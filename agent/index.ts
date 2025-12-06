@@ -1,21 +1,21 @@
 import {
   convertToModelMessages,
-  FinishReason,
+  type FinishReason,
   streamText,
-  UIMessageChunk,
+  type UIMessageChunk,
 } from "ai";
-import { defineHook, getWritable } from "workflow";
-import { getTools } from "./tools";
-import {
-  redis,
-  StoredInterrupt,
-  pushMessages,
-  getMessages,
-  clearStreamIdIf,
-} from "@/lib/redis";
 import { nanoid } from "nanoid";
+import { defineHook, getWritable } from "workflow";
+import {
+  clearStreamIdIf,
+  getMessages,
+  pushMessages,
+  redis,
+  type StoredInterrupt,
+} from "@/lib/redis";
+import { getTools } from "./tools";
 
-const system = `You are an AI assistant. Help the user with their requests.`;
+const system = "You are an AI assistant. Help the user with their requests.";
 
 type FinishReasonWithInterrupt =
   | FinishReason
@@ -75,7 +75,7 @@ async function onAgentEvent(
         stepCount,
       });
       finishReason = result.finishReason;
-      stepCount++;
+      stepCount += 1;
     }
   }
 
@@ -96,7 +96,9 @@ async function hasInterruptStep({
 }): Promise<boolean> {
   "use step";
   const interrupt = await redis.get<StoredInterrupt>(`interrupt:${chatId}`);
-  if (!interrupt || interrupt.timestamp < since) return false;
+  if (!interrupt || interrupt.timestamp < since) {
+    return false;
+  }
   return true;
 }
 

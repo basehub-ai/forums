@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import { UIMessage } from "ai";
+import type { UIMessage } from "ai";
 
 export const redis = Redis.fromEnv();
 
@@ -28,7 +28,7 @@ export async function setStreamId(
 
 export async function getStreamId(chatId: string): Promise<string | null> {
   const val = await redis.get(streamKey(chatId));
-  return val != null ? String(val) : null;
+  return val !== null ? String(val) : null;
 }
 
 /**
@@ -59,7 +59,9 @@ export async function pushMessages(
   chatId: string,
   messages: UIMessage[]
 ): Promise<void> {
-  if (messages.length === 0) return;
+  if (messages.length === 0) {
+    return;
+  }
   const serialized = messages.map((m) => JSON.stringify(m));
   await redis.rpush(messagesKey(chatId), ...serialized);
 }

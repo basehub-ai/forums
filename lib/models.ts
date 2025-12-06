@@ -15,6 +15,8 @@ export const models: Model[] = [
 ];
 
 export function getModel(model?: string): Model {
-  if (!model) return models[0]!;
-  return models.find((m) => m.value === model) ?? models[0]!;
+  if (!model) {
+    return models[0] as Model;
+  }
+  return models.find((m) => m.value === model) ?? (models[0] as Model);
 }
