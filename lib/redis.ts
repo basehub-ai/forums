@@ -1,34 +1,34 @@
-import { Redis } from "@upstash/redis";
-import type { UIMessage } from "ai";
+import { Redis } from "@upstash/redis"
+import type { AgentUIMessage } from "@/agent/types"
 
-export const redis = Redis.fromEnv();
+export const redis = Redis.fromEnv()
 
 // types
 
 export type StoredChat = {
-  id: string;
-  runId: string;
-};
+  id: string
+  runId: string
+}
 
 export type StoredChatClient = StoredChat & {
-  streamId: string | null;
-  messages: UIMessage[];
-};
+  streamId: string | null
+  messages: AgentUIMessage[]
+}
 
 // Stream ID operations (separate key for atomic compare-and-clear)
 
-const streamKey = (chatId: string) => `chat:${chatId}:stream`;
+const streamKey = (chatId: string) => `chat:${chatId}:stream`
 
 export async function setStreamId(
   chatId: string,
   streamId: string
 ): Promise<void> {
-  await redis.set(streamKey(chatId), streamId);
+  await redis.set(streamKey(chatId), streamId)
 }
 
 export async function getStreamId(chatId: string): Promise<string | null> {
-  const val = await redis.get(streamKey(chatId));
-  return val !== null ? String(val) : null;
+  const val = await redis.get(streamKey(chatId))
+  return val !== null ? String(val) : null
 }
 
 /**
@@ -47,30 +47,30 @@ export async function clearStreamIdIf(
     return 0`,
     [streamKey(chatId)],
     [expectedStreamId]
-  );
-  return result === 1;
+  )
+  return result === 1
 }
 
 // Message operations using Redis list (atomic, no race conditions)
 
-const messagesKey = (chatId: string) => `chat:${chatId}:messages`;
+const messagesKey = (chatId: string) => `chat:${chatId}:messages`
 
 export async function pushMessages(
   chatId: string,
-  messages: UIMessage[]
+  messages: AgentUIMessage[]
 ): Promise<void> {
   if (messages.length === 0) {
-    return;
+    return
   }
-  const serialized = messages.map((m) => JSON.stringify(m));
-  await redis.rpush(messagesKey(chatId), ...serialized);
+  const serialized = messages.map((m) => JSON.stringify(m))
+  await redis.rpush(messagesKey(chatId), ...serialized)
 }
 
-export async function getMessages(chatId: string): Promise<UIMessage[]> {
-  const raw = await redis.lrange<string>(messagesKey(chatId), 0, -1);
-  return raw.map((s) => (typeof s === "string" ? JSON.parse(s) : s));
+export async function getMessages(chatId: string): Promise<AgentUIMessage[]> {
+  const raw = await redis.lrange<string>(messagesKey(chatId), 0, -1)
+  return raw.map((s) => (typeof s === "string" ? JSON.parse(s) : s))
 }
 
 export type StoredInterrupt = {
-  timestamp: number;
-};
+  timestamp: number
+}

@@ -1,6 +1,6 @@
-import type { ToolSet } from "ai";
-import { z } from "zod";
-import { checkTimeStep } from "./check-time";
+import type { ToolSet } from "ai"
+import { z } from "zod"
+import { checkTimeStep } from "./check-time"
 
 export function getTools(): ToolSet {
   return {
@@ -10,5 +10,5 @@ export function getTools(): ToolSet {
       inputSchema: z.object({}),
       execute: async () => await checkTimeStep(),
     },
-  };
+  }
 }
