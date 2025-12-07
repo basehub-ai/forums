@@ -8,6 +8,8 @@ export const redis = Redis.fromEnv()
 export type StoredThread = {
   id: string
   runId: string
+  owner: string
+  repo: string
 }
 
 export type StoredThreadClient = StoredThread & {
@@ -15,11 +17,11 @@ export type StoredThreadClient = StoredThread & {
   messages: AgentUIMessage[]
 }
 
-export const threadKey = (threadId: string) => `thread:${threadId}`
+export const threadKey = (threadId: string) => `thread:meta:${threadId}`
 
 // Stream ID operations (separate key for atomic compare-and-clear)
 
-const streamKey = (threadId: string) => `thread:${threadId}:stream`
+const streamKey = (threadId: string) => `thread:stream:${threadId}`
 
 export async function setStreamId(
   threadId: string,
@@ -55,7 +57,7 @@ export async function clearStreamIdIf(
 
 // Message operations using Redis list (atomic, no race conditions)
 
-const messagesKey = (threadId: string) => `thread:${threadId}:messages`
+const messagesKey = (threadId: string) => `thread:messages:${threadId}`
 
 export async function pushMessages(
   threadId: string,

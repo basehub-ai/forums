@@ -5,6 +5,7 @@ import {
   type UIMessageChunk,
 } from "ai"
 import { nanoid } from "nanoid"
+import { updateTag } from "next/cache"
 import { defineHook, getWritable } from "workflow"
 import {
   clearStreamIdIf,
@@ -93,7 +94,7 @@ async function onAgentEvent(
 
   await closeStreamStep({
     writable,
-    chatId: threadId,
+    threadId,
     now: event.now,
     writeInterruptionMessage: finishReason === "interrupted-mid-stream",
   })
@@ -116,12 +117,12 @@ async function hasInterruptStep({
 
 async function closeStreamStep({
   writable,
-  chatId,
+  threadId,
   writeInterruptionMessage,
   now,
 }: {
   writable: WritableStream<UIMessageChunk>
-  chatId: string
+  threadId: string
   writeInterruptionMessage?: boolean
   now: number
 }) {
@@ -144,7 +145,7 @@ async function closeStreamStep({
   await Promise.all([
     writable.close(),
     writeInterruptionMessage
-      ? pushMessages(chatId, [
+      ? pushMessages(threadId, [
           {
             id: interruptionMessageId,
             role: "assistant" as const,
@@ -152,7 +153,8 @@ async function closeStreamStep({
           },
         ])
       : Promise.resolve(),
-    clearStreamIdIf(chatId, String(now)),
+    clearStreamIdIf(threadId, String(now)),
+    updateTag(`thread:${threadId}`),
   ])
 }
 

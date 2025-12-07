@@ -98,7 +98,12 @@ export async function POST(
       ])
       runId = run.runId
       await Promise.all([
-        redis.set<StoredThread>(threadKey(threadId), { id: threadId, runId }),
+        redis.set<StoredThread>(threadKey(threadId), {
+          id: threadId,
+          runId,
+          owner: gitContext.owner,
+          repo: gitContext.repo,
+        }),
         setStreamId(threadId, streamId),
         pushMessages(threadId, messages),
       ])
