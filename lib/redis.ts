@@ -11,6 +11,8 @@ export type StoredThread = {
   repo: string
   runId: string
   title?: string
+  createdAt: number
+  updatedAt: number
 }
 
 export type StoredThreadClient = Pick<

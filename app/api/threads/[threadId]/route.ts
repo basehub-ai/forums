@@ -78,6 +78,10 @@ export async function POST(
           now,
           gitContext,
         }),
+        redis.set<StoredThread>(threadKey(thread.id), {
+          ...thread,
+          updatedAt: now,
+        }),
         setStreamId(thread.id, streamId),
         pushMessages(thread.id, messages),
       ])
@@ -109,6 +113,8 @@ export async function POST(
         runId,
         owner: gitContext.owner,
         repo: gitContext.repo,
+        createdAt: now,
+        updatedAt: now,
       }
       await redis.set<StoredThread>(threadKey(threadId), newThread)
 
