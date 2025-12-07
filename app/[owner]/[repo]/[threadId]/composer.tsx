@@ -39,7 +39,7 @@ export const Composer = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} ref={formRef}>
+    <form className="bg-background" onSubmit={handleSubmit} ref={formRef}>
       <InputGroup>
         <InputGroupTextarea
           name="message"

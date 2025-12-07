@@ -1,23 +1,28 @@
 "use client"
 
+import { Fragment } from "react/jsx-runtime"
+import { Streamdown } from "streamdown"
 import type { AgentUIMessage } from "@/agent/types"
 import { cn } from "@/lib/utils"
 import { useAgentStore } from "./agent-store"
 
 type MessageItemProps = {
   message: AgentUIMessage
+  isStreaming?: boolean
 }
 
-const MessageItem = ({ message }: MessageItemProps) => {
+const MessageItem = ({ message, isStreaming }: MessageItemProps) => {
+  const isSystem = message.role === "system"
   const isUser = message.role === "user"
   const isAssistant = message.role === "assistant"
 
   return (
     <div
-      className={cn("mb-4 rounded-lg border p-4", {
+      className={cn("mb-4 rounded-lg", {
+        "border p-4": isUser || isSystem,
         "border-blue-200 bg-blue-50": isUser,
-        "border-gray-200 bg-gray-50": isAssistant,
-        "border-yellow-200 bg-yellow-50": !!isUser && !!isAssistant,
+        "": isAssistant,
+        "border-yellow-200 bg-yellow-50": isSystem,
       })}
     >
       <div className="mb-2 font-semibold text-sm capitalize">
@@ -28,9 +33,13 @@ const MessageItem = ({ message }: MessageItemProps) => {
           if (part.type === "text") {
             return (
               // biome-ignore lint/suspicious/noArrayIndexKey: .
-              <div className="prose prose-sm max-w-none" key={idx}>
-                {part.text}
-              </div>
+              <Fragment key={idx}>
+                <Streamdown
+                  isAnimating={!!isStreaming && message.role === "assistant"}
+                >
+                  {part.text}
+                </Streamdown>
+              </Fragment>
             )
           }
 
@@ -69,7 +78,7 @@ export const MessagesStream = () => {
   return (
     <>
       {streamMessages.map((message) => (
-        <MessageItem key={message.id} message={message} />
+        <MessageItem isStreaming key={message.id} message={message} />
       ))}
     </>
   )

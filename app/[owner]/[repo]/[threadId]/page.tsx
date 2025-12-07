@@ -8,8 +8,7 @@ import {
   threadKey,
 } from "@/lib/redis"
 import { AgentProvider } from "./agent-context"
-import { Composer } from "./composer"
-import { MessagesStatic, MessagesStream } from "./messages"
+import { ThreadWithComposer } from "./thread"
 
 export const generateStaticParams = async () => {
   let cursor: string | undefined
@@ -67,13 +66,7 @@ export default async function ThreadPage({
         repo: thread.repo,
       }}
     >
-      <div>
-        <div className="space-y-4">
-          <MessagesStatic messages={messages} />
-          <MessagesStream />
-        </div>
-        <Composer />
-      </div>
+      <ThreadWithComposer initialMessages={messages} />
     </AgentProvider>
   )
 }

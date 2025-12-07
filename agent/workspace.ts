@@ -174,7 +174,7 @@ export const getWorkspace = async ({
         fi
 
         cd "$REPO_DIR"
-        git fetch origin
+        git fetch origin --quiet
 
         # Wait for ripgrep installation to complete if it was started
         if [ -n "$RG_PID" ]; then
