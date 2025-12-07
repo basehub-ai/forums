@@ -97,6 +97,7 @@ async function onAgentEvent(
     threadId,
     now: event.now,
     writeInterruptionMessage: finishReason === "interrupted-mid-stream",
+    gitContext: event.gitContext,
   })
 }
 
@@ -120,11 +121,13 @@ async function closeStreamStep({
   threadId,
   writeInterruptionMessage,
   now,
+  gitContext,
 }: {
   writable: WritableStream<UIMessageChunk>
   threadId: string
   writeInterruptionMessage?: boolean
   now: number
+  gitContext: GitContext
 }) {
   "use step"
 
@@ -156,6 +159,7 @@ async function closeStreamStep({
     clearStreamIdIf(threadId, String(now)),
   ])
 
+  revalidateTag(`repo:${gitContext.owner}:${gitContext.repo}`, "max")
   revalidateTag(`thread:${threadId}`, "max")
 }
 
@@ -196,6 +200,10 @@ async function streamTextStep({
 
   const system = `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${gitContext.owner}/${gitContext.repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).`
 
+  console.log(
+    "convertToModelMessages(uiMessages)",
+    convertToModelMessages(uiMessages)
+  )
   const result = streamText({
     messages: convertToModelMessages(uiMessages),
     tools: getTools({ workspace }),

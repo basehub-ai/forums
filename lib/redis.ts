@@ -9,9 +9,14 @@ export type StoredThread = {
   id: string
   owner: string
   repo: string
+  runId: string
+  title?: string
 }
 
-export type StoredThreadClient = StoredThread & {
+export type StoredThreadClient = Pick<
+  StoredThread,
+  "id" | "owner" | "repo" | "title"
+> & {
   streamId: string | null
 }
 
@@ -75,7 +80,44 @@ export async function pushMessages(
 
 export async function getMessages(chatId: string): Promise<AgentUIMessage[]> {
   const raw = await redis.lrange<string>(messagesKey(chatId), 0, -1)
-  return raw.map((s) => (typeof s === "string" ? JSON.parse(s) : s))
+  return raw.map((s) =>
+    typeof s === "string" ? (JSON.parse(s) as AgentUIMessage) : s
+  )
+}
+
+export async function getThreadsByRepo(
+  owner: string,
+  repo: string
+): Promise<StoredThreadClient[]> {
+  let cursor: string | undefined
+  const keys: string[] = []
+  while (cursor !== "0") {
+    const [newCursor, newKeys] = await redis.scan(cursor ?? "0", {
+      count: 1000,
+      match: "thread:meta:*",
+    })
+    keys.push(...newKeys)
+    cursor = newCursor
+  }
+
+  const threads = await Promise.all(
+    keys.map(async (key) => {
+      const thread = await redis.get<StoredThread>(key)
+      if (!thread || thread.owner !== owner || thread.repo !== repo) {
+        return null
+      }
+      const streamId = await getStreamId(thread.id)
+      return {
+        id: thread.id,
+        owner: thread.owner,
+        repo: thread.repo,
+        title: thread.title,
+        streamId,
+      } satisfies StoredThreadClient
+    })
+  )
+
+  return threads.filter(Boolean).sort((a, b) => b.id.localeCompare(a.id))
 }
 
 export type StoredInterrupt = {

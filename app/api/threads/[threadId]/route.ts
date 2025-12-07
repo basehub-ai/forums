@@ -1,4 +1,6 @@
-import { createUIMessageStreamResponse } from "ai"
+import { waitUntil } from "@vercel/functions"
+import { createUIMessageStreamResponse, generateText } from "ai"
+import { revalidateTag } from "next/cache"
 import { getRun, start } from "workflow/api"
 import { agent, agentHook, type GitContext } from "@/agent"
 import type { AgentUIMessage } from "@/agent/types"
@@ -50,7 +52,7 @@ export async function POST(
   { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
-    const body: ThreadRequest = await request.json()
+    const body = (await request.json()) as ThreadRequest
 
     const { messages, gitContext } = body
     const now = Date.now()
@@ -85,29 +87,55 @@ export async function POST(
       }
       runId = hook.runId
     } else {
-      const run = await start(agent, [
-        {
-          threadId,
-          initialEvent: {
-            type: "user-message",
-            now,
-            gitContext,
+      const [newRun] = await Promise.all([
+        start(agent, [
+          {
+            threadId,
+            initialEvent: {
+              type: "user-message",
+              now,
+              gitContext,
+            },
+            model: getModel(body.model).value,
           },
-          model: getModel(body.model).value,
-        },
-      ])
-      runId = run.runId
-      await Promise.all([
-        redis.set<StoredThread>(threadKey(threadId), {
-          id: threadId,
-          runId,
-          owner: gitContext.owner,
-          repo: gitContext.repo,
-        }),
+        ]),
         setStreamId(threadId, streamId),
         pushMessages(threadId, messages),
       ])
+      runId = newRun.runId
+
+      const newThread: StoredThread = {
+        id: threadId,
+        runId,
+        owner: gitContext.owner,
+        repo: gitContext.repo,
+      }
+      await redis.set<StoredThread>(threadKey(threadId), newThread)
+
+      const firstUserMessage = messages.find((m) => m.role === "user")
+      const firstUserText = firstUserMessage?.parts
+        .filter((p) => p.type === "text")
+        .map((p) => p.text)
+        .join("\n\n")
+
+      if (firstUserText) {
+        waitUntil(
+          generateText({
+            model: getModel("haiku").value,
+            prompt: `Generate a short, concise title (max 5-7 words) for this thread based on the first user message. Only return the title text, nothing else.\n\nUser message: ${firstUserText}`,
+          }).then(async (res) => {
+            const title = res.text.trim()
+            await redis.set<StoredThread>(threadKey(threadId), {
+              ...newThread,
+              title,
+            })
+            revalidateTag(`repo:${gitContext.owner}:${gitContext.repo}`, "max")
+          })
+        )
+      }
     }
+
+    revalidateTag(`repo:${gitContext.owner}:${gitContext.repo}`, "max")
 
     if (!runId) {
       throw new Error("expected runId by this point")

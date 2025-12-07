@@ -29,7 +29,7 @@ export async function POST(
     if (!thread) {
       return new Response("Thread not found", { status: 404 })
     }
-    const body: InterruptRequest = await request.json()
+    const body = (await request.json()) as InterruptRequest
     await redis.set<StoredInterrupt>(`interrupt:${thread.id}`, {
       timestamp: body.now,
     })

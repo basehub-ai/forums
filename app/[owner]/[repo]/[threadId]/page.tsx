@@ -57,6 +57,8 @@ export default async function ThreadPage({
     notFound()
   }
 
+  const { owner, repo } = await params
+
   return (
     <AgentProvider
       thread={{
@@ -66,7 +68,12 @@ export default async function ThreadPage({
         repo: thread.repo,
       }}
     >
-      <ThreadWithComposer initialMessages={messages} />
+      <ThreadWithComposer
+        initialMessages={messages}
+        owner={owner}
+        repo={repo}
+        title={thread.title}
+      />
     </AgentProvider>
   )
 }

@@ -1,6 +1,8 @@
 "use client"
 
+import { Suspense } from "react"
 import { authClient } from "@/lib/auth-client"
+import { RepoSwitcher } from "./repo-switcher"
 import { Button } from "./ui/button"
 import {
   DropdownMenu,
@@ -13,8 +15,8 @@ import {
 export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
-      <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        <div>
+      <div className="container mx-auto flex h-14 items-center px-4">
+        <div className="flex-1">
           <span className="font-semibold text-2xl">Forums</span>
           <span className="text-muted-foreground text-xs">
             {" "}
@@ -31,7 +33,13 @@ export function Header() {
           </span>
         </div>
 
-        <div>
+        <div className="-translate-x-1/2 absolute left-1/2">
+          <Suspense>
+            <RepoSwitcher />
+          </Suspense>
+        </div>
+
+        <div className="flex flex-1 justify-end">
           <User />
         </div>
       </div>
