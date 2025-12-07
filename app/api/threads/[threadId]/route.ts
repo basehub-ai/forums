@@ -1,80 +1,83 @@
 import { createUIMessageStreamResponse } from "ai"
 import { getRun, start } from "workflow/api"
-import { agent, agentHook } from "@/agent"
+import { agent, agentHook, type GitContext } from "@/agent"
 import type { AgentUIMessage } from "@/agent/types"
 import { getModel } from "@/lib/models"
 import {
   getStreamId,
   pushMessages,
   redis,
-  type StoredChat,
+  type StoredThread,
   setStreamId,
+  threadKey,
 } from "@/lib/redis"
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ chatId: string }> }
+  { params }: { params: Promise<{ threadId: string }> }
 ) {
-  const { chatId } = await params
+  const { threadId } = await params
 
-  if (!chatId) {
-    return new Response("chatId is required", { status: 400 })
+  if (!threadId) {
+    return new Response("threadId is required", { status: 400 })
   }
 
-  const [chat, streamId] = await Promise.all([
-    redis.get<StoredChat>(`chat:${chatId}`),
-    getStreamId(chatId),
+  const [thread, streamId] = await Promise.all([
+    redis.get<StoredThread>(threadKey(threadId)),
+    getStreamId(threadId),
   ])
-  if (!(chat && streamId)) {
+  if (!(thread && streamId)) {
     return new Response("No active stream", { status: 404 })
   }
 
-  const run = getRun(chat.runId)
+  const run = getRun(thread.runId)
 
   return createUIMessageStreamResponse({
     stream: run.getReadable({ namespace: streamId }),
-    headers: { "x-workflow-run-id": chat.runId },
+    headers: { "x-workflow-run-id": thread.runId },
   })
 }
 
-export type ChatRequest = {
+export type ThreadRequest = {
   messages: AgentUIMessage[]
   now: number
+  gitContext: GitContext
   model?: string
 }
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ chatId: string }> }
+  { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
-    const body: ChatRequest = await request.json()
+    const body: ThreadRequest = await request.json()
 
-    const { messages } = body
+    const { messages, gitContext } = body
     const now = Date.now()
     const streamId = String(now)
 
-    const { chatId } = (await params) ?? {}
+    const { threadId } = (await params) ?? {}
 
-    if (chatId.length > 32) {
-      return new Response("Invalid chatId", { status: 400 })
+    if (threadId.length > 32) {
+      return new Response("Invalid threadId", { status: 400 })
     }
 
-    const chat = await redis.get<StoredChat>(`chat:${chatId}`)
+    const thread = await redis.get<StoredThread>(threadKey(threadId))
 
     let runId: string | undefined
-    if (chat) {
-      if (!chat) {
-        return new Response("Chat not found", { status: 404 })
+    if (thread) {
+      if (!thread) {
+        return new Response("Thread not found", { status: 404 })
       }
 
       const [hook] = await Promise.all([
-        agentHook.resume(chat.id, {
+        agentHook.resume(thread.id, {
           type: "user-message",
           now,
+          gitContext,
         }),
-        setStreamId(chat.id, streamId),
-        pushMessages(chat.id, messages),
+        setStreamId(thread.id, streamId),
+        pushMessages(thread.id, messages),
       ])
 
       if (!hook) {
@@ -84,19 +87,20 @@ export async function POST(
     } else {
       const run = await start(agent, [
         {
-          chatId,
-          initialEvent: { type: "user-message", now },
+          threadId,
+          initialEvent: {
+            type: "user-message",
+            now,
+            gitContext,
+          },
           model: getModel(body.model).value,
         },
       ])
       runId = run.runId
       await Promise.all([
-        redis.set<StoredChat>(`chat:${chatId}`, {
-          id: chatId,
-          runId,
-        }),
-        setStreamId(chatId, streamId),
-        pushMessages(chatId, messages),
+        redis.set<StoredThread>(threadKey(threadId), { id: threadId, runId }),
+        setStreamId(threadId, streamId),
+        pushMessages(threadId, messages),
       ])
     }
 

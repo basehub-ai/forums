@@ -15,6 +15,7 @@ import {
 } from "@/lib/redis"
 import { getTools } from "./tools"
 import type { AgentUIMessage } from "./types"
+import { getWorkspace } from "./workspace"
 
 const system = "You are an AI assistant. Help the user with their requests."
 
@@ -23,43 +24,52 @@ type FinishReasonWithInterrupt =
   | "interrupted-mid-stream"
   | "interrupted-before-stream"
 
-export type AgentEvent = { now: number } & { type: "user-message" }
+export type GitContext = {
+  owner: string
+  repo: string
+  ref?: string
+}
+
+export type AgentEvent = { now: number; gitContext: GitContext } & {
+  type: "user-message"
+}
 
 export const agentHook = defineHook<AgentEvent>()
 
 export async function agent({
   model,
-  chatId,
+  threadId,
   initialEvent,
 }: {
   model: string
-  chatId: string
+  threadId: string
   initialEvent: AgentEvent
 }) {
   "use workflow"
 
-  const hook = agentHook.create({ token: chatId })
+  const hook = agentHook.create({ token: threadId })
 
-  await onAgentEvent(initialEvent, { chatId, model })
+  await onAgentEvent(initialEvent, { threadId, model })
 
   for await (const event of hook) {
-    await onAgentEvent(event, { chatId, model })
+    await onAgentEvent(event, { threadId, model })
   }
 }
 
 async function onAgentEvent(
   event: AgentEvent,
-  { chatId, model }: { chatId: string; model: string }
+  { threadId, model }: { threadId: string; model: string }
 ) {
   const streamId = String(event.now)
   const writable = getWritable({ namespace: streamId })
 
   const interruptedBeforeStream = await hasInterruptStep({
-    chatId,
+    threadId,
     since: event.now,
   })
 
   let finishReason: FinishReasonWithInterrupt | undefined
+  let sandboxId: string | null = null
   if (!interruptedBeforeStream) {
     let stepCount = 0
     while (
@@ -70,33 +80,36 @@ async function onAgentEvent(
     ) {
       const result = await streamTextStep({
         model,
-        chatId,
+        threadId,
         writable,
         now: event.now,
         stepCount,
+        sandboxId,
+        gitContext: event.gitContext,
       })
       finishReason = result.finishReason
+      sandboxId = result.sandboxId
       stepCount += 1
     }
   }
 
   await closeStreamStep({
     writable,
-    chatId,
+    chatId: threadId,
     now: event.now,
     writeInterruptionMessage: finishReason === "interrupted-mid-stream",
   })
 }
 
 async function hasInterruptStep({
-  chatId,
+  threadId,
   since,
 }: {
-  chatId: string
+  threadId: string
   since: number
 }): Promise<boolean> {
   "use step"
-  const interrupt = await redis.get<StoredInterrupt>(`interrupt:${chatId}`)
+  const interrupt = await redis.get<StoredInterrupt>(`interrupt:${threadId}`)
   if (!interrupt || interrupt.timestamp < since) {
     return false
   }
@@ -147,22 +160,27 @@ async function closeStreamStep({
 
 async function streamTextStep({
   model,
-  chatId,
+  threadId,
   writable,
   now,
   stepCount,
+  gitContext,
+  sandboxId,
 }: {
   model: string
-  chatId: string
+  threadId: string
   writable: WritableStream<UIMessageChunk>
   now: number
   stepCount: number
-}): Promise<{ finishReason: FinishReasonWithInterrupt }> {
+  gitContext: GitContext
+  sandboxId: string | null
+}): Promise<{ finishReason: FinishReasonWithInterrupt; sandboxId: string }> {
   "use step"
 
-  const [uiMessages, interrupted] = await Promise.all([
-    getMessages(chatId),
-    hasInterruptStep({ chatId, since: now }),
+  const [uiMessages, interrupted, workspace] = await Promise.all([
+    getMessages(threadId),
+    hasInterruptStep({ threadId, since: now }),
+    getWorkspace({ sandboxId, gitContext }),
   ])
 
   if (interrupted) {
@@ -171,12 +189,13 @@ async function streamTextStep({
         stepCount === 0
           ? "interrupted-before-stream"
           : "interrupted-mid-stream",
+      sandboxId: workspace.sandbox.sandboxId,
     }
   }
 
   const result = streamText({
     messages: convertToModelMessages(uiMessages),
-    tools: getTools(),
+    tools: getTools({ workspace }),
     system,
     model,
   })
@@ -193,10 +212,13 @@ async function streamTextStep({
               metadata: { ts: ts + i, assistant: { model } },
             }) satisfies AgentUIMessage
         )
-        await pushMessages(chatId, toAdd)
+        await pushMessages(threadId, toAdd)
       },
     })
     .pipeTo(writable, { preventClose: true })
 
-  return { finishReason: await result.finishReason }
+  return {
+    finishReason: await result.finishReason,
+    sandboxId: workspace.sandbox.sandboxId,
+  }
 }

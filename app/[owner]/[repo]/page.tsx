@@ -1,3 +1,12 @@
+import { AgentProvider } from "./[threadId]/agent-context"
+import { Composer } from "./[threadId]/composer"
+
 export default function RepoPage() {
-  return <div>this is the repo page</div>
+  return (
+    <AgentProvider>
+      <div>
+        <Composer />
+      </div>
+    </AgentProvider>
+  )
 }

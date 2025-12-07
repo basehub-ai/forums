@@ -5,25 +5,27 @@ export const redis = Redis.fromEnv()
 
 // types
 
-export type StoredChat = {
+export type StoredThread = {
   id: string
   runId: string
 }
 
-export type StoredChatClient = StoredChat & {
+export type StoredThreadClient = StoredThread & {
   streamId: string | null
   messages: AgentUIMessage[]
 }
 
+export const threadKey = (threadId: string) => `thread:${threadId}`
+
 // Stream ID operations (separate key for atomic compare-and-clear)
 
-const streamKey = (chatId: string) => `chat:${chatId}:stream`
+const streamKey = (threadId: string) => `thread:${threadId}:stream`
 
 export async function setStreamId(
-  chatId: string,
+  threadId: string,
   streamId: string
 ): Promise<void> {
-  await redis.set(streamKey(chatId), streamId)
+  await redis.set(streamKey(threadId), streamId)
 }
 
 export async function getStreamId(chatId: string): Promise<string | null> {
@@ -53,17 +55,22 @@ export async function clearStreamIdIf(
 
 // Message operations using Redis list (atomic, no race conditions)
 
-const messagesKey = (chatId: string) => `chat:${chatId}:messages`
+const messagesKey = (threadId: string) => `thread:${threadId}:messages`
 
 export async function pushMessages(
-  chatId: string,
+  threadId: string,
   messages: AgentUIMessage[]
 ): Promise<void> {
   if (messages.length === 0) {
     return
   }
-  const serialized = messages.map((m) => JSON.stringify(m))
-  await redis.rpush(messagesKey(chatId), ...serialized)
+  const serialized = messages.map((m, i) =>
+    JSON.stringify({
+      ...m,
+      metadata: { ts: Date.now() + i },
+    } satisfies AgentUIMessage)
+  )
+  await redis.rpush(messagesKey(threadId), ...serialized)
 }
 
 export async function getMessages(chatId: string): Promise<AgentUIMessage[]> {

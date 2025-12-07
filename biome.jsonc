@@ -8,11 +8,15 @@
   },
   "linter": {
     "rules": {
+      "performance": {
+        "noNamespaceImport": "off"
+      },
       "nursery": {
         "useConsistentArrowReturn": "off"
       },
       "style": {
-        "useNodejsImportProtocol": "off"
+        "useNodejsImportProtocol": "off",
+        "useConsistentArrayType": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off"
