@@ -1,6 +1,6 @@
 "use client"
 import { ArrowUpIcon, PlusIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useRef } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,19 +19,33 @@ import { useAgentStore } from "./agent-store"
 
 export const Composer = () => {
   const sendMessages = useAgentStore((state) => state.sendMessages)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const message = formData.get("message")?.toString() || ""
+    if (message.trim()) {
+      sendMessages([{ parts: [{ type: "text", text: message }] }])
+      e.currentTarget.reset()
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault()
+      formRef.current?.requestSubmit()
+    }
+  }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
-        const message = formData.get("message")?.toString() || ""
-        sendMessages([{ parts: [{ type: "text", text: message }] }])
-        e.currentTarget.reset()
-      }}
-    >
+    <form onSubmit={handleSubmit} ref={formRef}>
       <InputGroup>
-        <InputGroupTextarea name="message" placeholder="Search or chat..." />
+        <InputGroupTextarea
+          name="message"
+          onKeyDown={handleKeyDown}
+          placeholder="Search or chat..."
+        />
         <InputGroupAddon align="block-end">
           <InputGroupButton
             className="rounded-full"
@@ -58,8 +72,8 @@ export const Composer = () => {
           <Separator className="h-4!" orientation="vertical" />
           <InputGroupButton
             className="rounded-full"
-            disabled
             size="icon-xs"
+            type="submit"
             variant="default"
           >
             <ArrowUpIcon />
@@ -67,7 +81,6 @@ export const Composer = () => {
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
-      <Button>New Thread</Button>
     </form>
   )
 }

@@ -33,12 +33,12 @@ export function useAgent({
     React.useState(false)
 
   const {
-    messages: streamMessages,
+    messages,
     resumeStream,
     sendMessage: sendMessageRaw,
     status,
     setMessages,
-  } = useChat({
+  } = useChat<AgentUIMessage>({
     id: threadId,
     transport: new WorkflowChatTransport({
       prepareSendMessagesRequest: (config) => {
@@ -102,10 +102,6 @@ export function useAgent({
     }
   }, [thread?.streamId, resumeStream, status])
 
-  const messages = React.useMemo(() => {
-    return [...(thread?.messages ?? []), ...streamMessages]
-  }, [thread?.messages, streamMessages])
-
   const sendMessages = React.useCallback(
     async (newMessages: Array<Omit<AgentUIMessage, "id" | "role">>) => {
       if (status === "ready") {
@@ -144,7 +140,6 @@ export function useAgent({
   return {
     sendMessages,
     messages,
-    streamMessages,
     queue,
     status,
     removeFromQueue,

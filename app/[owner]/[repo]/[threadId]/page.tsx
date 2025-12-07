@@ -9,7 +9,7 @@ import {
 } from "@/lib/redis"
 import { AgentProvider } from "./agent-context"
 import { Composer } from "./composer"
-import { Messages } from "./messages"
+import { MessagesStatic, MessagesStream } from "./messages"
 
 export const generateStaticParams = async () => {
   let cursor: string | undefined
@@ -59,9 +59,19 @@ export default async function ThreadPage({
   }
 
   return (
-    <AgentProvider thread={{ ...thread, messages, streamId }}>
+    <AgentProvider
+      thread={{
+        id: thread.id,
+        streamId,
+        owner: thread.owner,
+        repo: thread.repo,
+      }}
+    >
       <div>
-        <Messages />
+        <div className="space-y-4">
+          <MessagesStatic messages={messages} />
+          <MessagesStream />
+        </div>
         <Composer />
       </div>
     </AgentProvider>

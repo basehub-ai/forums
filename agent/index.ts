@@ -5,7 +5,7 @@ import {
   type UIMessageChunk,
 } from "ai"
 import { nanoid } from "nanoid"
-import { updateTag } from "next/cache"
+import { revalidateTag } from "next/cache"
 import { defineHook, getWritable } from "workflow"
 import {
   clearStreamIdIf,
@@ -154,8 +154,9 @@ async function closeStreamStep({
         ])
       : Promise.resolve(),
     clearStreamIdIf(threadId, String(now)),
-    updateTag(`thread:${threadId}`),
   ])
+
+  revalidateTag(`thread:${threadId}`, "max")
 }
 
 async function streamTextStep({

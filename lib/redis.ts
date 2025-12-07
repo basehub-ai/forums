@@ -7,14 +7,12 @@ export const redis = Redis.fromEnv()
 
 export type StoredThread = {
   id: string
-  runId: string
   owner: string
   repo: string
 }
 
 export type StoredThreadClient = StoredThread & {
   streamId: string | null
-  messages: AgentUIMessage[]
 }
 
 export const threadKey = (threadId: string) => `thread:meta:${threadId}`

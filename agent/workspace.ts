@@ -157,25 +157,24 @@ export const getWorkspace = async ({
         # Install ripgrep in background if not present
         if ! which rg >/dev/null 2>&1; then
           (
+            mkdir -p ~/.local/bin &&
             cd /tmp &&
             curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
             tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-            cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg /usr/local/bin/ &&
+            cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
             rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
           ) &
           RG_PID=$!
+          export PATH="$HOME/.local/bin:$PATH"
         fi
 
         # Clone as bare repo if needed
         if [ ! -d "$REPO_DIR" ]; then
           git clone --bare "$REPO_URL" "$REPO_DIR"
-          cd "$REPO_DIR"
-          # Set HEAD for bare repo
-          git remote set-head origin --auto
-        else
-          cd "$REPO_DIR"
-          git fetch origin
         fi
+
+        cd "$REPO_DIR"
+        git fetch origin
 
         # Wait for ripgrep installation to complete if it was started
         if [ -n "$RG_PID" ]; then
@@ -186,8 +185,12 @@ export const getWorkspace = async ({
         if [ -n "$PROVIDED_REF" ]; then
           REF="$PROVIDED_REF"
         else
-          # For bare repos, get the default branch from symbolic-ref HEAD
-          REF=$(git symbolic-ref --short HEAD)
+          # Get the default branch from the remote
+          REF=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+          if [ -z "$REF" ]; then
+            echo "Error: Could not detect default branch from remote" >&2
+            exit 1
+          fi
         fi
 
         # Create worktree path with URL-encoded ref
