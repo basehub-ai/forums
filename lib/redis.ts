@@ -9,6 +9,8 @@ export type StoredThread = {
   id: string
   owner: string
   repo: string
+  createdAt: number
+  updatedAt: number
 }
 
 export type StoredThreadClient = StoredThread & {
