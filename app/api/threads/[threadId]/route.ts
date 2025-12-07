@@ -95,11 +95,7 @@ export async function POST(
         start(agent, [
           {
             threadId,
-            initialEvent: {
-              type: "user-message",
-              now,
-              gitContext,
-            },
+            initialEvent: { type: "user-message", now, gitContext },
             model: getModel(body.model).value,
           },
         ]),
