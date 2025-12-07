@@ -1,3 +1,4 @@
+import { extractTool, searchTool } from "@parallel-web/ai-sdk-tools"
 import { type ToolSet, tool } from "ai"
 import { join } from "path"
 import { z } from "zod"
@@ -27,5 +28,8 @@ export function getTools(context: ToolContext): ToolSet {
         return { content: out }
       },
     }),
+
+    WebSearch: searchTool,
+    WebExtract: extractTool,
   }
 }

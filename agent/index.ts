@@ -17,8 +17,6 @@ import { getTools } from "./tools"
 import type { AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
 
-const system = "You are an AI assistant. Help the user with their requests."
-
 type FinishReasonWithInterrupt =
   | FinishReason
   | "interrupted-mid-stream"
@@ -192,6 +190,8 @@ async function streamTextStep({
       sandboxId: workspace.sandbox.sandboxId,
     }
   }
+
+  const system = `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${gitContext.owner}/${gitContext.repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).`
 
   const result = streamText({
     messages: convertToModelMessages(uiMessages),
