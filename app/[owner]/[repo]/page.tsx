@@ -1,4 +1,5 @@
 import { cacheTag } from "next/cache"
+import { notFound } from "next/navigation"
 import { getThreadsByRepo, redis, type StoredThread } from "@/lib/redis"
 import { AgentProvider } from "./[threadId]/agent-context"
 import { ThreadWithComposer } from "./[threadId]/thread"
@@ -41,7 +42,20 @@ export default async function RepoPage({
 
   const { owner, repo } = await params
   cacheTag(`repo:${owner}:${repo}`)
-  const threads = await getThreadsByRepo(owner, repo)
+  const [threads, repoData] = await Promise.all([
+    getThreadsByRepo(owner, repo),
+    fetch(`https://api.github.com/repos/${owner}/${repo}`).then(async (res) => {
+      if (!res.ok || res.status === 404) {
+        return null
+      }
+      const data = await res.json()
+      return data
+    }),
+  ])
+
+  if (!repoData) {
+    return notFound()
+  }
 
   return (
     <AgentProvider>

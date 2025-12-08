@@ -1,16 +1,9 @@
-"use client"
-
+import { headers } from "next/headers"
 import { Suspense } from "react"
-import { authClient } from "@/lib/auth-client"
+import { auth } from "@/lib/auth"
 import { RepoSwitcher } from "./repo-switcher"
-import { Button } from "./ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
+import { SignInButton } from "./sign-in-button"
+import { UserDropdown } from "./user-dropdown"
 
 export function Header() {
   return (
@@ -40,68 +33,25 @@ export function Header() {
         </div>
 
         <div className="flex flex-1 justify-end">
-          <User />
+          <Suspense
+            fallback={
+              <div className="h-9 w-32 animate-pulse rounded-md bg-muted" />
+            }
+          >
+            <User />
+          </Suspense>
         </div>
       </div>
     </header>
   )
 }
 
-const User = () => {
-  const { data: session, isPending } = authClient.useSession()
+const User = async () => {
+  const data = await auth.api.getSession({ headers: await headers() })
 
-  if (isPending) {
-    return <div className="h-9 w-32 animate-pulse rounded-md bg-muted" />
+  if (!data) {
+    return <SignInButton />
   }
 
-  if (!session) {
-    return (
-      <Button onClick={() => authClient.signIn.social({ provider: "github" })}>
-        Sign in with GitHub
-      </Button>
-    )
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          type="button"
-        >
-          {/** biome-ignore lint/correctness/useImageSize: . */}
-          {/** biome-ignore lint/performance/noImgElement: . */}
-          <img
-            alt={session.user.name}
-            className="size-8 rounded-full"
-            src={session.user.image || ""}
-          />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          {/** biome-ignore lint/correctness/useImageSize: . */}
-          {/** biome-ignore lint/performance/noImgElement: . */}
-          <img
-            alt={session.user.name}
-            className="size-8 rounded-full"
-            src={session.user.image || ""}
-          />
-          <div className="flex flex-col">
-            <span className="font-medium text-sm">{session.user.name}</span>
-            <span className="text-muted-foreground text-xs">
-              {session.user.email}
-            </span>
-          </div>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => authClient.signOut()}
-          variant="destructive"
-        >
-          Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  return <UserDropdown {...data} />
 }

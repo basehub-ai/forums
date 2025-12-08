@@ -15,14 +15,17 @@ const MessageItem = ({ message, isStreaming }: MessageItemProps) => {
   const isSystem = message.role === "system"
   const isUser = message.role === "user"
   const isAssistant = message.role === "assistant"
+  const isAnimating = !!isStreaming && message.role === "assistant"
 
   return (
     <div
       className={cn("mb-4 rounded-lg", {
         "border p-4": isUser || isSystem,
-        "border-blue-200 bg-blue-50": isUser,
+        "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950":
+          isUser,
         "": isAssistant,
-        "border-yellow-200 bg-yellow-50": isSystem,
+        "border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950":
+          isSystem,
       })}
     >
       <div className="mb-2 font-semibold text-sm capitalize">
@@ -35,7 +38,8 @@ const MessageItem = ({ message, isStreaming }: MessageItemProps) => {
               // biome-ignore lint/suspicious/noArrayIndexKey: .
               <Fragment key={idx}>
                 <Streamdown
-                  isAnimating={!!isStreaming && message.role === "assistant"}
+                  isAnimating={isAnimating}
+                  mode={isAnimating ? "streaming" : "static"}
                 >
                   {part.text}
                 </Streamdown>
