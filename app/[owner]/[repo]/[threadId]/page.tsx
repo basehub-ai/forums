@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"
 import { messages, threads } from "@/lib/db/schema"
 import { toClientThread } from "@/lib/db/threads"
+import { fromThreadSlug } from "@/lib/thread-slug"
 import { AgentProvider } from "./agent-context"
 import { RefreshOnReady } from "./messages"
 import { ThreadWithComposer } from "./thread"
@@ -25,7 +26,9 @@ export default async function ThreadPage({
 }) {
   "use cache"
 
-  const { threadId, owner, repo } = await params
+  const { threadId: threadIdWithSlug, owner, repo } = await params
+  const threadId = fromThreadSlug(threadIdWithSlug)
+  console.log("threadId", threadId)
   if (!threadId) {
     notFound()
   }
