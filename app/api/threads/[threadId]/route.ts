@@ -1,18 +1,14 @@
 import { waitUntil } from "@vercel/functions"
 import { createUIMessageStreamResponse, generateText } from "ai"
+import { eq } from "drizzle-orm"
 import { revalidateTag } from "next/cache"
 import { getRun, start } from "workflow/api"
 import { agent, agentHook, type GitContext } from "@/agent"
 import type { AgentUIMessage } from "@/agent/types"
+import { db } from "@/lib/db/client"
+import { messages, threads } from "@/lib/db/schema"
 import { getModel } from "@/lib/models"
-import {
-  getStreamId,
-  pushMessages,
-  redis,
-  type StoredThread,
-  setStreamId,
-  threadKey,
-} from "@/lib/redis"
+import { nanoid } from "@/lib/utils"
 
 export async function GET(
   _request: Request,
@@ -24,18 +20,20 @@ export async function GET(
     return new Response("threadId is required", { status: 400 })
   }
 
-  const [thread, streamId] = await Promise.all([
-    redis.get<StoredThread>(threadKey(threadId)),
-    getStreamId(threadId),
-  ])
-  if (!(thread && streamId)) {
+  const [thread] = await db
+    .select()
+    .from(threads)
+    .where(eq(threads.id, threadId))
+    .limit(1)
+
+  if (!thread?.streamId) {
     return new Response("No active stream", { status: 404 })
   }
 
   const run = getRun(thread.runId)
 
   return createUIMessageStreamResponse({
-    stream: run.getReadable({ namespace: streamId }),
+    stream: run.getReadable({ namespace: thread.streamId }),
     headers: { "x-workflow-run-id": thread.runId },
   })
 }
@@ -54,7 +52,7 @@ export async function POST(
   try {
     const body = (await request.json()) as ThreadRequest
 
-    const { messages, gitContext } = body
+    const { messages: reqMessages, gitContext } = body
     const now = Date.now()
     const streamId = String(now)
 
@@ -64,26 +62,32 @@ export async function POST(
       return new Response("Invalid threadId", { status: 400 })
     }
 
-    const thread = await redis.get<StoredThread>(threadKey(threadId))
+    const [thread] = await db
+      .select()
+      .from(threads)
+      .where(eq(threads.id, threadId))
+      .limit(1)
 
     let runId: string | undefined
     if (thread) {
-      if (!thread) {
-        return new Response("Thread not found", { status: 404 })
-      }
-
       const [hook] = await Promise.all([
         agentHook.resume(thread.id, {
           type: "user-message",
           now,
           gitContext,
         }),
-        redis.set<StoredThread>(threadKey(thread.id), {
-          ...thread,
-          updatedAt: now,
-        }),
-        setStreamId(thread.id, streamId),
-        pushMessages(thread.id, messages),
+        db
+          .update(threads)
+          .set({ updatedAt: now, streamId })
+          .where(eq(threads.id, thread.id)),
+        db.insert(messages).values(
+          reqMessages.map((msg, i) => ({
+            id: nanoid(),
+            threadId: thread.id,
+            content: msg,
+            createdAt: now + i,
+          }))
+        ),
       ])
 
       if (!hook) {
@@ -99,22 +103,28 @@ export async function POST(
             model: getModel(body.model).value,
           },
         ]),
-        setStreamId(threadId, streamId),
-        pushMessages(threadId, messages),
+        db.insert(messages).values(
+          reqMessages.map((msg, i) => ({
+            id: nanoid(),
+            threadId,
+            content: msg,
+            createdAt: now + i,
+          }))
+        ),
       ])
       runId = newRun.runId
 
-      const newThread: StoredThread = {
+      await db.insert(threads).values({
         id: threadId,
         runId,
+        streamId,
         owner: gitContext.owner,
         repo: gitContext.repo,
         createdAt: now,
         updatedAt: now,
-      }
-      await redis.set<StoredThread>(threadKey(threadId), newThread)
+      })
 
-      const firstUserMessage = messages.find((m) => m.role === "user")
+      const firstUserMessage = reqMessages.find((m) => m.role === "user")
       const firstUserText = firstUserMessage?.parts
         .filter((p) => p.type === "text")
         .map((p) => p.text)
@@ -127,10 +137,10 @@ export async function POST(
             prompt: `Generate a short, concise title (max 5-7 words) for this thread based on the first user message. Only return the title text, nothing else.\n\nUser message: ${firstUserText}`,
           }).then(async (res) => {
             const title = res.text.trim()
-            await redis.set<StoredThread>(threadKey(threadId), {
-              ...newThread,
-              title,
-            })
+            await db
+              .update(threads)
+              .set({ title })
+              .where(eq(threads.id, threadId))
             revalidateTag(`repo:${gitContext.owner}:${gitContext.repo}`, "max")
           })
         )

@@ -2,12 +2,12 @@
 
 import { useParams } from "next/navigation"
 import * as React from "react"
+import type { ClientThread } from "@/lib/db/threads"
 import { getModel } from "@/lib/models"
-import type { StoredThreadClient } from "@/lib/redis"
 import { useAgentStore } from "./agent-store"
 import { useAgent } from "./use-agent"
 
-export function AgentSetter({ thread }: { thread?: StoredThreadClient }) {
+export function AgentSetter({ thread }: { thread?: ClientThread }) {
   const [model] = React.useState(getModel().value)
   const { owner, repo } = useParams<{ owner: string; repo: string }>()
   const agentState = useAgent({

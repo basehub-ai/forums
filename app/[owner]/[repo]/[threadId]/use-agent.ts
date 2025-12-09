@@ -1,13 +1,13 @@
 import { useChat } from "@ai-sdk/react"
 import { WorkflowChatTransport } from "@workflow/ai"
-import { nanoid } from "nanoid"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import type { GitContext } from "@/agent"
 import type { AgentUIMessage } from "@/agent/types"
 import type { InterruptRequest } from "@/app/api/threads/[threadId]/interrupt/route"
 import type { ThreadRequest } from "@/app/api/threads/[threadId]/route"
-import type { StoredThreadClient } from "@/lib/redis"
+import type { ClientThread } from "@/lib/db/threads"
+import { nanoid } from "@/lib/utils"
 
 export function useAgent({
   basePath,
@@ -17,7 +17,7 @@ export function useAgent({
 }: {
   basePath: string
   gitContext: GitContext
-  thread?: StoredThreadClient
+  thread?: ClientThread
   model: string
 }) {
   const resumedRef = React.useRef(false)

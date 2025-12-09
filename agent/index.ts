@@ -4,16 +4,13 @@ import {
   streamText,
   type UIMessageChunk,
 } from "ai"
-import { nanoid } from "nanoid"
+import { and, asc, eq } from "drizzle-orm"
 import { revalidateTag } from "next/cache"
 import { defineHook, getWritable } from "workflow"
-import {
-  clearStreamIdIf,
-  getMessages,
-  pushMessages,
-  redis,
-  type StoredInterrupt,
-} from "@/lib/redis"
+import { db } from "@/lib/db/client"
+import { messages, threads } from "@/lib/db/schema"
+import { redis, type StoredInterrupt } from "@/lib/redis"
+import { nanoid } from "@/lib/utils"
 import { getTools } from "./tools"
 import type { AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
@@ -148,15 +145,22 @@ async function closeStreamStep({
   await Promise.all([
     writable.close(),
     writeInterruptionMessage
-      ? pushMessages(threadId, [
-          {
+      ? db.insert(messages).values({
+          id: interruptionMessageId,
+          threadId,
+          content: {
             id: interruptionMessageId,
             role: "assistant" as const,
             parts: [{ type: "text" as const, text: interruptionMessage }],
+            metadata: { model: "[interruption]" },
           },
-        ])
+          createdAt: Date.now(),
+        })
       : Promise.resolve(),
-    clearStreamIdIf(threadId, String(now)),
+    db
+      .update(threads)
+      .set({ streamId: null })
+      .where(and(eq(threads.id, threadId), eq(threads.streamId, String(now)))),
   ])
 
   revalidateTag(`repo:${gitContext.owner}:${gitContext.repo}`, "max")
@@ -182,11 +186,17 @@ async function streamTextStep({
 }): Promise<{ finishReason: FinishReasonWithInterrupt; sandboxId: string }> {
   "use step"
 
-  const [uiMessages, interrupted, workspace] = await Promise.all([
-    getMessages(threadId),
+  const [dbMessages, interrupted, workspace] = await Promise.all([
+    db
+      .select()
+      .from(messages)
+      .where(eq(messages.threadId, threadId))
+      .orderBy(asc(messages.createdAt)),
     hasInterruptStep({ threadId, since: now }),
     getWorkspace({ sandboxId, gitContext }),
   ])
+
+  const uiMessages = dbMessages.map((row) => row.content)
 
   if (interrupted) {
     return {
@@ -200,10 +210,6 @@ async function streamTextStep({
 
   const system = `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${gitContext.owner}/${gitContext.repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).`
 
-  console.log(
-    "convertToModelMessages(uiMessages)",
-    convertToModelMessages(uiMessages)
-  )
   const result = streamText({
     messages: convertToModelMessages(uiMessages),
     tools: getTools({ workspace }),
@@ -215,15 +221,22 @@ async function streamTextStep({
   await result
     .toUIMessageStream({
       onFinish: async ({ messages: newMessages }) => {
-        const toAdd = newMessages.map(
-          (m, i) =>
-            ({
-              ...m,
-              id: m.id || nanoid(),
-              metadata: { ts: ts + i, assistant: { model } },
-            }) satisfies AgentUIMessage
+        await db.insert(messages).values(
+          newMessages.map((m, i) => {
+            const id = m.id || nanoid()
+            const createdAt = ts + i
+            return {
+              id,
+              threadId,
+              content: {
+                ...m,
+                id,
+                metadata: { model },
+              } satisfies AgentUIMessage,
+              createdAt,
+            }
+          })
         )
-        await pushMessages(threadId, toAdd)
       },
     })
     .pipeTo(writable, { preventClose: true })

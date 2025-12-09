@@ -1,36 +1,20 @@
+import { asc, eq } from "drizzle-orm"
 import { cacheTag } from "next/cache"
 import { notFound } from "next/navigation"
-import {
-  getMessages,
-  getStreamId,
-  redis,
-  type StoredThread,
-  threadKey,
-} from "@/lib/redis"
+import { db } from "@/lib/db/client"
+import { messages, threads } from "@/lib/db/schema"
+import { toClientThread } from "@/lib/db/threads"
 import { AgentProvider } from "./agent-context"
 import { ThreadWithComposer } from "./thread"
 
 export const generateStaticParams = async () => {
-  let cursor: string | undefined
-  const keys: string[] = []
-  while (cursor !== "0") {
-    const [newCursor, newKeys] = await redis.scan(cursor ?? "0", {
-      count: 1000,
-      match: "thread:meta:*",
-    })
-    keys.push(...newKeys)
-    cursor = newCursor
-  }
+  const allThreads = await db.select().from(threads)
 
-  return await Promise.all(
-    keys.map(async (key) => {
-      const thread = await redis.get<StoredThread>(key)
-      if (!thread) {
-        return null
-      }
-      return { owner: thread.owner, repo: thread.repo, threadId: thread.id }
-    })
-  ).then((params) => params.filter((p) => p !== null))
+  return allThreads.map((thread) => ({
+    owner: thread.owner,
+    repo: thread.repo,
+    threadId: thread.id,
+  }))
 }
 
 export default async function ThreadPage({
@@ -40,39 +24,35 @@ export default async function ThreadPage({
 }) {
   "use cache"
 
-  const { threadId } = await params
+  const { threadId, owner, repo } = await params
   if (!threadId) {
     notFound()
   }
 
   cacheTag(`thread:${threadId}`)
 
-  const [thread, messages, streamId] = await Promise.all([
-    redis.get<StoredThread>(threadKey(threadId)),
-    getMessages(threadId),
-    getStreamId(threadId),
+  const [[thread], rawMessages] = await Promise.all([
+    db.select().from(threads).where(eq(threads.id, threadId)).limit(1),
+    db
+      .select()
+      .from(messages)
+      .where(eq(messages.threadId, threadId))
+      .orderBy(asc(messages.createdAt)),
   ])
 
   if (!thread) {
     notFound()
   }
 
-  const { owner, repo } = await params
+  const threadMessages = rawMessages.map((row) => row.content)
 
   return (
-    <AgentProvider
-      thread={{
-        id: thread.id,
-        streamId,
-        owner: thread.owner,
-        repo: thread.repo,
-      }}
-    >
+    <AgentProvider thread={toClientThread(thread)}>
       <ThreadWithComposer
-        initialMessages={messages}
+        initialMessages={threadMessages}
         owner={owner}
         repo={repo}
-        title={thread.title}
+        title={thread.title ?? undefined}
       />
     </AgentProvider>
   )

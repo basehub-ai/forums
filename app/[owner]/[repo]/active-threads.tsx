@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import type { StoredThreadClient } from "@/lib/redis"
+import type { ClientThread } from "@/lib/db/threads"
+import { toThreadSlug } from "@/lib/thread-slug"
 import { useAgentStore } from "./[threadId]/agent-store"
 
 export function ActiveThreads({
@@ -9,7 +10,7 @@ export function ActiveThreads({
   owner,
   repo,
 }: {
-  threads: StoredThreadClient[]
+  threads: ClientThread[]
   owner: string
   repo: string
 }) {
@@ -30,7 +31,7 @@ export function ActiveThreads({
         {threads.map((thread) => (
           <Link
             className="block rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
-            href={`/${owner}/${repo}/${thread.id}`}
+            href={`/${owner}/${repo}/${toThreadSlug(thread)}`}
             key={thread.id}
           >
             <div className="flex items-center justify-between">

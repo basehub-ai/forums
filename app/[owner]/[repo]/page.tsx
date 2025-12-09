@@ -1,36 +1,22 @@
+import { and, desc, eq } from "drizzle-orm"
 import { cacheTag } from "next/cache"
 import { notFound } from "next/navigation"
-import { getThreadsByRepo, redis, type StoredThread } from "@/lib/redis"
+import { db } from "@/lib/db/client"
+import { threads } from "@/lib/db/schema"
+import { toClientThread } from "@/lib/db/threads"
 import { AgentProvider } from "./[threadId]/agent-context"
 import { ThreadWithComposer } from "./[threadId]/thread"
 import { ActiveThreads } from "./active-threads"
 
 export const generateStaticParams = async () => {
-  let cursor: string | undefined
-  const keys: string[] = []
-  while (cursor !== "0") {
-    const [newCursor, newKeys] = await redis.scan(cursor ?? "0", {
-      count: 1000,
-      match: "thread:meta:*",
+  const repos = await db
+    .selectDistinctOn([threads.owner, threads.repo], {
+      owner: threads.owner,
+      repo: threads.repo,
     })
-    keys.push(...newKeys)
-    cursor = newCursor
-  }
+    .from(threads)
 
-  const added = new Set<string>()
-  return await Promise.all(
-    keys.map(async (key) => {
-      const thread = await redis.get<StoredThread>(key)
-      if (!thread) {
-        return null
-      }
-      if (added.has(`${thread.owner}/${thread.repo}`)) {
-        return null
-      }
-      added.add(`${thread.owner}/${thread.repo}`)
-      return { owner: thread.owner, repo: thread.repo }
-    })
-  ).then((params) => params.filter((p) => p !== null))
+  return repos.map((r) => ({ owner: r.owner, repo: r.repo }))
 }
 
 export default async function RepoPage({
@@ -42,8 +28,12 @@ export default async function RepoPage({
 
   const { owner, repo } = await params
   cacheTag(`repo:${owner}:${repo}`)
-  const [threads, repoData] = await Promise.all([
-    getThreadsByRepo(owner, repo),
+  const [repoThreads, repoData] = await Promise.all([
+    db
+      .select()
+      .from(threads)
+      .where(and(eq(threads.owner, owner), eq(threads.repo, repo)))
+      .orderBy(desc(threads.id)),
     fetch(`https://api.github.com/repos/${owner}/${repo}`).then(async (res) => {
       if (!res.ok || res.status === 404) {
         return null
@@ -57,10 +47,12 @@ export default async function RepoPage({
     return notFound()
   }
 
+  const clientThreads = repoThreads.map(toClientThread)
+
   return (
     <AgentProvider>
       <ThreadWithComposer initialMessages={[]} />
-      <ActiveThreads owner={owner} repo={repo} threads={threads} />
+      <ActiveThreads owner={owner} repo={repo} threads={clientThreads} />
     </AgentProvider>
   )
 }
