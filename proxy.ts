@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-const THREAD_SLUG_REGEX = /^\/([^/]+)\/([^/]+)\/.+-(\d+)(\/.*)?$/
+const THREAD_SLUG_REGEX = /^\/([^/]+)\/([^/]+)\/.+-([^/]+)(\/.*)?$/
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname

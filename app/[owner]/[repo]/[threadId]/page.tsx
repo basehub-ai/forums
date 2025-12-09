@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client"
 import { messages, threads } from "@/lib/db/schema"
 import { toClientThread } from "@/lib/db/threads"
 import { AgentProvider } from "./agent-context"
+import { RefreshOnReady } from "./messages"
 import { ThreadWithComposer } from "./thread"
 
 export const generateStaticParams = async () => {
@@ -54,6 +55,7 @@ export default async function ThreadPage({
         repo={repo}
         title={thread.title ?? undefined}
       />
+      <RefreshOnReady threadId={threadId} />
     </AgentProvider>
   )
 }

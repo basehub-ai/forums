@@ -8,7 +8,7 @@ export function toThreadSlug({
   if (!title) {
     return id
   }
-  return `${slugify(title)}-${id}`
+  return `${slugify(title, { lower: true, strict: true, trim: true })}-${id}`
 }
 
 export function fromThreadSlug(slug: string): string {

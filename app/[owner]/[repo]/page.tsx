@@ -9,14 +9,16 @@ import { ThreadWithComposer } from "./[threadId]/thread"
 import { ActiveThreads } from "./active-threads"
 
 export const generateStaticParams = async () => {
-  const repos = await db
-    .selectDistinctOn([threads.owner, threads.repo], {
-      owner: threads.owner,
-      repo: threads.repo,
-    })
-    .from(threads)
+  const repos = (
+    await db
+      .selectDistinctOn([threads.owner, threads.repo], {
+        owner: threads.owner,
+        repo: threads.repo,
+      })
+      .from(threads)
+  ).map((r) => ({ owner: r.owner, repo: r.repo }))
 
-  return repos.map((r) => ({ owner: r.owner, repo: r.repo }))
+  return repos.length > 0 ? repos : [{ owner: "basehub-ai", repo: "forums" }]
 }
 
 export default async function RepoPage({

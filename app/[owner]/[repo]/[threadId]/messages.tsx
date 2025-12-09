@@ -1,10 +1,13 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+import { useEffect, useRef } from "react"
 import { Fragment } from "react/jsx-runtime"
 import { Streamdown } from "streamdown"
 import type { AgentUIMessage } from "@/agent/types"
 import { cn } from "@/lib/utils"
 import { useAgentStore } from "./agent-store"
+import { revalidateThread } from "./revalidate"
 
 type MessageItemProps = {
   message: AgentUIMessage
@@ -78,12 +81,41 @@ export const MessagesStatic = ({ messages }: MessagesProps) => {
 
 export const MessagesStream = () => {
   const streamMessages = useAgentStore((state) => state.messages)
+  const status = useAgentStore((state) => state.status)
 
   return (
     <>
       {streamMessages.map((message) => (
-        <MessageItem isStreaming key={message.id} message={message} />
+        <MessageItem
+          isStreaming={status === "streaming"}
+          key={message.id}
+          message={message}
+        />
       ))}
     </>
   )
+}
+
+export const RefreshOnReady = ({ threadId }: { threadId: string }) => {
+  const router = useRouter()
+  const status = useAgentStore((state) => state.status)
+  const prevStatusRef = useRef(status)
+
+  useEffect(() => {
+    const wasStreaming = prevStatusRef.current === "streaming"
+
+    if (
+      wasStreaming &&
+      status === "ready" &&
+      status !== prevStatusRef.current
+    ) {
+      revalidateThread({ threadId }).then(() => {
+        router.refresh()
+      })
+    }
+
+    prevStatusRef.current = status
+  }, [status, router, threadId])
+
+  return null
 }

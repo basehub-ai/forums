@@ -1,10 +1,5 @@
 import type { NextRequest } from "next/server"
-import {
-  redis,
-  type StoredInterrupt,
-  type StoredThread,
-  threadKey,
-} from "@/lib/redis"
+import { redis, type StoredInterrupt } from "@/lib/redis"
 
 export type InterruptRequest = {
   now: number
@@ -25,12 +20,8 @@ export async function POST(
     if (!threadId) {
       return new Response("Missing threadId", { status: 400 })
     }
-    const thread = await redis.get<StoredThread>(threadKey(threadId))
-    if (!thread) {
-      return new Response("Thread not found", { status: 404 })
-    }
     const body = (await request.json()) as InterruptRequest
-    await redis.set<StoredInterrupt>(`interrupt:${thread.id}`, {
+    await redis.set<StoredInterrupt>(`interrupt:${threadId}`, {
       timestamp: body.now,
     })
 

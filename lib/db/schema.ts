@@ -24,10 +24,7 @@ export const messages = p.pgTable(
   "messages",
   {
     id: p.varchar({ length: 32 }).primaryKey(),
-    threadId: p
-      .varchar("thread_id", { length: 32 })
-      .notNull()
-      .references(() => threads.id, { onDelete: "cascade" }),
+    threadId: p.varchar("thread_id", { length: 32 }).notNull(),
     content: p.jsonb().$type<AgentUIMessage>().notNull(),
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
   },
