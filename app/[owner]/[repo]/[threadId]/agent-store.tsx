@@ -7,6 +7,7 @@ import type { AgentUIMessage } from "@/agent/types"
 import type { useAgent } from "./use-agent"
 
 type AgentState = {
+  threadId: string
   messages: AgentUIMessage[]
   sendMessages: ReturnType<typeof useAgent>["sendMessages"]
   queue: ReturnType<typeof useAgent>["queue"]
@@ -22,6 +23,7 @@ type AgentStore = AgentState & AgentActions
 
 const createAgentStore = () => {
   return createStore<AgentStore>((set) => ({
+    threadId: "",
     messages: [],
     sendMessages: async () => {},
     queue: [],

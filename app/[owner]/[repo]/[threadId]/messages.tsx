@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
 import { Fragment } from "react/jsx-runtime"
 import { Streamdown } from "streamdown"
@@ -97,7 +96,6 @@ export const MessagesStream = () => {
 }
 
 export const RefreshOnReady = ({ threadId }: { threadId: string }) => {
-  const router = useRouter()
   const status = useAgentStore((state) => state.status)
   const prevStatusRef = useRef(status)
 
@@ -109,13 +107,11 @@ export const RefreshOnReady = ({ threadId }: { threadId: string }) => {
       status === "ready" &&
       status !== prevStatusRef.current
     ) {
-      revalidateThread({ threadId }).then(() => {
-        router.refresh()
-      })
+      revalidateThread({ threadId })
     }
 
     prevStatusRef.current = status
-  }, [status, router, threadId])
+  }, [status, threadId])
 
   return null
 }

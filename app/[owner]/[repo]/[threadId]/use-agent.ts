@@ -138,6 +138,7 @@ export function useAgent({
   }, [sendMessages, status, queue])
 
   return {
+    threadId,
     sendMessages,
     messages,
     queue,

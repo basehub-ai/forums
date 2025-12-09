@@ -28,7 +28,6 @@ export default async function ThreadPage({
 
   const { threadId: threadIdWithSlug, owner, repo } = await params
   const threadId = fromThreadSlug(threadIdWithSlug)
-  console.log("threadId", threadId)
   if (!threadId) {
     notFound()
   }

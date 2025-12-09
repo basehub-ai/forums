@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/input-group"
 import { Separator } from "@/components/ui/separator"
 import { useAgentStore } from "./agent-store"
+import { revalidateThread } from "./revalidate"
 
 export const Composer = () => {
   const sendMessages = useAgentStore((state) => state.sendMessages)
+  const threadId = useAgentStore((state) => state.threadId)
   const formRef = useRef<HTMLFormElement>(null)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -26,7 +28,9 @@ export const Composer = () => {
     const formData = new FormData(e.currentTarget)
     const message = formData.get("message")?.toString() || ""
     if (message.trim()) {
-      sendMessages([{ parts: [{ type: "text", text: message }] }])
+      sendMessages([{ parts: [{ type: "text", text: message }] }]).then(() =>
+        revalidateThread({ threadId })
+      )
       e.currentTarget.reset()
     }
   }
