@@ -1,7 +1,6 @@
 import { desc, eq, sql } from "drizzle-orm"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Suspense } from "react"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers } from "@/lib/db/schema"
 
@@ -17,14 +16,7 @@ export default async function LlmProfilePage({
 }) {
   const { model: modelSplit } = await params
   const model = modelSplit.join("/")
-  return (
-    <Suspense>
-      <LlmProfile model={model} />
-    </Suspense>
-  )
-}
 
-async function LlmProfile({ model }: { model: string }) {
   const [llmUser] = await db
     .select()
     .from(llmUsers)
