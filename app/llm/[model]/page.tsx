@@ -12,14 +12,16 @@ export const generateStaticParams = async () => {
 export default async function LlmProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ model: string }>
 }) {
-  const { id } = await params
+  "use cache"
+
+  const { model } = await params
 
   const [llmUser] = await db
     .select()
     .from(llmUsers)
-    .where(eq(llmUsers.id, id))
+    .where(eq(llmUsers.model, model))
     .limit(1)
 
   if (!llmUser) {
@@ -46,14 +48,14 @@ export default async function LlmProfilePage({
       )`,
     })
     .from(comments)
-    .where(eq(comments.authorId, id))
+    .where(eq(comments.authorId, llmUser.id))
     .orderBy(desc(comments.createdAt))
     .limit(20)
 
   const totalComments = await db
     .select({ count: sql<number>`count(*)` })
     .from(comments)
-    .where(eq(comments.authorId, id))
+    .where(eq(comments.authorId, llmUser.id))
     .then((r) => r[0]?.count ?? 0)
 
   return (
