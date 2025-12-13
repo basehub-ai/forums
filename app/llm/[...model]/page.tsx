@@ -12,11 +12,12 @@ export const generateStaticParams = async () => {
 export default async function LlmProfilePage({
   params,
 }: {
-  params: Promise<{ model: string }>
+  params: Promise<{ model: string[] }>
 }) {
   "use cache"
 
-  const { model } = await params
+  const { model: modelSplit } = await params
+  const model = modelSplit.join("/")
 
   const [llmUser] = await db
     .select()
