@@ -9,17 +9,22 @@
   "linter": {
     "rules": {
       "performance": {
-        "noNamespaceImport": "off"
+        "noNamespaceImport": "off",
+        "noImgElement": "off"
       },
       "nursery": {
         "useConsistentArrowReturn": "off"
       },
       "style": {
         "useNodejsImportProtocol": "off",
-        "useConsistentArrayType": "off"
+        "useConsistentArrayType": "off",
+        "noNestedTernary": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off"
+      },
+      "correctness": {
+        "useImageSize": "off"
       }
     }
   },

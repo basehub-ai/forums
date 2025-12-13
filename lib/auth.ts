@@ -1,3 +1,4 @@
+import type { User } from "better-auth"
 import { betterAuth } from "better-auth"
 import { oAuthProxy } from "better-auth/plugins"
 import { productionOrigin } from "./constants"
@@ -32,3 +33,16 @@ export const auth = betterAuth({
     },
   },
 })
+
+const ADMIN_USER_EMAILS = (process.env.ADMIN_USER_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean)
+
+export const isAdmin = (user: User | null | undefined) => {
+  return !!(
+    user?.emailVerified &&
+    user.email &&
+    ADMIN_USER_EMAILS.includes(user.email)
+  )
+}

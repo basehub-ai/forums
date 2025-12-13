@@ -8,7 +8,11 @@ import {
   removeSandboxIf,
   storeSandbox,
 } from "@/lib/redis"
-import type { GitContext } from "."
+export type GitContext = {
+  owner: string
+  repo: string
+  ref?: string
+}
 
 const timeout = ms("10m")
 const CREATION_LOCK_TTL = ms("30s")

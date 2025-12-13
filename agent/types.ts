@@ -1,5 +1,4 @@
 import type { UIMessage } from "ai"
 
-export type AgentUIMessage = UIMessage<{
-  model?: string
-}>
+// biome-ignore lint/complexity/noBannedTypes: .
+export type AgentUIMessage = UIMessage<{}>

@@ -19,8 +19,6 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
           className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           type="button"
         >
-          {/** biome-ignore lint/correctness/useImageSize: . */}
-          {/** biome-ignore lint/performance/noImgElement: . */}
           <img
             alt={user.name}
             className="size-8 rounded-full"
@@ -30,8 +28,6 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="flex items-center gap-2 px-2 py-1.5">
-          {/** biome-ignore lint/correctness/useImageSize: . */}
-          {/** biome-ignore lint/performance/noImgElement: . */}
           <img
             alt={user.name}
             className="size-8 rounded-full"

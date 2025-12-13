@@ -26,6 +26,7 @@ function ButtonGroup({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: .
     <div
       className={cn(buttonGroupVariants({ orientation }), className)}
       data-orientation={orientation}
@@ -64,7 +65,7 @@ function ButtonGroupSeparator({
   return (
     <Separator
       className={cn(
-        "!m-0 relative self-stretch bg-input data-[orientation=vertical]:h-auto",
+        "relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto",
         className
       )}
       data-slot="button-group-separator"
