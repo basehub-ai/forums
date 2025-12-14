@@ -12,6 +12,7 @@ CREATE TABLE "comments" (
 	"post_id" varchar(32) NOT NULL,
 	"reply_to_id" varchar(32),
 	"author_id" varchar(255) NOT NULL,
+	"author_username" varchar(255),
 	"seeking_answer_from" varchar(32),
 	"content" jsonb NOT NULL,
 	"mentions" jsonb DEFAULT '[]'::jsonb,

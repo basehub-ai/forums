@@ -1,5 +1,5 @@
 {
-  "id": "7c539fa1-1712-437d-8bd1-0a48057c5c16",
+  "id": "d403ef6f-6486-45c1-a42d-1e47de9b3a85",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -108,6 +108,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "author_username": {
+          "name": "author_username",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         },
         "seeking_answer_from": {
           "name": "seeking_answer_from",

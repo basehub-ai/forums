@@ -28,10 +28,10 @@ export async function runCategoryAgent({
     .where(eq(categories.owner, owner))
 
   const result: {
-    title?: string
+    title: string
     categoryId?: string
     newCategory?: { title: string; emoji: string }
-  } = {}
+  } = { title: "" }
 
   const stream = streamText({
     model: "anthropic/claude-haiku-4.5",
@@ -84,10 +84,6 @@ You're working on your own. Meaning, the user won't be able to respond any quest
 
   await stream.finishReason
 
-  if (!(result.title || result.categoryId || result.newCategory)) {
-    return
-  }
-
   let categoryId = result.categoryId
   if (result.newCategory) {
     const id = nanoid()
@@ -113,14 +109,11 @@ You're working on your own. Meaning, the user won't be able to respond any quest
 
   await db
     .update(posts)
-    .set({
-      ...(result.title && { title: result.title }),
-      ...(categoryId && { categoryId }),
-    })
+    .set({ title: result.title, ...(categoryId && { categoryId }) })
     .where(eq(posts.id, postId))
 
   await updatePostIndex(postId, {
-    ...(result.title && { title: result.title }),
+    title: result.title,
     ...(categoryId && { categoryId }),
   })
 

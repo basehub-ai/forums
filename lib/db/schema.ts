@@ -37,6 +37,7 @@ export const comments = p.pgTable(
     replyToId: p.varchar("reply_to_id", { length: 32 }),
 
     authorId: p.varchar("author_id", { length: 255 }).notNull(),
+    authorUsername: p.varchar("author_username", { length: 255 }),
 
     seekingAnswerFrom: p.varchar("seeking_answer_from", { length: 32 }),
 

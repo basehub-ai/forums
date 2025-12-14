@@ -3,16 +3,14 @@ import { ArrowLeftIcon } from "lucide-react"
 import { cacheTag } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
-import {
-  categories,
-  comments,
-  llmUsers,
-  posts,
-  reactions,
-} from "@/lib/db/schema"
+import { categories, comments, llmUsers, posts, reactions } from "@/lib/db/schema"
 import { CommentThread } from "./comment-thread"
 import { PostComposer } from "./post-composer"
+import { PostMetadataProvider } from "./post-metadata-context"
+import { PostSidebar } from "./post-sidebar"
+import { PostTitle } from "./post-title"
 
 export const generateStaticParams = async () => {
   const allPosts = await db.select().from(posts)
@@ -38,96 +36,188 @@ export default async function PostPage({
     notFound()
   }
 
-  const [[post], allLlmUsers] = await Promise.all([
-    db
-      .select()
-      .from(posts)
-      .where(
-        and(
-          eq(posts.owner, owner),
-          eq(posts.repo, repo),
-          eq(posts.number, postNumber)
+  const [postWithCategory, allLlmUsers, postComments, postReactions] =
+    await Promise.all([
+      db
+        .select({
+          id: posts.id,
+          number: posts.number,
+          owner: posts.owner,
+          repo: posts.repo,
+          title: posts.title,
+          categoryId: posts.categoryId,
+          rootCommentId: posts.rootCommentId,
+          authorId: posts.authorId,
+          createdAt: posts.createdAt,
+          updatedAt: posts.updatedAt,
+          category: {
+            id: categories.id,
+            title: categories.title,
+            emoji: categories.emoji,
+          },
+        })
+        .from(posts)
+        .leftJoin(categories, eq(posts.categoryId, categories.id))
+        .where(
+          and(
+            eq(posts.owner, owner),
+            eq(posts.repo, repo),
+            eq(posts.number, postNumber)
+          )
         )
-      )
-      .limit(1),
-    db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
-  ])
+        .limit(1)
+        .then((r) => r[0]),
+      db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
+      db
+        .select()
+        .from(comments)
+        .innerJoin(posts, eq(comments.postId, posts.id))
+        .where(
+          and(
+            eq(posts.owner, owner),
+            eq(posts.repo, repo),
+            eq(posts.number, postNumber)
+          )
+        )
+        .orderBy(asc(comments.createdAt))
+        .then((r) => r.map((row) => row.comments)),
+      db
+        .select()
+        .from(reactions)
+        .innerJoin(comments, eq(reactions.commentId, comments.id))
+        .innerJoin(posts, eq(comments.postId, posts.id))
+        .where(
+          and(
+            eq(posts.owner, owner),
+            eq(posts.repo, repo),
+            eq(posts.number, postNumber)
+          )
+        )
+        .then((r) => r.map((row) => row.reactions)),
+    ])
 
-  if (!post) {
+  if (!postWithCategory) {
     notFound()
   }
 
-  cacheTag(`post:${post.id}`)
+  const { category, ...post } = postWithCategory
 
-  const [postComments, postReactions, category] = await Promise.all([
-    db
-      .select()
-      .from(comments)
-      .where(eq(comments.postId, post.id))
-      .orderBy(asc(comments.createdAt)),
-    db
-      .select()
-      .from(reactions)
-      .where(eq(reactions.commentId, post.rootCommentId ?? "")),
-    post.categoryId
-      ? db
-          .select()
-          .from(categories)
-          .where(eq(categories.id, post.categoryId))
-          .limit(1)
-          .then((r) => r[0])
-      : null,
-  ])
+  cacheTag(`post:${post.id}`)
 
   const llmUsersById = Object.fromEntries(allLlmUsers.map((u) => [u.id, u]))
 
+  const humanAuthors: { authorId: string; username: string }[] = []
+  const llmAuthorIds = new Set<string>()
+  for (const c of postComments) {
+    if (c.authorId.startsWith("llm_")) {
+      llmAuthorIds.add(c.authorId)
+    } else if (c.authorUsername) {
+      humanAuthors.push({ authorId: c.authorId, username: c.authorUsername })
+    }
+  }
+
+  const uniqueHumanUsernames = [...new Set(humanAuthors.map((a) => a.username))]
+  const humanUsersByUsername = Object.fromEntries(
+    await Promise.all(
+      uniqueHumanUsernames.map(async (username) => {
+        const user = await gitHubUserLoader.load(username)
+        return [username, user] as const
+      })
+    )
+  )
+
+  const authorsById: Record<
+    string,
+    { name: string; username: string; image: string; isLlm: boolean }
+  > = {}
+
+  for (const { authorId, username } of humanAuthors) {
+    if (authorsById[authorId]) {
+      continue
+    }
+    const user = humanUsersByUsername[username]
+    if (user) {
+      authorsById[authorId] = {
+        name: user.name,
+        username,
+        image: user.image,
+        isLlm: false,
+      }
+    }
+  }
+
+  for (const llmId of llmAuthorIds) {
+    const llm = llmUsersById[llmId]
+    if (llm) {
+      authorsById[llmId] = {
+        name: llm.name,
+        username: llm.model,
+        image:
+          llm.image ??
+          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(llm.name)}`,
+        isLlm: true,
+      }
+    }
+  }
+
+  const participants = Object.values(authorsById).map((a) => ({
+    id: a.username,
+    name: a.name,
+    image: a.image,
+  }))
+
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
-      <div className="mb-6">
-        <Link
-          className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"
-          href={`/${owner}/${repo}`}
-        >
-          <ArrowLeftIcon size={14} /> Back to {owner}/{repo}
-        </Link>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">#{post.number}</span>
-          {!!category && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-              {category.emoji} {category.title}
-            </span>
-          )}
+    <PostMetadataProvider
+      initialCategory={category?.id ? category : null}
+      initialTitle={post.title}
+      postId={post.id}
+    >
+      <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-8">
+        <div className="min-w-0 flex-1">
+          <div className="mb-6">
+            <Link
+              className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"
+              href={`/${owner}/${repo}`}
+            >
+              <ArrowLeftIcon size={14} /> Back to {owner}/{repo}
+            </Link>
+            <div className="mt-2">
+              <span className="text-muted-foreground text-sm">
+                #{post.number}
+              </span>
+            </div>
+            <PostTitle />
+          </div>
+
+          <div className="space-y-6">
+            <CommentThread
+              authorsById={authorsById}
+              comments={postComments}
+              owner={owner}
+              reactions={postReactions}
+              repo={repo}
+              rootCommentId={post.rootCommentId}
+            />
+          </div>
+
+          <div className="mt-8">
+            <PostComposer
+              askingOptions={[
+                ...allLlmUsers.map((u) => ({
+                  id: u.id,
+                  name: u.name,
+                  image: u.image,
+                  isDefault: u.isDefault,
+                })),
+                { id: "human", name: "Human only" },
+              ]}
+              postId={post.id}
+            />
+          </div>
         </div>
-        {!!post.title && <h1 className="font-medium text-3xl">{post.title}</h1>}
-      </div>
 
-      <div className="space-y-6">
-        <CommentThread
-          comments={postComments}
-          llmUsersById={llmUsersById}
-          owner={owner}
-          postAuthorId={post.authorId}
-          postId={post.id}
-          reactions={postReactions}
-          repo={repo}
-          rootCommentId={post.rootCommentId}
-        />
+        <PostSidebar participants={participants} />
       </div>
-
-      <div className="mt-8">
-        <PostComposer
-          askingOptions={[
-            ...allLlmUsers.map((u) => ({
-              id: u.id,
-              name: u.name,
-              image: u.image,
-              isDefault: u.isDefault,
-            })),
-            { id: "human", name: "Human only" },
-          ]}
-          postId={post.id}
-        />
-      </div>
-    </div>
+    </PostMetadataProvider>
   )
 }

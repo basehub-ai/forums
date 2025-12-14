@@ -27,6 +27,7 @@
     "better-auth": "^1.4.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dataloader": "^2.2.3",
     "drizzle-orm": "^0.45.0",
     "lucide-react": "^0.556.0",
     "ms": "^2.1.3",

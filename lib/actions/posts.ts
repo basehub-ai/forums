@@ -8,9 +8,10 @@ import { start } from "workflow/api"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
 import type { AgentUIMessage } from "@/agent/types"
-import { auth } from "@/lib/auth"
+import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import {
+  categories,
   comments,
   llmUsers,
   postCounters,
@@ -21,12 +22,36 @@ import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
 import { nanoid } from "@/lib/utils"
 import { run } from "../run"
 
+function extractMentions(content: AgentUIMessage): string[] {
+  const mentions = new Set<string>()
+  for (const part of content.parts) {
+    if (part.type === "text") {
+      const matches = part.text.matchAll(/@([a-zA-Z0-9_-]+)/g)
+      for (const match of matches) {
+        mentions.add(match[1])
+      }
+    }
+  }
+  return [...mentions]
+}
+
 async function getSessionOrThrow() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user?.id) {
     throw new Error("Unauthorized")
   }
   return session
+}
+
+async function getGitHubUsername(
+  image: string | null | undefined
+): Promise<string | null> {
+  const userId = extractGitHubUserId(image)
+  if (!userId) {
+    return null
+  }
+  const user = await gitHubUserByIdLoader.load(userId)
+  return user?.login ?? null
 }
 
 export async function createPost(data: {
@@ -36,6 +61,7 @@ export async function createPost(data: {
   seekingAnswerFrom?: string | null
 }) {
   const session = await getSessionOrThrow()
+  const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const postId = nanoid()
   const commentId = nanoid()
@@ -91,7 +117,9 @@ export async function createPost(data: {
       id: commentId,
       postId,
       authorId: session.user.id,
+      authorUsername,
       content: [data.content],
+      mentions: extractMentions(data.content),
       seekingAnswerFrom: data.seekingAnswerFrom,
       createdAt: now,
       updatedAt: now,
@@ -111,6 +139,7 @@ export async function createPost(data: {
         id: newCommentId,
         postId,
         authorId: llm.id,
+        authorUsername: llm.model,
         content: [],
         streamId,
         createdAt: now + 1,
@@ -187,6 +216,7 @@ export async function createComment(data: {
   seekingAnswerFrom?: string | null
 }) {
   const session = await getSessionOrThrow()
+  const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const commentId = nanoid()
 
@@ -238,7 +268,9 @@ export async function createComment(data: {
       postId: data.postId,
       replyToId: data.replyToId,
       authorId: session.user.id,
+      authorUsername,
       content: [data.content],
+      mentions: extractMentions(data.content),
       seekingAnswerFrom: data.seekingAnswerFrom,
       createdAt: now,
       updatedAt: now,
@@ -256,6 +288,7 @@ export async function createComment(data: {
         postId: data.postId,
         replyToId: llmReplyToId,
         authorId: llm.id,
+        authorUsername: llm.model,
         content: [],
         streamId,
         createdAt: now + 1,
@@ -360,4 +393,44 @@ export async function removeReaction({
     )
   updateTag(`repo:${owner}:${repo}`)
   updateTag(`post:${postId}`)
+}
+
+export async function getPostMetadata(postId: string) {
+  const [post] = await db
+    .select({
+      title: posts.title,
+      categoryId: posts.categoryId,
+      owner: posts.owner,
+      repo: posts.repo,
+    })
+    .from(posts)
+    .where(eq(posts.id, postId))
+    .limit(1)
+
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  if (typeof post.title !== "string") {
+    return null
+  }
+
+  updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${postId}`)
+
+  return {
+    title: post.title,
+    category: post.categoryId
+      ? await db
+          .select({
+            id: categories.id,
+            title: categories.title,
+            emoji: categories.emoji,
+          })
+          .from(categories)
+          .where(eq(categories.id, post.categoryId))
+          .limit(1)
+          .then((c) => c[0] ?? null)
+      : null,
+  }
 }

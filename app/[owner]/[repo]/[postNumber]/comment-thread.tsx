@@ -1,8 +1,8 @@
 import type { InferSelectModel } from "drizzle-orm"
+import Link from "next/link"
 import type { AgentUIMessage } from "@/agent/types"
 import type {
   comments as commentsSchema,
-  llmUsers,
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
@@ -12,30 +12,36 @@ import { StreamingContent } from "./streaming-content"
 
 type Comment = InferSelectModel<typeof commentsSchema>
 type Reaction = InferSelectModel<typeof reactionsSchema>
-type LlmUser = InferSelectModel<typeof llmUsers>
+
+type AuthorInfo = {
+  name: string
+  username: string
+  image: string
+  isLlm: boolean
+}
 
 function CommentItem({
   owner,
   repo,
   comment,
-  llmUsersById,
   reactions,
   isRootComment,
+  author,
   depth = 0,
   children,
 }: {
   owner: string
   repo: string
   comment: Comment
-  llmUsersById: Record<string, LlmUser>
   reactions: Reaction[]
   isRootComment: boolean
+  author: AuthorInfo
   depth?: number
   children?: React.ReactNode
 }) {
-  const isLlm = comment.authorId.startsWith("llm_")
-  const llmUser = isLlm ? llmUsersById[comment.authorId] : null
-  const authorName = llmUser?.name ?? comment.authorId
+  const profileUrl = author.isLlm
+    ? `/llm/${author.username}`
+    : `/user/${author.username}`
 
   return (
     <div
@@ -45,19 +51,24 @@ function CommentItem({
     >
       <div
         className={cn("rounded-lg", {
-          "border bg-card p-4": isRootComment || isLlm,
-          "py-2": !(isRootComment || isLlm),
+          "border bg-card p-4": isRootComment || author.isLlm,
+          "py-2": !(isRootComment || author.isLlm),
         })}
       >
         <div className="mb-2 flex items-center gap-2">
-          {!!llmUser?.image && (
+          <Link href={profileUrl}>
             <img
-              alt={llmUser.name}
+              alt={`Avatar of ${author.name}`}
               className="h-6 w-6 rounded-full"
-              src={llmUser.image}
+              src={author.image}
             />
-          )}
-          <span className="font-semibold text-sm">{authorName}</span>
+          </Link>
+          <Link
+            className="font-semibold text-sm hover:underline"
+            href={profileUrl}
+          >
+            {author.name}
+          </Link>
         </div>
 
         {comment.streamId ? (
@@ -66,17 +77,15 @@ function CommentItem({
           <CommentContent content={comment.content as AgentUIMessage[]} />
         )}
 
-        {reactions.length > 0 && (
-          <div className="mt-3">
-            <ReactionButtons
-              commentId={comment.id}
-              owner={owner}
-              postId={comment.postId}
-              reactions={reactions}
-              repo={repo}
-            />
-          </div>
-        )}
+        <div className="mt-3">
+          <ReactionButtons
+            commentId={comment.id}
+            owner={owner}
+            postId={comment.postId}
+            reactions={reactions}
+            repo={repo}
+          />
+        </div>
       </div>
 
       {children}
@@ -96,8 +105,8 @@ function CommentTreeRecursive({
   repo,
   comments,
   parentId,
-  llmUsersById,
   reactionsByComment,
+  authorsById,
   rootCommentId,
   depth,
 }: {
@@ -105,8 +114,8 @@ function CommentTreeRecursive({
   repo: string
   comments: Comment[]
   parentId: string | null
-  llmUsersById: Record<string, LlmUser>
   reactionsByComment: Record<string, Reaction[]>
+  authorsById: Record<string, AuthorInfo>
   rootCommentId: string | null
   depth: number
 }) {
@@ -114,29 +123,35 @@ function CommentTreeRecursive({
 
   return (
     <>
-      {children.map((comment) => (
-        <CommentItem
-          comment={comment}
-          depth={depth}
-          isRootComment={comment.id === rootCommentId}
-          key={comment.id}
-          llmUsersById={llmUsersById}
-          owner={owner}
-          reactions={reactionsByComment[comment.id] ?? []}
-          repo={repo}
-        >
-          <CommentTreeRecursive
-            comments={comments}
-            depth={depth + 1}
-            llmUsersById={llmUsersById}
+      {children.map((comment) => {
+        const author = authorsById[comment.authorId]
+        if (!author) {
+          return null
+        }
+        return (
+          <CommentItem
+            author={author}
+            comment={comment}
+            depth={depth}
+            isRootComment={comment.id === rootCommentId}
+            key={comment.id}
             owner={owner}
-            parentId={comment.id}
-            reactionsByComment={reactionsByComment}
+            reactions={reactionsByComment[comment.id] ?? []}
             repo={repo}
-            rootCommentId={rootCommentId}
-          />
-        </CommentItem>
-      ))}
+          >
+            <CommentTreeRecursive
+              authorsById={authorsById}
+              comments={comments}
+              depth={depth + 1}
+              owner={owner}
+              parentId={comment.id}
+              reactionsByComment={reactionsByComment}
+              repo={repo}
+              rootCommentId={rootCommentId}
+            />
+          </CommentItem>
+        )
+      })}
     </>
   )
 }
@@ -145,18 +160,16 @@ export function CommentThread({
   owner,
   repo,
   comments,
-  llmUsersById,
+  authorsById,
   reactions,
   rootCommentId,
 }: {
   owner: string
   repo: string
   comments: Comment[]
-  llmUsersById: Record<string, LlmUser>
+  authorsById: Record<string, AuthorInfo>
   reactions: Reaction[]
   rootCommentId: string | null
-  postId: string
-  postAuthorId: string
 }) {
   const reactionsByComment: Record<string, Reaction[]> = {}
   for (const reaction of reactions) {
@@ -169,9 +182,9 @@ export function CommentThread({
   return (
     <div className="space-y-4">
       <CommentTreeRecursive
+        authorsById={authorsById}
         comments={comments}
         depth={0}
-        llmUsersById={llmUsersById}
         owner={owner}
         parentId={null}
         reactionsByComment={reactionsByComment}
