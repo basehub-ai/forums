@@ -11,8 +11,6 @@ async function getStream(commentId: string) {
     .where(eq(comments.id, commentId))
     .limit(1)
 
-  console.log(comment)
-
   if (!(comment?.runId && comment?.streamId)) {
     return null
   }

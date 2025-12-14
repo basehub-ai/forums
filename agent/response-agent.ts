@@ -63,6 +63,7 @@ export async function responseAgent({
     owner,
     repo,
     content: newMessages,
+    postId,
   })
 }
 
@@ -150,6 +151,7 @@ async function streamTextStep({
 
 async function closeStreamStep({
   writable,
+  postId,
   commentId,
   owner,
   repo,
@@ -157,6 +159,7 @@ async function closeStreamStep({
 }: {
   writable: WritableStream
   commentId: string
+  postId: string
   owner: string
   repo: string
   content: AgentUIMessage[]
@@ -172,4 +175,5 @@ async function closeStreamStep({
   ])
 
   revalidateTag(`repo:${owner}:${repo}`, "max")
+  revalidateTag(`post:${postId}`, "max")
 }

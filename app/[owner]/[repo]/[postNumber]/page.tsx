@@ -105,9 +105,11 @@ export default async function PostPage({
         <CommentThread
           comments={postComments}
           llmUsersById={llmUsersById}
+          owner={owner}
           postAuthorId={post.authorId}
           postId={post.id}
           reactions={postReactions}
+          repo={repo}
           rootCommentId={post.rootCommentId}
         />
       </div>

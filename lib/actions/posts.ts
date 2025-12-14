@@ -169,6 +169,7 @@ export async function createPost(data: {
   )
 
   updateTag(`repo:${data.owner}:${data.repo}`)
+  updateTag(`post:${postId}`)
 
   return {
     postId,
@@ -231,7 +232,7 @@ export async function createComment(data: {
   let llmCommentId: string | undefined
   let streamId: string | undefined
 
-  const insertPromises: Promise<unknown>[] = [
+  const promises: Promise<unknown>[] = [
     db.insert(comments).values({
       id: commentId,
       postId: data.postId,
@@ -249,7 +250,7 @@ export async function createComment(data: {
     llmCommentId = newCommentId
     streamId = String(now)
 
-    insertPromises.push(
+    promises.push(
       db.insert(comments).values({
         id: newCommentId,
         postId: data.postId,
@@ -275,7 +276,7 @@ export async function createComment(data: {
     )
   }
 
-  await Promise.all(insertPromises)
+  await Promise.all(promises)
 
   waitUntil(
     (async () => {
@@ -297,6 +298,7 @@ export async function createComment(data: {
   )
 
   updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${post.id}`)
 
   return {
     commentId,
@@ -305,7 +307,19 @@ export async function createComment(data: {
   }
 }
 
-export async function addReaction(commentId: string, type: string) {
+export async function addReaction({
+  owner,
+  repo,
+  postId,
+  commentId,
+  type,
+}: {
+  owner: string
+  repo: string
+  postId: string
+  commentId: string
+  type: string
+}) {
   const session = await getSessionOrThrow()
   await db
     .insert(reactions)
@@ -317,9 +331,23 @@ export async function addReaction(commentId: string, type: string) {
       createdAt: Date.now(),
     })
     .onConflictDoNothing()
+  updateTag(`repo:${owner}:${repo}`)
+  updateTag(`post:${postId}`)
 }
 
-export async function removeReaction(commentId: string, type: string) {
+export async function removeReaction({
+  owner,
+  repo,
+  postId,
+  commentId,
+  type,
+}: {
+  owner: string
+  repo: string
+  postId: string
+  commentId: string
+  type: string
+}) {
   const session = await getSessionOrThrow()
   await db
     .delete(reactions)
@@ -330,4 +358,6 @@ export async function removeReaction(commentId: string, type: string) {
         eq(reactions.type, type)
       )
     )
+  updateTag(`repo:${owner}:${repo}`)
+  updateTag(`post:${postId}`)
 }

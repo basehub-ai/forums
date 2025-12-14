@@ -14,23 +14,25 @@ type Comment = InferSelectModel<typeof commentsSchema>
 type Reaction = InferSelectModel<typeof reactionsSchema>
 type LlmUser = InferSelectModel<typeof llmUsers>
 
-type CommentItemProps = {
-  comment: Comment
-  llmUsersById: Record<string, LlmUser>
-  reactions: Reaction[]
-  isRootComment: boolean
-  depth?: number
-  children?: React.ReactNode
-}
-
 function CommentItem({
+  owner,
+  repo,
   comment,
   llmUsersById,
   reactions,
   isRootComment,
   depth = 0,
   children,
-}: CommentItemProps) {
+}: {
+  owner: string
+  repo: string
+  comment: Comment
+  llmUsersById: Record<string, LlmUser>
+  reactions: Reaction[]
+  isRootComment: boolean
+  depth?: number
+  children?: React.ReactNode
+}) {
   const isLlm = comment.authorId.startsWith("llm_")
   const llmUser = isLlm ? llmUsersById[comment.authorId] : null
   const authorName = llmUser?.name ?? comment.authorId
@@ -66,7 +68,13 @@ function CommentItem({
 
         {reactions.length > 0 && (
           <div className="mt-3">
-            <ReactionButtons commentId={comment.id} reactions={reactions} />
+            <ReactionButtons
+              commentId={comment.id}
+              owner={owner}
+              postId={comment.postId}
+              reactions={reactions}
+              repo={repo}
+            />
           </div>
         )}
       </div>
@@ -84,6 +92,8 @@ function buildCommentTree(
 }
 
 function CommentTreeRecursive({
+  owner,
+  repo,
   comments,
   parentId,
   llmUsersById,
@@ -91,6 +101,8 @@ function CommentTreeRecursive({
   rootCommentId,
   depth,
 }: {
+  owner: string
+  repo: string
   comments: Comment[]
   parentId: string | null
   llmUsersById: Record<string, LlmUser>
@@ -109,14 +121,18 @@ function CommentTreeRecursive({
           isRootComment={comment.id === rootCommentId}
           key={comment.id}
           llmUsersById={llmUsersById}
+          owner={owner}
           reactions={reactionsByComment[comment.id] ?? []}
+          repo={repo}
         >
           <CommentTreeRecursive
             comments={comments}
             depth={depth + 1}
             llmUsersById={llmUsersById}
+            owner={owner}
             parentId={comment.id}
             reactionsByComment={reactionsByComment}
+            repo={repo}
             rootCommentId={rootCommentId}
           />
         </CommentItem>
@@ -126,11 +142,15 @@ function CommentTreeRecursive({
 }
 
 export function CommentThread({
+  owner,
+  repo,
   comments,
   llmUsersById,
   reactions,
   rootCommentId,
 }: {
+  owner: string
+  repo: string
   comments: Comment[]
   llmUsersById: Record<string, LlmUser>
   reactions: Reaction[]
@@ -152,8 +172,10 @@ export function CommentThread({
         comments={comments}
         depth={0}
         llmUsersById={llmUsersById}
+        owner={owner}
         parentId={null}
         reactionsByComment={reactionsByComment}
+        repo={repo}
         rootCommentId={rootCommentId}
       />
     </div>

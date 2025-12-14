@@ -1,4 +1,4 @@
-import { generateText, stepCountIs, tool } from "ai"
+import { stepCountIs, streamText, tool } from "ai"
 import { eq } from "drizzle-orm"
 import { revalidateTag } from "next/cache"
 import { z } from "zod"
@@ -33,15 +33,17 @@ export async function runCategoryAgent({
     newCategory?: { title: string; emoji: string }
   } = {}
 
-  await generateText({
+  const stream = streamText({
     model: "anthropic/claude-haiku-4.5",
     system: `You are a forum assistant. Given a post's content, you must:
 1. Set a concise post title (5-7 words max) using setTitle
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
 
 Existing categories:
-${existingCategories.length ? existingCategories.map((c) => `- ${c.emoji || ""} ${c.title} (id: ${c.id})`).join("\n") : "(none yet)"}`,
-    prompt: content,
+${existingCategories.length ? existingCategories.map((c) => `- ${c.emoji || ""} ${c.title} (id: ${c.id})`).join("\n") : "(none yet)"}
+
+You're working on your own. Meaning, the user won't be able to respond any question you might have. They'll send in the only info they have available at this time.`,
+    prompt: `Here's the post content:\n\n${content}`,
     tools: {
       setTitle: tool({
         description: "Set the post title",
@@ -79,6 +81,8 @@ ${existingCategories.length ? existingCategories.map((c) => `- ${c.emoji || ""} 
     },
     stopWhen: stepCountIs(5),
   })
+
+  await stream.finishReason
 
   if (!(result.title || result.categoryId || result.newCategory)) {
     return
@@ -121,4 +125,5 @@ ${existingCategories.length ? existingCategories.map((c) => `- ${c.emoji || ""} 
   })
 
   revalidateTag(`repo:${owner}:${repo}`, "max")
+  revalidateTag(`post:${postId}`, "max")
 }

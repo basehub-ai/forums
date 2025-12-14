@@ -1,12 +1,8 @@
 "use client"
 
-import type { InferSelectModel } from "drizzle-orm"
 import { useTransition } from "react"
 import { addReaction, removeReaction } from "@/lib/actions/posts"
-import type { reactions as reactionsScheam } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
-
-type Reaction = InferSelectModel<typeof reactionsScheam>
 
 const REACTION_TYPES = [
   { type: "+1", emoji: "👍" },
@@ -20,12 +16,18 @@ const REACTION_TYPES = [
 ] as const
 
 export function ReactionButtons({
+  owner,
+  repo,
+  postId,
   commentId,
   reactions,
   currentUserId,
 }: {
+  owner: string
+  repo: string
+  postId: string
   commentId: string
-  reactions: Reaction[]
+  reactions: { type: string; userId: string }[]
   currentUserId?: string
 }) {
   const [isPending, startTransition] = useTransition()
@@ -49,9 +51,9 @@ export function ReactionButtons({
 
     startTransition(async () => {
       if (userReactions.has(type)) {
-        await removeReaction(commentId, type)
+        await removeReaction({ commentId, type, owner, repo, postId })
       } else {
-        await addReaction(commentId, type)
+        await addReaction({ commentId, type, owner, repo, postId })
       }
     })
   }
