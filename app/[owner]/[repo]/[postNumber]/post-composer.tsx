@@ -1,8 +1,8 @@
 "use client"
 
 import { ArrowUpIcon } from "lucide-react"
-import { usePathname, useRouter } from "next/navigation"
-import { useRef, useState, useTransition } from "react"
+import { usePathname } from "next/navigation"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { AskingSelector } from "@/components/asking-selector"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,6 +23,7 @@ export function PostComposer({
   autoFocus,
   onCancel,
   connected,
+  storageKey,
 }: {
   postId: string
   askingOptions: AskingOption[]
@@ -30,23 +31,51 @@ export function PostComposer({
   autoFocus?: boolean
   onCancel?: () => void
   connected?: boolean
+  storageKey?: string
 }) {
   const { data: auth } = authClient.useSession()
   const isSignedIn = !!auth?.session
-  const router = useRouter()
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
+  const [message, setMessage] = useState("")
   const [seekingAnswerFrom, setSeekingAnswerFrom] = useState<string | null>(
     null
   )
 
+  useEffect(() => {
+    if (!storageKey) {
+      return
+    }
+    const saved = sessionStorage.getItem(storageKey)
+    if (saved) {
+      setMessage(saved)
+    }
+  }, [storageKey])
+
+  useEffect(() => {
+    if (!storageKey) {
+      return
+    }
+    if (message) {
+      sessionStorage.setItem(storageKey, message)
+    } else {
+      sessionStorage.removeItem(storageKey)
+    }
+  }, [storageKey, message])
+
   const handleBlur = (e: React.FocusEvent) => {
-    if (!onCancel) return
+    if (!onCancel) {
+      return
+    }
     const form = formRef.current
-    if (!form) return
+    if (!form) {
+      return
+    }
     const relatedTarget = e.relatedTarget as Node | null
-    if (relatedTarget && form.contains(relatedTarget)) return
+    if (relatedTarget && form.contains(relatedTarget)) {
+      return
+    }
     onCancel()
   }
 
@@ -57,9 +86,6 @@ export function PostComposer({
       authClient.signIn.social({ provider: "github", callbackURL: pathname })
       return
     }
-
-    const formData = new FormData(e.currentTarget)
-    const message = formData.get("message")?.toString() || ""
 
     if (!message.trim()) {
       return
@@ -77,12 +103,15 @@ export function PostComposer({
         seekingAnswerFrom,
       })
 
-      formRef.current?.reset()
-      router.refresh()
+      setMessage("")
+      if (storageKey) {
+        sessionStorage.removeItem(storageKey)
+      }
     })
   }
 
   return (
+    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: .
     <form
       className={
         connected
@@ -97,8 +126,9 @@ export function PostComposer({
         autoFocus={autoFocus}
         className="mb-3 min-h-[100px] resize-none"
         disabled={isPending}
-        name="message"
+        onChange={(e) => setMessage(e.target.value)}
         placeholder={threadCommentId ? "Write a reply..." : "Add a comment..."}
+        value={message}
       />
       <div className="flex items-center justify-between">
         <AskingSelector

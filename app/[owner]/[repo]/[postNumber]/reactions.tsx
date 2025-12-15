@@ -8,6 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { addReaction, removeReaction } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -78,83 +83,124 @@ export function ReactionButtons({
   const upvoteCount = reactionCounts["+1"] ?? 0
   const downvoteCount = reactionCounts["-1"] ?? 0
 
+  const isSignedIn = !!userId
+
+  const upvoteButton = (
+    <button
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+        userReactions.has("+1")
+          ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
+          : "hover:bg-muted",
+        !isSignedIn && "cursor-not-allowed opacity-50"
+      )}
+      disabled={isPending || !isSignedIn}
+      onClick={() => handleReaction("+1")}
+      type="button"
+    >
+      <ThumbsUpIcon className="size-3" />
+      <span>{upvoteCount}</span>
+    </button>
+  )
+
+  const downvoteButton = (
+    <button
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+        userReactions.has("-1")
+          ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
+          : "hover:bg-muted",
+        !isSignedIn && "cursor-not-allowed opacity-50"
+      )}
+      disabled={isPending || !isSignedIn}
+      onClick={() => handleReaction("-1")}
+      type="button"
+    >
+      <ThumbsDownIcon className="size-3" />
+      <span>{downvoteCount}</span>
+    </button>
+  )
+
+  const signedOutTooltip = "You must be signed in to react"
+
   return (
     <div className="flex flex-wrap items-center gap-1">
-      <button
-        className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
-          userReactions.has("+1")
-            ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-            : "hover:bg-muted"
-        )}
-        disabled={isPending || !userId}
-        onClick={() => handleReaction("+1")}
-        type="button"
-      >
-        <ThumbsUpIcon className="size-3" />
-        {upvoteCount > 0 && <span>{upvoteCount}</span>}
-      </button>
+      {isSignedIn ? (
+        upvoteButton
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>{upvoteButton}</TooltipTrigger>
+          <TooltipContent>{signedOutTooltip}</TooltipContent>
+        </Tooltip>
+      )}
 
-      <button
-        className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
-          userReactions.has("-1")
-            ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-            : "hover:bg-muted"
-        )}
-        disabled={isPending || !userId}
-        onClick={() => handleReaction("-1")}
-        type="button"
-      >
-        <ThumbsDownIcon className="size-3" />
-        {downvoteCount > 0 && <span>{downvoteCount}</span>}
-      </button>
+      {isSignedIn ? (
+        downvoteButton
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>{downvoteButton}</TooltipTrigger>
+          <TooltipContent>{signedOutTooltip}</TooltipContent>
+        </Tooltip>
+      )}
 
-      {otherActiveReactions.map((r) => (
-        <button
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
-            userReactions.has(r.type)
-              ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-              : "hover:bg-muted"
-          )}
-          disabled={isPending || !userId}
-          key={r.type}
-          onClick={() => handleReaction(r.type)}
-          type="button"
-        >
-          <span>{r.emoji}</span>
-          <span>{reactionCounts[r.type]}</span>
-        </button>
-      ))}
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      {otherActiveReactions.map((r) => {
+        const button = (
           <button
-            className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
-            disabled={isPending || !userId}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+              userReactions.has(r.type)
+                ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
+                : "hover:bg-muted",
+              !isSignedIn && "cursor-not-allowed opacity-50"
+            )}
+            disabled={isPending || !isSignedIn}
+            key={r.type}
+            onClick={() => handleReaction(r.type)}
             type="button"
           >
-            <SmilePlusIcon className="size-3" />
+            <span>{r.emoji}</span>
+            <span>{reactionCounts[r.type]}</span>
           </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <div className="grid grid-cols-4 gap-1 p-1">
-            {OTHER_REACTIONS.map((r) => (
-              <DropdownMenuItem
-                className={cn(
-                  "flex cursor-pointer items-center justify-center rounded p-2 text-base",
-                  userReactions.has(r.type) && "bg-blue-50 dark:bg-blue-900"
-                )}
-                key={r.type}
-                onClick={() => handleReaction(r.type)}
-              >
-                {r.emoji}
-              </DropdownMenuItem>
-            ))}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        )
+        return isSignedIn ? (
+          button
+        ) : (
+          <Tooltip key={r.type}>
+            <TooltipTrigger asChild>{button}</TooltipTrigger>
+            <TooltipContent>{signedOutTooltip}</TooltipContent>
+          </Tooltip>
+        )
+      })}
+
+      {isSignedIn ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
+              disabled={isPending}
+              type="button"
+            >
+              <SmilePlusIcon className="size-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <div className="grid grid-cols-4 gap-1 p-1">
+              {OTHER_REACTIONS.map((r) => (
+                <DropdownMenuItem
+                  className={cn(
+                    "flex cursor-pointer items-center justify-center rounded p-2 text-base",
+                    userReactions.has(r.type) && "bg-blue-50 dark:bg-blue-900"
+                  )}
+                  key={r.type}
+                  onClick={() => handleReaction(r.type)}
+                >
+                  {r.emoji}
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </div>
   )
 }

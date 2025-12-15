@@ -120,15 +120,18 @@ function CommentItem({
       {children}
 
       {canReply ? (
-        isReplying && askingOptions ? (
-          <PostComposer
-            askingOptions={askingOptions}
-            autoFocus
-            connected
-            onCancel={onCancelReply}
-            postId={comment.postId}
-            threadCommentId={comment.id}
-          />
+        isReplying ? (
+          askingOptions ? (
+            <PostComposer
+              askingOptions={askingOptions}
+              autoFocus
+              connected
+              onCancel={onCancelReply}
+              postId={comment.postId}
+              storageKey={`reply:${comment.id}`}
+              threadCommentId={comment.id}
+            />
+          ) : null
         ) : (
           <button
             className="-mt-px w-full rounded-b-lg border border-t-0 bg-card px-4 py-3 text-left text-muted-foreground text-sm hover:bg-muted/50"

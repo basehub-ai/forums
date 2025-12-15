@@ -5,7 +5,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
-import { categories, comments, llmUsers, posts, reactions } from "@/lib/db/schema"
+import {
+  categories,
+  comments,
+  llmUsers,
+  posts,
+  reactions,
+} from "@/lib/db/schema"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
 import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
@@ -216,7 +222,11 @@ export default async function PostPage({
           </div>
 
           <div className="mt-8">
-            <PostComposer askingOptions={askingOptions} postId={post.id} />
+            <PostComposer
+              askingOptions={askingOptions}
+              postId={post.id}
+              storageKey={`composer:${post.id}`}
+            />
           </div>
         </div>
 
