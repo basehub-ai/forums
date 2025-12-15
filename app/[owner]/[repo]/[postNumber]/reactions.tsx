@@ -74,7 +74,6 @@ export function ReactionButtons({
   const otherActiveReactions = OTHER_REACTIONS.filter(
     (r) => (reactionCounts[r.type] ?? 0) > 0
   )
-  console.log("reactions", reactions)
 
   const upvoteCount = reactionCounts["+1"] ?? 0
   const downvoteCount = reactionCounts["-1"] ?? 0

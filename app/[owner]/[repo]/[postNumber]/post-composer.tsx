@@ -19,11 +19,17 @@ type AskingOption = {
 export function PostComposer({
   postId,
   askingOptions,
-  replyToId,
+  threadCommentId,
+  autoFocus,
+  onCancel,
+  connected,
 }: {
   postId: string
   askingOptions: AskingOption[]
-  replyToId?: string
+  threadCommentId?: string
+  autoFocus?: boolean
+  onCancel?: () => void
+  connected?: boolean
 }) {
   const { data: auth } = authClient.useSession()
   const isSignedIn = !!auth?.session
@@ -34,6 +40,15 @@ export function PostComposer({
   const [seekingAnswerFrom, setSeekingAnswerFrom] = useState<string | null>(
     null
   )
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!onCancel) return
+    const form = formRef.current
+    if (!form) return
+    const relatedTarget = e.relatedTarget as Node | null
+    if (relatedTarget && form.contains(relatedTarget)) return
+    onCancel()
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -58,7 +73,7 @@ export function PostComposer({
           role: "user",
           parts: [{ type: "text", text: message }],
         },
-        replyToId,
+        threadCommentId,
         seekingAnswerFrom,
       })
 
@@ -69,15 +84,21 @@ export function PostComposer({
 
   return (
     <form
-      className="rounded-lg border bg-card p-4"
+      className={
+        connected
+          ? "-mt-px rounded-b-lg border border-t-0 bg-card p-4"
+          : "rounded-lg border bg-card p-4"
+      }
+      onBlur={handleBlur}
       onSubmit={handleSubmit}
       ref={formRef}
     >
       <Textarea
+        autoFocus={autoFocus}
         className="mb-3 min-h-[100px] resize-none"
         disabled={isPending}
         name="message"
-        placeholder={replyToId ? "Write a reply..." : "Add a comment..."}
+        placeholder={threadCommentId ? "Write a reply..." : "Add a comment..."}
       />
       <div className="flex items-center justify-between">
         <AskingSelector

@@ -34,7 +34,7 @@ export const comments = p.pgTable(
   {
     id: p.varchar({ length: 32 }).primaryKey(),
     postId: p.varchar("post_id", { length: 32 }).notNull(),
-    replyToId: p.varchar("reply_to_id", { length: 32 }),
+    threadCommentId: p.varchar("thread_comment_id", { length: 32 }),
 
     authorId: p.varchar("author_id", { length: 255 }).notNull(),
     authorUsername: p.varchar("author_username", { length: 255 }),
@@ -52,7 +52,7 @@ export const comments = p.pgTable(
   },
   (table) => [
     p.index("idx_comments_post_created").on(table.postId, table.createdAt),
-    p.index("idx_comments_reply_to").on(table.replyToId),
+    p.index("idx_comments_thread").on(table.threadCommentId),
     p.index("idx_comments_author").on(table.authorId),
     p.index("idx_comments_stream").on(table.streamId),
   ]

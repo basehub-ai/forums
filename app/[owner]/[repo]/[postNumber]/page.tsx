@@ -6,7 +6,8 @@ import { notFound } from "next/navigation"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { categories, comments, llmUsers, posts, reactions } from "@/lib/db/schema"
-import { CommentThread } from "./comment-thread"
+import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
+import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
 import { PostMetadataProvider } from "./post-metadata-context"
 import { PostSidebar } from "./post-sidebar"
@@ -166,6 +167,18 @@ export default async function PostPage({
     image: a.image,
   }))
 
+  const commentNumbers = computeCommentNumbers(postComments)
+
+  const askingOptions = [
+    ...allLlmUsers.map((u) => ({
+      id: u.id,
+      name: u.name,
+      image: u.image,
+      isDefault: u.isDefault,
+    })),
+    { id: "human", name: "Human only" },
+  ]
+
   return (
     <PostMetadataProvider
       initialCategory={category?.id ? category : null}
@@ -190,8 +203,10 @@ export default async function PostPage({
           </div>
 
           <div className="space-y-6">
-            <CommentThread
+            <CommentThreadClient
+              askingOptions={askingOptions}
               authorsById={authorsById}
+              commentNumbers={commentNumbers}
               comments={postComments}
               owner={owner}
               reactions={postReactions}
@@ -201,18 +216,7 @@ export default async function PostPage({
           </div>
 
           <div className="mt-8">
-            <PostComposer
-              askingOptions={[
-                ...allLlmUsers.map((u) => ({
-                  id: u.id,
-                  name: u.name,
-                  image: u.image,
-                  isDefault: u.isDefault,
-                })),
-                { id: "human", name: "Human only" },
-              ]}
-              postId={post.id}
-            />
+            <PostComposer askingOptions={askingOptions} postId={post.id} />
           </div>
         </div>
 

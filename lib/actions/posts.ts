@@ -212,7 +212,7 @@ export async function createPost(data: {
 export async function createComment(data: {
   postId: string
   content: AgentUIMessage
-  replyToId?: string
+  threadCommentId?: string
   seekingAnswerFrom?: string | null
 }) {
   const session = await getSessionOrThrow()
@@ -256,8 +256,12 @@ export async function createComment(data: {
   }
 
   const isOp = session.user.id === post.authorId
-  const isTopLevel = !data.replyToId
-  const llmReplyToId = llm && !(isTopLevel && isOp) ? commentId : undefined
+  const isTopLevel = !data.threadCommentId
+  // LLM replies to same thread as user (flat), or creates new thread if user is OP posting top-level
+  const llmThreadCommentId =
+    llm && !(isTopLevel && isOp)
+      ? (data.threadCommentId ?? commentId)
+      : undefined
 
   let llmCommentId: string | undefined
   let streamId: string | undefined
@@ -266,7 +270,7 @@ export async function createComment(data: {
     db.insert(comments).values({
       id: commentId,
       postId: data.postId,
-      replyToId: data.replyToId,
+      threadCommentId: data.threadCommentId,
       authorId: session.user.id,
       authorUsername,
       content: [data.content],
@@ -286,7 +290,7 @@ export async function createComment(data: {
       db.insert(comments).values({
         id: newCommentId,
         postId: data.postId,
-        replyToId: llmReplyToId,
+        threadCommentId: llmThreadCommentId,
         authorId: llm.id,
         authorUsername: llm.model,
         content: [],
