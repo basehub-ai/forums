@@ -1,4 +1,5 @@
 import { desc, eq, sql } from "drizzle-orm"
+import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"
@@ -14,6 +15,8 @@ export default async function LlmProfilePage({
 }: {
   params: Promise<{ model: string[] }>
 }) {
+  "use cache"
+  cacheLife("minutes")
   const { model: modelSplit } = await params
   const model = modelSplit.join("/")
 

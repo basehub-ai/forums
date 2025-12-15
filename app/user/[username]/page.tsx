@@ -1,4 +1,5 @@
 import { desc, eq, sql } from "drizzle-orm"
+import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { gitHubUserLoader } from "@/lib/auth"
@@ -10,6 +11,8 @@ export default async function UserProfilePage({
 }: {
   params: Promise<{ username: string }>
 }) {
+  "use cache"
+  cacheLife("minutes")
   const { username } = await params
 
   const user = await gitHubUserLoader.load(username)
