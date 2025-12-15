@@ -399,6 +399,19 @@ export async function removeReaction({
   updateTag(`post:${postId}`)
 }
 
+export async function revalidateAfterStream({
+  owner,
+  repo,
+  postId,
+}: {
+  owner: string
+  repo: string
+  postId: string
+}) {
+  updateTag(`repo:${owner}:${repo}`)
+  updateTag(`post:${postId}`)
+}
+
 export async function getPostMetadata(postId: string) {
   const [post] = await db
     .select({

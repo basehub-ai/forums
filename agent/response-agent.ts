@@ -6,8 +6,8 @@ import {
 } from "ai"
 import { asc, eq } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
+import { revalidateAfterStream } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
 import { getTools } from "./tools"
@@ -174,6 +174,5 @@ async function closeStreamStep({
       .where(eq(comments.id, commentId)),
   ])
 
-  revalidateTag(`repo:${owner}:${repo}`, "max")
-  revalidateTag(`post:${postId}`, "max")
+  await revalidateAfterStream({ owner, repo, postId })
 }
