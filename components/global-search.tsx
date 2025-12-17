@@ -3,7 +3,6 @@
 import { FileTextIcon, GitBranchIcon, StarIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { cn } from "@/lib/utils"
 import {
   Command,
   CommandDialog,
@@ -13,6 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
 
 type PostResult = {
   id: string
@@ -124,7 +124,7 @@ function SearchContent({
       <CommandInput
         mode={mode}
         onValueChange={setQuery}
-        placeholder="Search posts and repositories..."
+        placeholder="Search posts and repos..."
         value={query}
       />
       {shouldShowResults ? (
@@ -241,8 +241,8 @@ export function GlobalSearch() {
 
   return (
     <Command
-      ref={containerRef}
       className="relative overflow-visible rounded-lg border"
+      ref={containerRef}
     >
       <SearchContent
         isLoading={isLoading}

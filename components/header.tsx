@@ -12,7 +12,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="grid h-14 grid-cols-[105px_1fr_105px] items-center justify-items-center px-4">
         <Link className="flex w-fit hover:opacity-80" href="/">
-          <Logotype />
+          <Logotype className="fill-foreground" />
         </Link>
 
         <Suspense>
