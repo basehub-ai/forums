@@ -2,7 +2,7 @@
 
 import { FileTextIcon, GitBranchIcon, StarIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   Command,
@@ -88,6 +88,7 @@ function SearchContent({
   results,
   isLoading,
   onSelect,
+  showResults,
 }: {
   query: string
   setQuery: (q: string) => void
@@ -95,6 +96,7 @@ function SearchContent({
   isLoading: boolean
   onSelect: () => void
   mode: "inline" | "dialog"
+  showResults?: boolean
 }) {
   const router = useRouter()
 
@@ -115,6 +117,7 @@ function SearchContent({
   )
 
   const hasResults = results.posts.length > 0 || results.repos.length > 0
+  const shouldShowResults = showResults ?? (query.length >= 2 || hasResults)
 
   return (
     <>
@@ -124,7 +127,7 @@ function SearchContent({
         placeholder="Search posts and repositories..."
         value={query}
       />
-      {query.length >= 2 || hasResults ? (
+      {shouldShowResults ? (
         <CommandList
           className={cn(
             mode === "inline" &&
@@ -193,13 +196,54 @@ function SearchContent({
 
 export function GlobalSearch() {
   const { query, setQuery, results, isLoading } = useGlobalSearch()
+  const [isOpen, setIsOpen] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handleSelect = useCallback(() => {
     setQuery("")
   }, [setQuery])
 
+  // Re-open results when query changes
+  useEffect(() => {
+    if (query.length >= 2) {
+      setIsOpen(true)
+    }
+  }, [query])
+
+  // Handle Escape key - close results but keep query
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen])
+
+  // Handle click outside - close results but keep query
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const showResults = isOpen && query.length >= 2
+
   return (
-    <Command className="relative overflow-visible rounded-lg border">
+    <Command
+      ref={containerRef}
+      className="relative overflow-visible rounded-lg border"
+    >
       <SearchContent
         isLoading={isLoading}
         mode="inline"
@@ -207,6 +251,7 @@ export function GlobalSearch() {
         query={query}
         results={results}
         setQuery={setQuery}
+        showResults={showResults}
       />
     </Command>
   )
