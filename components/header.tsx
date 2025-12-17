@@ -1,5 +1,7 @@
 import { headers } from "next/headers"
+import Link from "next/link"
 import { Suspense } from "react"
+import Logotype from "@/components/logotype"
 import { auth } from "@/lib/auth"
 import { RepoSwitcher } from "./repo-switcher"
 import { SignInButton } from "./sign-in-button"
@@ -9,22 +11,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="container mx-auto flex h-14 items-center px-4">
-        <div className="flex-1">
-          <span className="font-semibold text-2xl">Forums</span>
-          <span className="text-muted-foreground text-xs">
-            {" "}
-            by{" "}
-            <a
-              className="text-orange-500 hover:underline"
-              href="https://basehub.com"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              BaseHub
-            </a>
-            .
-          </span>
-        </div>
+        <Link className="flex-1 hover:opacity-80" href="/">
+          <Logotype />
+        </Link>
 
         <div className="-translate-x-1/2 absolute left-1/2">
           <Suspense>

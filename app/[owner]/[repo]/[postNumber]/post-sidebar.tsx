@@ -19,11 +19,12 @@ export function PostSidebar({ participants }: { participants: Participant[] }) {
           {participants.length !== 1 ? "s" : ""}
         </h3>
         <div className="flex flex-wrap gap-1">
-          {participants.map((p) => (
+          {participants.map((p, i) => (
             <img
               alt={p.name}
               className="h-8 w-8 rounded-lg"
-              key={p.id}
+              // biome-ignore lint/suspicious/noArrayIndexKey: They are effectively the same
+              key={p.id + i}
               src={
                 p.image ??
                 `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(p.name)}`
