@@ -65,15 +65,15 @@
   --muted: oklch(94% 0.004 240deg);
   --muted-foreground: oklch(45% 0.01 240deg);
 
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: oklch(95.5% 0 240deg); /* #F0F0F0 */
+  --accent-foreground: oklch(20% 0.015 240deg); /* #10171C */
 
   --destructive: oklch(66.9% 0.218 25.3deg); /* #FF4949 */
   --success: oklch(65.1% 0.147 147deg); /* #46A758 */
 
   --border: oklch(90.9% 0.00687 146deg); /* #DEE2DE */
-  --input: oklch(92% 0.00423 237deg); /* #E2E5E7 */
-  --ring: oklch(96.6% 0.0041 122deg); /* #F3F4F1 */
+  --input: oklch(90.9% 0.00687 146deg); /* #DEE2DE */
+  --ring: oklch(90.9% 0.00687 146deg); /* #DEE2DE */
 
   /* Charts - Meadow palette */
   --chart-1: oklch(58% 0.14 145deg); /* Meadow green */
@@ -132,7 +132,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans selection:bg-foreground selection:text-background;
   }
 }
 

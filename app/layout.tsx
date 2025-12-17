@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import type { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 
+import { GlobalSearchDialog } from "@/components/global-search"
 import { Header } from "@/components/header"
 import "./globals.css"
 
@@ -28,6 +29,7 @@ export default function RootLayout({
         >
           <Header />
           {children}
+          <GlobalSearchDialog />
         </ThemeProvider>
         <Analytics />
       </body>
