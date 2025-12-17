@@ -3,6 +3,7 @@
 import { FileTextIcon, GitBranchIcon, StarIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 import {
   Command,
   CommandDialog,
@@ -123,62 +124,69 @@ function SearchContent({
         placeholder="Search posts and repositories..."
         value={query}
       />
-      <CommandList>
-        {query.length >= 2 && !isLoading && !hasResults ? (
-          <CommandEmpty>No results found.</CommandEmpty>
-        ) : null}
-        {isLoading ? (
-          query.length >= 2 ? (
-            <div className="py-6 text-center text-muted-foreground text-sm">
-              Searching...
-            </div>
-          ) : null
-        ) : null}
-        {results.posts.length > 0 ? (
-          <CommandGroup heading="Posts">
-            {results.posts.map((post) => (
-              <CommandItem
-                key={post.id}
-                onSelect={() => handlePostSelect(post)}
-                value={`post-${post.id}-${post.title}`}
-              >
-                <FileTextIcon className="mr-2 size-4" />
-                <div className="flex flex-col">
-                  <span>{post.title || `Post #${post.number}`}</span>
-                  <span className="text-muted-foreground text-xs">
-                    {post.owner}/{post.repo} #{post.number}
-                  </span>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : null}
-        {results.repos.length > 0 ? (
-          <CommandGroup heading="GitHub Repositories">
-            {results.repos.map((repo) => (
-              <CommandItem
-                key={repo.id}
-                onSelect={() => handleRepoSelect(repo)}
-                value={`repo-${repo.id}-${repo.fullName}`}
-              >
-                <GitBranchIcon className="mr-2 size-4" />
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span>{repo.fullName}</span>
-                  {repo.description ? (
-                    <span className="truncate text-muted-foreground text-xs">
-                      {repo.description}
+      {query.length >= 2 || hasResults ? (
+        <CommandList
+          className={cn(
+            mode === "inline" &&
+              "absolute inset-x-0 top-full z-50 mt-1 rounded-lg border bg-popover shadow-lg"
+          )}
+        >
+          {query.length >= 2 && !isLoading && !hasResults ? (
+            <CommandEmpty>No results found.</CommandEmpty>
+          ) : null}
+          {isLoading ? (
+            query.length >= 2 ? (
+              <div className="py-6 text-center text-muted-foreground text-sm">
+                Searching...
+              </div>
+            ) : null
+          ) : null}
+          {results.posts.length > 0 ? (
+            <CommandGroup heading="Posts">
+              {results.posts.map((post) => (
+                <CommandItem
+                  key={post.id}
+                  onSelect={() => handlePostSelect(post)}
+                  value={`post-${post.id}-${post.title}`}
+                >
+                  <FileTextIcon className="mr-2 size-4" />
+                  <div className="flex flex-col">
+                    <span>{post.title || `Post #${post.number}`}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {post.owner}/{post.repo} #{post.number}
                     </span>
-                  ) : null}
-                </div>
-                <span className="ml-2 flex items-center gap-1 text-muted-foreground text-xs">
-                  <StarIcon className="size-3" />
-                  {repo.stars.toLocaleString()}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : null}
-      </CommandList>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {results.repos.length > 0 ? (
+            <CommandGroup heading="GitHub Repositories">
+              {results.repos.map((repo) => (
+                <CommandItem
+                  key={repo.id}
+                  onSelect={() => handleRepoSelect(repo)}
+                  value={`repo-${repo.id}-${repo.fullName}`}
+                >
+                  <GitBranchIcon className="mr-2 size-4" />
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span>{repo.fullName}</span>
+                    {repo.description ? (
+                      <span className="truncate text-muted-foreground text-xs">
+                        {repo.description}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="ml-2 flex items-center gap-1 text-muted-foreground text-xs">
+                    <StarIcon className="size-3" />
+                    {repo.stars.toLocaleString()}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+        </CommandList>
+      ) : null}
     </>
   )
 }
@@ -191,7 +199,7 @@ export function GlobalSearch() {
   }, [setQuery])
 
   return (
-    <Command className="rounded-lg border shadow-md">
+    <Command className="relative overflow-visible rounded-lg border">
       <SearchContent
         isLoading={isLoading}
         mode="inline"
