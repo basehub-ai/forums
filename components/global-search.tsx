@@ -122,6 +122,7 @@ function SearchContent({
   return (
     <>
       <CommandInput
+        mode={mode}
         onValueChange={setQuery}
         placeholder="Search posts and repos..."
         showBorder={shouldShowResults}

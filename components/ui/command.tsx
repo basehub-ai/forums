@@ -2,7 +2,7 @@
 
 import { Command as CommandPrimitive } from "cmdk"
 import { SearchIcon } from "lucide-react"
-import type * as React from "react"
+import { useEffect, useState, type ComponentProps } from "react"
 import {
   Dialog,
   DialogContent,
@@ -10,12 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { cn } from "@/lib/utils"
 
 function Command({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive>) {
+}: ComponentProps<typeof CommandPrimitive>) {
   return (
     <CommandPrimitive
       className={cn(
@@ -35,7 +36,7 @@ function CommandDialog({
   className,
   showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof Dialog> & {
+}: ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
@@ -51,7 +52,7 @@ function CommandDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <Command className="**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+        <Command className="**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5 **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground **:[[cmdk-group]]:px-2 **:[[cmdk-input]]:h-12 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3">
           {children}
         </Command>
       </DialogContent>
@@ -61,11 +62,19 @@ function CommandDialog({
 
 function CommandInput({
   className,
+  mode,
   showBorder,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Input> & {
+}: ComponentProps<typeof CommandPrimitive.Input> & {
+  mode: "inline" | "dialog"
   showBorder?: boolean
 }) {
+  const [isMac, setIsMac] = useState(true)
+
+  useEffect(() => {
+    setIsMac(navigator.platform.toLowerCase().includes("mac"))
+  }, [])
+
   return (
     <div
       className={cn(
@@ -83,6 +92,12 @@ function CommandInput({
         data-slot="command-input"
         {...props}
       />
+      {mode === "inline" ? (
+        <KbdGroup className="shrink-0">
+          <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
+          <Kbd>K</Kbd>
+        </KbdGroup>
+      ) : null}
     </div>
   )
 }
@@ -90,11 +105,11 @@ function CommandInput({
 function CommandList({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.List>) {
+}: ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       className={cn(
-        "max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden",
+        "max-h-[300px] scroll-py-2 overflow-y-auto overflow-x-hidden",
         className
       )}
       data-slot="command-list"
@@ -105,7 +120,7 @@ function CommandList({
 
 function CommandEmpty({
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+}: ComponentProps<typeof CommandPrimitive.Empty>) {
   return (
     <CommandPrimitive.Empty
       className="py-6 text-center text-sm"
@@ -118,7 +133,7 @@ function CommandEmpty({
 function CommandGroup({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Group>) {
+}: ComponentProps<typeof CommandPrimitive.Group>) {
   return (
     <CommandPrimitive.Group
       className={cn(
@@ -134,7 +149,7 @@ function CommandGroup({
 function CommandSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Separator>) {
+}: ComponentProps<typeof CommandPrimitive.Separator>) {
   return (
     <CommandPrimitive.Separator
       className={cn("-mx-1 h-px bg-border", className)}
@@ -147,7 +162,7 @@ function CommandSeparator({
 function CommandItem({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Item>) {
+}: ComponentProps<typeof CommandPrimitive.Item>) {
   return (
     <CommandPrimitive.Item
       className={cn(
@@ -163,7 +178,7 @@ function CommandItem({
 function CommandShortcut({
   className,
   ...props
-}: React.ComponentProps<"span">) {
+}: ComponentProps<"span">) {
   return (
     <span
       className={cn(
