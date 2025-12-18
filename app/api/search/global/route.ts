@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       .limit(5),
 
     fetch(
-      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=5`,
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=8`,
       {
         headers: {
           Accept: "application/vnd.github.v3+json",
@@ -54,8 +54,10 @@ export async function GET(request: Request) {
       }
     )
       .then(async (res) => {
-        if (!res.ok) return []
-        const data = await res.json()
+        if (!res.ok) {
+          return []
+        }
+        const data = (await res.json()) as { items: GitHubRepo[] }
         return (data.items ?? []).map((repo: GitHubRepo) => ({
           id: repo.id,
           fullName: repo.full_name,
