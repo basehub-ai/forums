@@ -1,6 +1,5 @@
 import { desc, sql } from "drizzle-orm"
 import Link from "next/link"
-import { GitHubRepoInput } from "@/components/github-repo-input"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
 
@@ -29,18 +28,6 @@ export default async function Home() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
-      <div className="mb-12 flex flex-col items-center gap-6">
-        <div className="text-center">
-          <h1 className="font-semibold text-3xl tracking-tight">
-            Enter a GitHub repository
-          </h1>
-          <p className="mt-2 text-muted-foreground text-sm">
-            Paste a GitHub URL or type owner/repo
-          </p>
-        </div>
-        <GitHubRepoInput />
-      </div>
-
       {allPosts.length > 0 && (
         <div>
           <h2 className="mb-4 font-semibold text-xl">Featured Posts</h2>
