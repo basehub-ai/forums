@@ -61,16 +61,16 @@ function CommandDialog({
 
 function CommandInput({
   className,
-  mode,
+  showBorder,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input> & {
-  mode?: "inline" | "dialog"
+  showBorder?: boolean
 }) {
   return (
     <div
       className={cn(
         "flex h-9 items-center gap-2 px-3",
-        mode === "inline" ? "border-none" : "border-b"
+        showBorder ? "border-b" : ""
       )}
       data-slot="command-input-wrapper"
     >
