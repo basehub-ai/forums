@@ -1,24 +1,24 @@
-import { Redis } from "@upstash/redis"
+import { Redis } from "@upstash/redis";
 
-export const redis = Redis.fromEnv()
+export const redis = Redis.fromEnv();
 
 export type StoredInterrupt = {
-  timestamp: number
-}
+  timestamp: number;
+};
 
 // Sandbox deduplication
 
-const SANDBOX_VERSION = "v2" // Increment to invalidate all existing sandboxes
+const SANDBOX_VERSION = "v2"; // Increment to invalidate all existing sandboxes
 
 export type StoredSandbox = {
-  sandboxId: string
-  createdAt: number
-}
+  sandboxId: string;
+  createdAt: number;
+};
 
 const sandboxKey = (owner: string, repo: string) =>
-  `sandbox:${SANDBOX_VERSION}:${owner}:${repo}`
+  `sandbox:${SANDBOX_VERSION}:${owner}:${repo}`;
 const sandboxLockKey = (owner: string, repo: string) =>
-  `sandbox:${SANDBOX_VERSION}:${owner}:${repo}:lock`
+  `sandbox:${SANDBOX_VERSION}:${owner}:${repo}:lock`;
 
 /**
  * Atomically get existing sandboxId or acquire creation lock.
@@ -27,15 +27,15 @@ const sandboxLockKey = (owner: string, repo: string) =>
 export async function getOrLockSandbox(
   owner: string,
   repo: string,
-  lockTtlMs = 30_000
+  lockTtlMs = 30_000,
 ): Promise<
   | { type: "existing"; sandboxId: string }
   | { type: "create"; lockAcquired: true }
   | { type: "locked" }
 > {
-  const dataKey = sandboxKey(owner, repo)
-  const lockKey = sandboxLockKey(owner, repo)
-  const lockTtlSeconds = Math.ceil(lockTtlMs / 1000)
+  const dataKey = sandboxKey(owner, repo);
+  const lockKey = sandboxLockKey(owner, repo);
+  const lockTtlSeconds = Math.ceil(lockTtlMs / 1000);
 
   // Lua script: atomically check data key, then check/set lock
   const result = await redis.eval(
@@ -53,25 +53,25 @@ export async function getOrLockSandbox(
       return 'LOCKED'
     end`,
     [dataKey, lockKey],
-    [String(lockTtlSeconds)]
-  )
+    [String(lockTtlSeconds)],
+  );
 
   if (result === "LOCK_ACQUIRED") {
-    return { type: "create", lockAcquired: true }
+    return { type: "create", lockAcquired: true };
   }
   if (result === "LOCKED") {
-    return { type: "locked" }
+    return { type: "locked" };
   }
   if (result) {
     // Upstash Redis may auto-deserialize JSON, handle both cases
     const parsed =
       typeof result === "string"
         ? (JSON.parse(result) as StoredSandbox)
-        : (result as StoredSandbox)
-    return { type: "existing", sandboxId: parsed.sandboxId }
+        : (result as StoredSandbox);
+    return { type: "existing", sandboxId: parsed.sandboxId };
   }
   // Should never happen due to Lua logic, but handle gracefully
-  return { type: "locked" }
+  return { type: "locked" };
 }
 
 /**
@@ -82,16 +82,16 @@ export async function storeSandbox(
   owner: string,
   repo: string,
   sandboxId: string,
-  ttlMs = 600_000 // 10 minutes
+  ttlMs = 600_000, // 10 minutes
 ): Promise<void> {
-  const dataKey = sandboxKey(owner, repo)
-  const lockKey = sandboxLockKey(owner, repo)
-  const ttlSeconds = Math.ceil(ttlMs / 1000)
+  const dataKey = sandboxKey(owner, repo);
+  const lockKey = sandboxLockKey(owner, repo);
+  const ttlSeconds = Math.ceil(ttlMs / 1000);
 
   const data: StoredSandbox = {
     sandboxId,
     createdAt: Date.now(),
-  }
+  };
 
   // Atomically store data and release lock
   await redis.eval(
@@ -99,8 +99,8 @@ export async function storeSandbox(
     redis.call('DEL', KEYS[2])
     return 1`,
     [dataKey, lockKey],
-    [JSON.stringify(data), String(ttlSeconds)]
-  )
+    [JSON.stringify(data), String(ttlSeconds)],
+  );
 }
 
 /**
@@ -110,9 +110,9 @@ export async function storeSandbox(
 export async function removeSandboxIf(
   owner: string,
   repo: string,
-  expectedSandboxId: string
+  expectedSandboxId: string,
 ): Promise<boolean> {
-  const dataKey = sandboxKey(owner, repo)
+  const dataKey = sandboxKey(owner, repo);
 
   // Only delete if it still contains the stale sandboxId
   const result = (await redis.eval(
@@ -126,10 +126,10 @@ export async function removeSandboxIf(
     end
     return 0`,
     [dataKey],
-    [expectedSandboxId]
-  )) as number
+    [expectedSandboxId],
+  )) as number;
 
-  return result === 1
+  return result === 1;
 }
 
 /**
@@ -138,12 +138,12 @@ export async function removeSandboxIf(
 export async function extendSandboxTTL(
   owner: string,
   repo: string,
-  ttlMs = 600_000 // 10 minutes
+  ttlMs = 600_000, // 10 minutes
 ): Promise<void> {
-  const dataKey = sandboxKey(owner, repo)
-  const ttlSeconds = Math.ceil(ttlMs / 1000)
+  const dataKey = sandboxKey(owner, repo);
+  const ttlSeconds = Math.ceil(ttlMs / 1000);
 
-  await redis.expire(dataKey, ttlSeconds)
+  await redis.expire(dataKey, ttlSeconds);
 }
 
 /**
@@ -151,8 +151,8 @@ export async function extendSandboxTTL(
  */
 export async function releaseSandboxLock(
   owner: string,
-  repo: string
+  repo: string,
 ): Promise<void> {
-  const lockKey = sandboxLockKey(owner, repo)
-  await redis.del(lockKey)
+  const lockKey = sandboxLockKey(owner, repo);
+  await redis.del(lockKey);
 }

@@ -1,11 +1,11 @@
-import { stepCountIs, streamText, tool } from "ai"
-import { eq } from "drizzle-orm"
-import { revalidateTag } from "next/cache"
-import { z } from "zod"
-import { db } from "@/lib/db/client"
-import { categories, posts } from "@/lib/db/schema"
-import { updatePostIndex } from "@/lib/typesense-index"
-import { nanoid } from "@/lib/utils"
+import { stepCountIs, streamText, tool } from "ai";
+import { eq } from "drizzle-orm";
+import { revalidateTag } from "next/cache";
+import { z } from "zod";
+import { db } from "@/lib/db/client";
+import { categories, posts } from "@/lib/db/schema";
+import { updatePostIndex } from "@/lib/typesense-index";
+import { nanoid } from "@/lib/utils";
 
 export async function runCategoryAgent({
   postId,
@@ -13,10 +13,10 @@ export async function runCategoryAgent({
   repo,
   content,
 }: {
-  postId: string
-  owner: string
-  repo: string
-  content: string
+  postId: string;
+  owner: string;
+  repo: string;
+  content: string;
 }) {
   const existingCategories = await db
     .select({
@@ -25,13 +25,13 @@ export async function runCategoryAgent({
       emoji: categories.emoji,
     })
     .from(categories)
-    .where(eq(categories.owner, owner))
+    .where(eq(categories.owner, owner));
 
   const result: {
-    title: string
-    categoryId?: string
-    newCategory?: { title: string; emoji: string }
-  } = { title: "" }
+    title: string;
+    categoryId?: string;
+    newCategory?: { title: string; emoji: string };
+  } = { title: "" };
 
   const stream = streamText({
     model: "anthropic/claude-haiku-4.5",
@@ -50,8 +50,8 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         inputSchema: z.object({ title: z.string() }),
         // biome-ignore lint/suspicious/useAwait: .
         execute: async (params) => {
-          result.title = params.title
-          return { ok: true }
+          result.title = params.title;
+          return { ok: true };
         },
       }),
       setCategory: tool({
@@ -59,8 +59,8 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         inputSchema: z.object({ categoryId: z.string() }),
         // biome-ignore lint/suspicious/useAwait: .
         execute: async (params) => {
-          result.categoryId = params.categoryId
-          return { ok: true }
+          result.categoryId = params.categoryId;
+          return { ok: true };
         },
       }),
       createAndSetCategory: tool({
@@ -74,19 +74,19 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         }),
         // biome-ignore lint/suspicious/useAwait: .
         execute: async (cat) => {
-          result.newCategory = cat
-          return { ok: true }
+          result.newCategory = cat;
+          return { ok: true };
         },
       }),
     },
     stopWhen: stepCountIs(5),
-  })
+  });
 
-  await stream.finishReason
+  await stream.finishReason;
 
-  let categoryId = result.categoryId
+  let categoryId = result.categoryId;
   if (result.newCategory) {
-    const id = nanoid()
+    const id = nanoid();
     await db
       .insert(categories)
       .values({
@@ -97,26 +97,26 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         emoji: result.newCategory.emoji,
         createdAt: Date.now(),
       })
-      .onConflictDoNothing()
+      .onConflictDoNothing();
 
     const inserted = await db
       .select({ id: categories.id })
       .from(categories)
       .where(eq(categories.title, result.newCategory.title))
-      .limit(1)
-    categoryId = inserted[0]?.id
+      .limit(1);
+    categoryId = inserted[0]?.id;
   }
 
   await db
     .update(posts)
     .set({ title: result.title, ...(categoryId && { categoryId }) })
-    .where(eq(posts.id, postId))
+    .where(eq(posts.id, postId));
 
   await updatePostIndex(postId, {
     title: result.title,
     ...(categoryId && { categoryId }),
-  })
+  });
 
-  revalidateTag(`repo:${owner}:${repo}`, "max")
-  revalidateTag(`post:${postId}`, "max")
+  revalidateTag(`repo:${owner}:${repo}`, "max");
+  revalidateTag(`post:${postId}`, "max");
 }

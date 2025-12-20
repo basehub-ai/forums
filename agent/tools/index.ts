@@ -1,15 +1,15 @@
-import { extractTool, searchTool } from "@parallel-web/ai-sdk-tools"
-import { type ToolSet, tool } from "ai"
-import { join } from "path"
-import { z } from "zod"
-import type { Workspace } from "../workspace"
+import { extractTool, searchTool } from "@parallel-web/ai-sdk-tools";
+import { type ToolSet, tool } from "ai";
+import { join } from "path";
+import { z } from "zod";
+import type { Workspace } from "../workspace";
 
 export type ToolContext = {
-  workspace: Workspace
-}
+  workspace: Workspace;
+};
 
 export function getTools(context: ToolContext) {
-  return createTools(context)
+  return createTools(context);
 }
 
 function createTools(context: ToolContext) {
@@ -26,13 +26,13 @@ function createTools(context: ToolContext) {
           .number()
           .optional()
           .describe(
-            "Starting line number (1-indexed). If provided with endLine, reads exact range regardless of file size."
+            "Starting line number (1-indexed). If provided with endLine, reads exact range regardless of file size.",
           ),
         endLine: z
           .number()
           .optional()
           .describe(
-            "Ending line number (1-indexed, inclusive). If provided with startLine, reads exact range regardless of file size."
+            "Ending line number (1-indexed, inclusive). If provided with startLine, reads exact range regardless of file size.",
           ),
       }),
       outputSchema: z.object({
@@ -54,7 +54,7 @@ function createTools(context: ToolContext) {
         }),
       }),
       execute: async ({ path, startLine, endLine }) => {
-        const fullPath = join(context.workspace.path, path)
+        const fullPath = join(context.workspace.path, path);
 
         const result = await context.workspace.sandbox.runCommand("bash", [
           "-c",
@@ -98,15 +98,15 @@ function createTools(context: ToolContext) {
           fullPath,
           startLine?.toString() || "",
           endLine?.toString() || "",
-        ])
+        ]);
 
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
           result.stderr(),
-        ])
+        ]);
 
         if (stderr) {
-          console.error(`[Read Tool] Error: ${stderr}`)
+          console.error(`[Read Tool] Error: ${stderr}`);
           return {
             content: `Error: ${stderr}`,
             metadata: {
@@ -118,17 +118,17 @@ function createTools(context: ToolContext) {
               fileSize: "0",
               path: fullPath,
             },
-          }
+          };
         }
 
-        const [metadataLine, ...rest] = stdout.split("|||CONTENT|||")
-        const content = rest.join("|||CONTENT|||").trimStart()
+        const [metadataLine, ...rest] = stdout.split("|||CONTENT|||");
+        const content = rest.join("|||CONTENT|||").trimStart();
         const [totalLinesStr, fileSize, actualStartStr, actualEndStr] =
-          metadataLine.trim().split("|")
+          metadataLine.trim().split("|");
 
-        const totalLines = Number.parseInt(totalLinesStr, 10)
-        const actualStart = Number.parseInt(actualStartStr, 10)
-        const actualEnd = Number.parseInt(actualEndStr, 10)
+        const totalLines = Number.parseInt(totalLinesStr, 10);
+        const actualStart = Number.parseInt(actualStartStr, 10);
+        const actualEnd = Number.parseInt(actualEndStr, 10);
 
         return {
           content,
@@ -141,7 +141,7 @@ function createTools(context: ToolContext) {
             fileSize: fileSize || "unknown",
             path: fullPath,
           },
-        }
+        };
       },
     }),
 
@@ -157,19 +157,19 @@ function createTools(context: ToolContext) {
           .string()
           .optional()
           .describe(
-            "Path to search in (defaults to workspace root). Can be a file or directory."
+            "Path to search in (defaults to workspace root). Can be a file or directory.",
           ),
         fileType: z
           .string()
           .optional()
           .describe(
-            "File type to filter by (e.g., 'ts', 'js', 'py', 'md'). Uses ripgrep's built-in type filters."
+            "File type to filter by (e.g., 'ts', 'js', 'py', 'md'). Uses ripgrep's built-in type filters.",
           ),
         glob: z
           .string()
           .optional()
           .describe(
-            "Glob pattern to filter files (e.g., '*.tsx', 'src/**/*.ts')"
+            "Glob pattern to filter files (e.g., '*.tsx', 'src/**/*.ts')",
           ),
         caseSensitive: z
           .boolean()
@@ -180,27 +180,27 @@ function createTools(context: ToolContext) {
           .number()
           .optional()
           .describe(
-            "Number of context lines to show before and after each match"
+            "Number of context lines to show before and after each match",
           ),
         maxCount: z
           .number()
           .optional()
           .describe(
-            "Maximum number of matches per file (useful for limiting output)"
+            "Maximum number of matches per file (useful for limiting output)",
           ),
         filesWithMatches: z
           .boolean()
           .optional()
           .default(false)
           .describe(
-            "Only show file paths that contain matches, not the matching lines themselves"
+            "Only show file paths that contain matches, not the matching lines themselves",
           ),
       }),
       outputSchema: z.object({
         matches: z
           .string()
           .describe(
-            "Search results with file paths, line numbers, and matching content"
+            "Search results with file paths, line numbers, and matching content",
           ),
         summary: z.object({
           matchCount: z.number().describe("Number of matches found"),
@@ -221,61 +221,61 @@ function createTools(context: ToolContext) {
       }) => {
         const searchPath = path
           ? join(context.workspace.path, path)
-          : context.workspace.path
+          : context.workspace.path;
 
-        const args: string[] = []
+        const args: string[] = [];
 
-        args.push("--line-number")
-        args.push("--heading")
-        args.push("--color", "never")
+        args.push("--line-number");
+        args.push("--heading");
+        args.push("--color", "never");
 
         if (!caseSensitive) {
-          args.push("-i")
+          args.push("-i");
         }
 
         if (fileType) {
-          args.push("--type", fileType)
+          args.push("--type", fileType);
         }
 
         if (glob) {
-          args.push("--glob", glob)
+          args.push("--glob", glob);
         }
 
         if (contextLines !== undefined) {
-          args.push("-C", String(contextLines))
+          args.push("-C", String(contextLines));
         }
 
         if (maxCount !== undefined) {
-          args.push("--max-count", String(maxCount))
+          args.push("--max-count", String(maxCount));
         }
 
         if (filesWithMatches) {
-          args.push("--files-with-matches")
+          args.push("--files-with-matches");
         }
 
-        args.push("--", pattern, searchPath)
+        args.push("--", pattern, searchPath);
 
-        const result = await context.workspace.sandbox.runCommand("rg", args)
+        const result = await context.workspace.sandbox.runCommand("rg", args);
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
           result.stderr(),
-        ])
+        ]);
 
         if (stderr && !stderr.toLowerCase().includes("no matches")) {
-          console.error(`[Grep Tool] Warning: ${stderr}`)
+          console.error(`[Grep Tool] Warning: ${stderr}`);
         }
 
         const lines = stdout
           .trim()
           .split("\n")
-          .filter((l) => l.length > 0)
+          .filter((l) => l.length > 0);
         const fileCount = filesWithMatches
           ? lines.length
           : new Set(
               lines
                 .filter((l) => !l.startsWith(" ") && l.includes(":"))
-                .map((l) => l.split(":")[0])
-            ).size
+                .map((l) => l.split(":")[0]),
+            ).size;
 
         return {
           matches: stdout || "(no matches found)",
@@ -287,7 +287,7 @@ function createTools(context: ToolContext) {
             searchPath,
             pattern,
           },
-        }
+        };
       },
     }),
 
@@ -304,14 +304,14 @@ function createTools(context: ToolContext) {
           .number()
           .optional()
           .describe(
-            "Maximum depth to traverse. Choose based on context: 1-2 for quick overview, 3-4 for detailed exploration, 5+ for comprehensive mapping"
+            "Maximum depth to traverse. Choose based on context: 1-2 for quick overview, 3-4 for detailed exploration, 5+ for comprehensive mapping",
           ),
         includeHidden: z
           .boolean()
           .optional()
           .default(false)
           .describe(
-            "Include hidden files and directories (those starting with '.')"
+            "Include hidden files and directories (those starting with '.')",
           ),
         filesOnly: z
           .boolean()
@@ -327,7 +327,7 @@ function createTools(context: ToolContext) {
         listing: z
           .string()
           .describe(
-            "Directory tree listing showing paths relative to search root"
+            "Directory tree listing showing paths relative to search root",
           ),
         summary: z.object({
           totalItems: z.number().describe("Total number of items found"),
@@ -343,7 +343,7 @@ function createTools(context: ToolContext) {
       execute: async ({ path, depth, includeHidden, filesOnly, pattern }) => {
         const searchPath = path
           ? join(context.workspace.path, path)
-          : context.workspace.path
+          : context.workspace.path;
 
         const result = await context.workspace.sandbox.runCommand("bash", [
           "-c",
@@ -395,24 +395,24 @@ function createTools(context: ToolContext) {
           includeHidden ? "true" : "false",
           filesOnly ? "true" : "false",
           pattern || "",
-        ])
+        ]);
 
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
           result.stderr(),
-        ])
+        ]);
 
         if (stderr) {
-          console.error(`[List Tool] Warning: ${stderr}`)
+          console.error(`[List Tool] Warning: ${stderr}`);
         }
 
-        const [countsLine, ...rest] = stdout.split("|||LISTING|||")
-        const listing = rest.join("|||LISTING|||").trim()
-        const [fileCountStr, dirCountStr] = countsLine.trim().split("|")
+        const [countsLine, ...rest] = stdout.split("|||LISTING|||");
+        const listing = rest.join("|||LISTING|||").trim();
+        const [fileCountStr, dirCountStr] = countsLine.trim().split("|");
 
-        const totalFiles = Number.parseInt(fileCountStr, 10) || 0
-        const totalDirs = Number.parseInt(dirCountStr, 10) || 0
-        const lines = listing.split("\n").filter((l) => l.length > 0)
+        const totalFiles = Number.parseInt(fileCountStr, 10) || 0;
+        const totalDirs = Number.parseInt(dirCountStr, 10) || 0;
+        const lines = listing.split("\n").filter((l) => l.length > 0);
 
         return {
           listing,
@@ -423,14 +423,14 @@ function createTools(context: ToolContext) {
             searchPath,
             depth,
           },
-        }
+        };
       },
     }),
 
     WebSearch: searchTool,
     WebExtract: extractTool,
-  } satisfies ToolSet
+  } satisfies ToolSet;
 }
 
-export type AgentTools = ReturnType<typeof createTools>
-export type AgentToolName = keyof AgentTools
+export type AgentTools = ReturnType<typeof createTools>;
+export type AgentToolName = keyof AgentTools;

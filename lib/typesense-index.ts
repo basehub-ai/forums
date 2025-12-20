@@ -1,16 +1,16 @@
-import type { InferSelectModel } from "drizzle-orm"
-import type { comments, posts } from "./db/schema"
-import { typesense } from "./typesense"
+import type { InferSelectModel } from "drizzle-orm";
+import type { comments, posts } from "./db/schema";
+import { typesense } from "./typesense";
 
-type Post = InferSelectModel<typeof posts>
-type Comment = InferSelectModel<typeof comments>
+type Post = InferSelectModel<typeof posts>;
+type Comment = InferSelectModel<typeof comments>;
 
-const POSTS_COLLECTION = "posts"
-const COMMENTS_COLLECTION = "comments"
+const POSTS_COLLECTION = "posts";
+const COMMENTS_COLLECTION = "comments";
 
 export async function ensureCollections() {
-  const collections = await typesense.collections().retrieve()
-  const existingNames = new Set(collections.map((c) => c.name))
+  const collections = await typesense.collections().retrieve();
+  const existingNames = new Set(collections.map((c) => c.name));
 
   if (!existingNames.has(POSTS_COLLECTION)) {
     await typesense.collections().create({
@@ -27,7 +27,7 @@ export async function ensureCollections() {
         { name: "createdAt", type: "int64" },
       ],
       default_sorting_field: "createdAt",
-    })
+    });
   }
 
   if (!existingNames.has(COMMENTS_COLLECTION)) {
@@ -44,7 +44,7 @@ export async function ensureCollections() {
         { name: "createdAt", type: "int64" },
       ],
       default_sorting_field: "createdAt",
-    })
+    });
   }
 }
 
@@ -62,29 +62,29 @@ export async function indexPost(post: Post, commentCount: number) {
       authorId: post.authorId,
       commentCount,
       createdAt: post.createdAt,
-    })
+    });
 }
 
 export async function updatePostIndex(
   postId: string,
   updates: {
-    title?: string
-    categoryId?: string
-    commentCount?: number
-  }
+    title?: string;
+    categoryId?: string;
+    commentCount?: number;
+  },
 ) {
-  const doc: Record<string, unknown> = { id: postId }
+  const doc: Record<string, unknown> = { id: postId };
   if (updates.title !== undefined) {
-    doc.title = updates.title
+    doc.title = updates.title;
   }
   if (updates.categoryId !== undefined) {
-    doc.categoryId = updates.categoryId
+    doc.categoryId = updates.categoryId;
   }
   if (updates.commentCount !== undefined) {
-    doc.commentCount = updates.commentCount
+    doc.commentCount = updates.commentCount;
   }
 
-  await typesense.collections(POSTS_COLLECTION).documents().upsert(doc)
+  await typesense.collections(POSTS_COLLECTION).documents().upsert(doc);
 }
 
 function extractText(comment: Comment): string {
@@ -92,20 +92,20 @@ function extractText(comment: Comment): string {
     .flatMap((msg) =>
       msg.parts
         .filter((p): p is { type: "text"; text: string } => p.type === "text")
-        .map((p) => p.text)
+        .map((p) => p.text),
     )
-    .join("\n\n")
+    .join("\n\n");
 }
 
 export async function indexComment(
   comment: Comment,
   owner: string,
   repo: string,
-  isRootComment: boolean
+  isRootComment: boolean,
 ) {
-  const text = extractText(comment)
+  const text = extractText(comment);
   if (!text.trim()) {
-    return
+    return;
   }
 
   await typesense.collections(COMMENTS_COLLECTION).documents().upsert({
@@ -117,7 +117,7 @@ export async function indexComment(
     text,
     isRootComment,
     createdAt: comment.createdAt,
-  })
+  });
 }
 
 export async function deleteCommentFromIndex(commentId: string) {
@@ -125,7 +125,7 @@ export async function deleteCommentFromIndex(commentId: string) {
     await typesense
       .collections(COMMENTS_COLLECTION)
       .documents(commentId)
-      .delete()
+      .delete();
   } catch {
     // ignore if not found
   }
@@ -133,11 +133,11 @@ export async function deleteCommentFromIndex(commentId: string) {
 
 export async function deletePostFromIndex(postId: string) {
   try {
-    await typesense.collections(POSTS_COLLECTION).documents(postId).delete()
+    await typesense.collections(POSTS_COLLECTION).documents(postId).delete();
     await typesense
       .collections(COMMENTS_COLLECTION)
       .documents()
-      .delete({ filter_by: `postId:=${postId}` })
+      .delete({ filter_by: `postId:=${postId}` });
   } catch {
     // ignore if not found
   }

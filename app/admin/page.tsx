@@ -1,10 +1,10 @@
-import Link from "next/link"
+import Link from "next/link";
 
 export default function AdminPage() {
   return (
     <div className="space-y-4">
       <Link
-        className="block rounded-lg border p-4 hover:bg-muted"
+        className="hover:bg-muted block rounded-lg border p-4"
         href="/admin/llm-users"
       >
         <h2 className="font-semibold">LLM Users</h2>
@@ -13,5 +13,5 @@ export default function AdminPage() {
         </p>
       </Link>
     </div>
-  )
+  );
 }

@@ -1,40 +1,40 @@
-"use client"
+"use client";
 
-import type { FileUIPart, UIMessage } from "ai"
+import type { FileUIPart, UIMessage } from "ai";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   PaperclipIcon,
   XIcon,
-} from "lucide-react"
-import type { ComponentProps, HTMLAttributes, ReactElement } from "react"
-import { createContext, memo, useContext, useEffect, useState } from "react"
-import { Streamdown } from "streamdown"
-import { Button } from "@/components/ui/button"
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group"
+} from "lucide-react";
+import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
+import { createContext, memo, useContext, useEffect, useState } from "react";
+import { Streamdown } from "streamdown";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
-  from: UIMessage["role"]
-}
+  from: UIMessage["role"];
+};
 
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
       "group is-assistant flex w-full max-w-[95%] flex-col gap-2",
-      className
+      className,
     )}
     {...props}
   />
-)
+);
 
-export type MessageContentProps = HTMLAttributes<HTMLDivElement>
+export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
 
 export const MessageContent = ({
   children,
@@ -43,16 +43,16 @@ export const MessageContent = ({
 }: MessageContentProps) => (
   <div
     className={cn(
-      "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-foreground text-sm",
-      className
+      "text-foreground flex w-fit max-w-full min-w-0 flex-col gap-2 overflow-hidden text-sm",
+      className,
     )}
     {...props}
   >
     {children}
   </div>
-)
+);
 
-export type MessageActionsProps = ComponentProps<"div">
+export type MessageActionsProps = ComponentProps<"div">;
 
 export const MessageActions = ({
   className,
@@ -62,12 +62,12 @@ export const MessageActions = ({
   <div className={cn("flex items-center gap-1", className)} {...props}>
     {children}
   </div>
-)
+);
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
-  tooltip?: string
-  label?: string
-}
+  tooltip?: string;
+  label?: string;
+};
 
 export const MessageAction = ({
   tooltip,
@@ -82,7 +82,7 @@ export const MessageAction = ({
       {children}
       <span className="sr-only">{label || tooltip}</span>
     </Button>
-  )
+  );
 
   if (tooltip) {
     return (
@@ -94,41 +94,41 @@ export const MessageAction = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    )
+    );
   }
 
-  return button
-}
+  return button;
+};
 
 type MessageBranchContextType = {
-  currentBranch: number
-  totalBranches: number
-  goToPrevious: () => void
-  goToNext: () => void
-  branches: ReactElement[]
-  setBranches: (branches: ReactElement[]) => void
-}
+  currentBranch: number;
+  totalBranches: number;
+  goToPrevious: () => void;
+  goToNext: () => void;
+  branches: ReactElement[];
+  setBranches: (branches: ReactElement[]) => void;
+};
 
 const MessageBranchContext = createContext<MessageBranchContextType | null>(
-  null
-)
+  null,
+);
 
 const useMessageBranch = () => {
-  const context = useContext(MessageBranchContext)
+  const context = useContext(MessageBranchContext);
 
   if (!context) {
     throw new Error(
-      "MessageBranch components must be used within MessageBranch"
-    )
+      "MessageBranch components must be used within MessageBranch",
+    );
   }
 
-  return context
-}
+  return context;
+};
 
 export type MessageBranchProps = HTMLAttributes<HTMLDivElement> & {
-  defaultBranch?: number
-  onBranchChange?: (branchIndex: number) => void
-}
+  defaultBranch?: number;
+  onBranchChange?: (branchIndex: number) => void;
+};
 
 export const MessageBranch = ({
   defaultBranch = 0,
@@ -136,25 +136,25 @@ export const MessageBranch = ({
   className,
   ...props
 }: MessageBranchProps) => {
-  const [currentBranch, setCurrentBranch] = useState(defaultBranch)
-  const [branches, setBranches] = useState<ReactElement[]>([])
+  const [currentBranch, setCurrentBranch] = useState(defaultBranch);
+  const [branches, setBranches] = useState<ReactElement[]>([]);
 
   const handleBranchChange = (newBranch: number) => {
-    setCurrentBranch(newBranch)
-    onBranchChange?.(newBranch)
-  }
+    setCurrentBranch(newBranch);
+    onBranchChange?.(newBranch);
+  };
 
   const goToPrevious = () => {
     const newBranch =
-      currentBranch > 0 ? currentBranch - 1 : branches.length - 1
-    handleBranchChange(newBranch)
-  }
+      currentBranch > 0 ? currentBranch - 1 : branches.length - 1;
+    handleBranchChange(newBranch);
+  };
 
   const goToNext = () => {
     const newBranch =
-      currentBranch < branches.length - 1 ? currentBranch + 1 : 0
-    handleBranchChange(newBranch)
-  }
+      currentBranch < branches.length - 1 ? currentBranch + 1 : 0;
+    handleBranchChange(newBranch);
+  };
 
   const contextValue: MessageBranchContextType = {
     currentBranch,
@@ -163,7 +163,7 @@ export const MessageBranch = ({
     goToNext,
     branches,
     setBranches,
-  }
+  };
 
   return (
     <MessageBranchContext.Provider value={contextValue}>
@@ -172,55 +172,55 @@ export const MessageBranch = ({
         {...props}
       />
     </MessageBranchContext.Provider>
-  )
-}
+  );
+};
 
-export type MessageBranchContentProps = HTMLAttributes<HTMLDivElement>
+export type MessageBranchContentProps = HTMLAttributes<HTMLDivElement>;
 
 export const MessageBranchContent = ({
   children,
   ...props
 }: MessageBranchContentProps) => {
-  const { currentBranch, setBranches, branches } = useMessageBranch()
+  const { currentBranch, setBranches, branches } = useMessageBranch();
   const childrenArray = (
     Array.isArray(children) ? children : [children]
-  ) as ReactElement[]
+  ) as ReactElement[];
 
   // Use useEffect to update branches when they change
   useEffect(() => {
     if (branches.length !== childrenArray.length) {
-      setBranches(childrenArray)
+      setBranches(childrenArray);
     }
-  }, [childrenArray, branches, setBranches])
+  }, [childrenArray, branches, setBranches]);
 
   return childrenArray.map((branch, index) => (
     <div
       className={cn(
         "grid gap-2 overflow-hidden [&>div]:pb-0",
-        index === currentBranch ? "block" : "hidden"
+        index === currentBranch ? "block" : "hidden",
       )}
       key={branch.key}
       {...props}
     >
       {branch}
     </div>
-  ))
-}
+  ));
+};
 
 export type MessageBranchSelectorProps = HTMLAttributes<HTMLDivElement> & {
-  from: UIMessage["role"]
-}
+  from: UIMessage["role"];
+};
 
 export const MessageBranchSelector = ({
   className,
   from,
   ...props
 }: MessageBranchSelectorProps) => {
-  const { totalBranches } = useMessageBranch()
+  const { totalBranches } = useMessageBranch();
 
   // Don't render if there's only one branch
   if (totalBranches <= 1) {
-    return null
+    return null;
   }
 
   return (
@@ -229,16 +229,16 @@ export const MessageBranchSelector = ({
       orientation="horizontal"
       {...props}
     />
-  )
-}
+  );
+};
 
-export type MessageBranchPreviousProps = ComponentProps<typeof Button>
+export type MessageBranchPreviousProps = ComponentProps<typeof Button>;
 
 export const MessageBranchPrevious = ({
   children,
   ...props
 }: MessageBranchPreviousProps) => {
-  const { goToPrevious, totalBranches } = useMessageBranch()
+  const { goToPrevious, totalBranches } = useMessageBranch();
 
   return (
     <Button
@@ -252,17 +252,17 @@ export const MessageBranchPrevious = ({
     >
       {children ?? <ChevronLeftIcon size={14} />}
     </Button>
-  )
-}
+  );
+};
 
-export type MessageBranchNextProps = ComponentProps<typeof Button>
+export type MessageBranchNextProps = ComponentProps<typeof Button>;
 
 export const MessageBranchNext = ({
   children,
   className,
   ...props
 }: MessageBranchNextProps) => {
-  const { goToNext, totalBranches } = useMessageBranch()
+  const { goToNext, totalBranches } = useMessageBranch();
 
   return (
     <Button
@@ -276,52 +276,52 @@ export const MessageBranchNext = ({
     >
       {children ?? <ChevronRightIcon size={14} />}
     </Button>
-  )
-}
+  );
+};
 
-export type MessageBranchPageProps = HTMLAttributes<HTMLSpanElement>
+export type MessageBranchPageProps = HTMLAttributes<HTMLSpanElement>;
 
 export const MessageBranchPage = ({
   className,
   ...props
 }: MessageBranchPageProps) => {
-  const { currentBranch, totalBranches } = useMessageBranch()
+  const { currentBranch, totalBranches } = useMessageBranch();
 
   return (
     <ButtonGroupText
       className={cn(
-        "border-none bg-transparent text-muted-foreground shadow-none",
-        className
+        "text-muted-foreground border-none bg-transparent shadow-none",
+        className,
       )}
       {...props}
     >
       {currentBranch + 1} of {totalBranches}
     </ButtonGroupText>
-  )
-}
+  );
+};
 
-export type MessageResponseProps = ComponentProps<typeof Streamdown>
+export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className
+        className,
       )}
       {...props}
     />
   ),
-  (prevProps, nextProps) => prevProps.children === nextProps.children
-)
+  (prevProps, nextProps) => prevProps.children === nextProps.children,
+);
 
-MessageResponse.displayName = "MessageResponse"
+MessageResponse.displayName = "MessageResponse";
 
 export type MessageAttachmentProps = HTMLAttributes<HTMLDivElement> & {
-  data: FileUIPart
-  className?: string
-  onRemove?: () => void
-}
+  data: FileUIPart;
+  className?: string;
+  onRemove?: () => void;
+};
 
 export function MessageAttachment({
   data,
@@ -329,17 +329,17 @@ export function MessageAttachment({
   onRemove,
   ...props
 }: MessageAttachmentProps) {
-  const filename = data.filename || ""
+  const filename = data.filename || "";
   const mediaType =
-    data.mediaType?.startsWith("image/") && data.url ? "image" : "file"
-  const isImage = mediaType === "image"
-  const attachmentLabel = filename || (isImage ? "Image" : "Attachment")
+    data.mediaType?.startsWith("image/") && data.url ? "image" : "file";
+  const isImage = mediaType === "image";
+  const attachmentLabel = filename || (isImage ? "Image" : "Attachment");
 
   return (
     <div
       className={cn(
         "group relative size-24 overflow-hidden rounded-lg",
-        className
+        className,
       )}
       {...props}
     >
@@ -355,10 +355,10 @@ export function MessageAttachment({
           {onRemove ? (
             <Button
               aria-label="Remove attachment"
-              className="absolute top-2 right-2 size-6 rounded-full bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity hover:bg-background group-hover:opacity-100 [&>svg]:size-3"
+              className="bg-background/80 hover:bg-background absolute top-2 right-2 size-6 rounded-full p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 [&>svg]:size-3"
               onClick={(e) => {
-                e.stopPropagation()
-                onRemove()
+                e.stopPropagation();
+                onRemove();
               }}
               type="button"
               variant="ghost"
@@ -372,7 +372,7 @@ export function MessageAttachment({
         <>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex size-full shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <div className="bg-muted text-muted-foreground flex size-full shrink-0 items-center justify-center rounded-lg">
                 <PaperclipIcon className="size-4" />
               </div>
             </TooltipTrigger>
@@ -383,10 +383,10 @@ export function MessageAttachment({
           {onRemove ? (
             <Button
               aria-label="Remove attachment"
-              className="size-6 shrink-0 rounded-full p-0 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 [&>svg]:size-3"
+              className="hover:bg-accent size-6 shrink-0 rounded-full p-0 opacity-0 transition-opacity group-hover:opacity-100 [&>svg]:size-3"
               onClick={(e) => {
-                e.stopPropagation()
-                onRemove()
+                e.stopPropagation();
+                onRemove();
               }}
               type="button"
               variant="ghost"
@@ -398,10 +398,10 @@ export function MessageAttachment({
         </>
       )}
     </div>
-  )
+  );
 }
 
-export type MessageAttachmentsProps = ComponentProps<"div">
+export type MessageAttachmentsProps = ComponentProps<"div">;
 
 export function MessageAttachments({
   children,
@@ -409,23 +409,23 @@ export function MessageAttachments({
   ...props
 }: MessageAttachmentsProps) {
   if (!children) {
-    return null
+    return null;
   }
 
   return (
     <div
       className={cn(
         "ml-auto flex w-fit flex-wrap items-start gap-2",
-        className
+        className,
       )}
       {...props}
     >
       {children}
     </div>
-  )
+  );
 }
 
-export type MessageToolbarProps = ComponentProps<"div">
+export type MessageToolbarProps = ComponentProps<"div">;
 
 export const MessageToolbar = ({
   className,
@@ -435,10 +435,10 @@ export const MessageToolbar = ({
   <div
     className={cn(
       "mt-4 flex w-full items-center justify-between gap-4",
-      className
+      className,
     )}
     {...props}
   >
     {children}
   </div>
-)
+);

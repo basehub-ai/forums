@@ -1,32 +1,32 @@
-import type { InferSelectModel } from "drizzle-orm"
-import Link from "next/link"
-import type { AgentUIMessage } from "@/agent/types"
+import type { InferSelectModel } from "drizzle-orm";
+import Link from "next/link";
+import type { AgentUIMessage } from "@/agent/types";
 import type {
   comments as commentsSchema,
   reactions as reactionsSchema,
-} from "@/lib/db/schema"
-import { cn } from "@/lib/utils"
-import { CommentContent } from "./comment-content"
-import { PostComposer } from "./post-composer"
-import { ReactionButtons } from "./reactions"
-import { StreamingContent } from "./streaming-content"
+} from "@/lib/db/schema";
+import { cn } from "@/lib/utils";
+import { CommentContent } from "./comment-content";
+import { PostComposer } from "./post-composer";
+import { ReactionButtons } from "./reactions";
+import { StreamingContent } from "./streaming-content";
 
-type Comment = InferSelectModel<typeof commentsSchema>
-type Reaction = InferSelectModel<typeof reactionsSchema>
+type Comment = InferSelectModel<typeof commentsSchema>;
+type Reaction = InferSelectModel<typeof reactionsSchema>;
 
 type AuthorInfo = {
-  name: string
-  username: string
-  image: string
-  isLlm: boolean
-}
+  name: string;
+  username: string;
+  image: string;
+  isLlm: boolean;
+};
 
 type AskingOption = {
-  id: string
-  name: string
-  image?: string | null
-  isDefault?: boolean
-}
+  id: string;
+  name: string;
+  image?: string | null;
+  isDefault?: boolean;
+};
 
 function CommentItem({
   owner,
@@ -44,36 +44,36 @@ function CommentItem({
   isReplying,
   askingOptions,
 }: {
-  owner: string
-  repo: string
-  comment: Comment
-  commentId: string
-  reactions: Reaction[]
-  isRootComment: boolean
-  author: AuthorInfo
-  commentNumber: string
-  depth?: number
-  children?: React.ReactNode
-  onReply?: (commentId: string) => void
-  onCancelReply?: () => void
-  isReplying?: boolean
-  askingOptions?: AskingOption[]
+  owner: string;
+  repo: string;
+  comment: Comment;
+  commentId: string;
+  reactions: Reaction[];
+  isRootComment: boolean;
+  author: AuthorInfo;
+  commentNumber: string;
+  depth?: number;
+  children?: React.ReactNode;
+  onReply?: (commentId: string) => void;
+  onCancelReply?: () => void;
+  isReplying?: boolean;
+  askingOptions?: AskingOption[];
 }) {
   const profileUrl = author.isLlm
     ? `/llm/${author.username}`
-    : `/user/${author.username}`
+    : `/user/${author.username}`;
 
-  const canReply = depth === 0 && !isRootComment && onReply
+  const canReply = depth === 0 && !isRootComment && onReply;
 
   return (
     <div
       className={cn("relative", {
-        "ml-6 border-muted border-l-2 pl-4": depth > 0,
+        "border-muted ml-6 border-l-2 pl-4": depth > 0,
       })}
       id={commentNumber}
     >
       <div
-        className={cn("border bg-card p-4", {
+        className={cn("bg-card border p-4", {
           "rounded-lg": !canReply,
           "rounded-t-lg": canReply,
         })}
@@ -87,7 +87,7 @@ function CommentItem({
             />
           </Link>
           <Link
-            className="font-semibold text-sm hover:underline"
+            className="text-sm font-semibold hover:underline"
             href={profileUrl}
           >
             {author.name}
@@ -134,7 +134,7 @@ function CommentItem({
           ) : null
         ) : (
           <button
-            className="-mt-px w-full rounded-b-lg border border-t-0 bg-card px-4 py-3 text-left text-muted-foreground text-sm hover:bg-muted/50"
+            className="bg-card text-muted-foreground hover:bg-muted/50 -mt-px w-full rounded-b-lg border border-t-0 px-4 py-3 text-left text-sm"
             onClick={() => onReply(commentId)}
             type="button"
           >
@@ -143,14 +143,14 @@ function CommentItem({
         )
       ) : null}
     </div>
-  )
+  );
 }
 
 function buildCommentTree(
   comments: Comment[],
-  threadCommentId: string | null
+  threadCommentId: string | null,
 ): Comment[] {
-  return comments.filter((c) => c.threadCommentId === threadCommentId)
+  return comments.filter((c) => c.threadCommentId === threadCommentId);
 }
 
 function CommentTreeRecursive({
@@ -168,30 +168,30 @@ function CommentTreeRecursive({
   onCancelReply,
   askingOptions,
 }: {
-  owner: string
-  repo: string
-  comments: Comment[]
-  threadCommentId: string | null
-  reactionsByComment: Record<string, Reaction[]>
-  authorsById: Record<string, AuthorInfo>
-  rootCommentId: string | null
-  commentNumbers: Map<string, string>
-  depth: number
-  replyingToId?: string | null
-  onReply?: (commentId: string) => void
-  onCancelReply?: () => void
-  askingOptions?: AskingOption[]
+  owner: string;
+  repo: string;
+  comments: Comment[];
+  threadCommentId: string | null;
+  reactionsByComment: Record<string, Reaction[]>;
+  authorsById: Record<string, AuthorInfo>;
+  rootCommentId: string | null;
+  commentNumbers: Map<string, string>;
+  depth: number;
+  replyingToId?: string | null;
+  onReply?: (commentId: string) => void;
+  onCancelReply?: () => void;
+  askingOptions?: AskingOption[];
 }) {
-  const children = buildCommentTree(comments, threadCommentId)
+  const children = buildCommentTree(comments, threadCommentId);
 
   return (
     <>
       {children.map((comment) => {
-        const author = authorsById[comment.authorId]
+        const author = authorsById[comment.authorId];
         if (!author) {
-          return null
+          return null;
         }
-        const commentNumber = commentNumbers.get(comment.id) ?? "?"
+        const commentNumber = commentNumbers.get(comment.id) ?? "?";
         return (
           <CommentItem
             askingOptions={askingOptions}
@@ -227,10 +227,10 @@ function CommentTreeRecursive({
               />
             ) : null}
           </CommentItem>
-        )
+        );
       })}
     </>
-  )
+  );
 }
 
 export function CommentThread({
@@ -246,24 +246,24 @@ export function CommentThread({
   onCancelReply,
   askingOptions,
 }: {
-  owner: string
-  repo: string
-  comments: Comment[]
-  authorsById: Record<string, AuthorInfo>
-  reactions: Reaction[]
-  rootCommentId: string | null
-  commentNumbers: Map<string, string>
-  replyingToId?: string | null
-  onReply?: (commentId: string) => void
-  onCancelReply?: () => void
-  askingOptions?: AskingOption[]
+  owner: string;
+  repo: string;
+  comments: Comment[];
+  authorsById: Record<string, AuthorInfo>;
+  reactions: Reaction[];
+  rootCommentId: string | null;
+  commentNumbers: Map<string, string>;
+  replyingToId?: string | null;
+  onReply?: (commentId: string) => void;
+  onCancelReply?: () => void;
+  askingOptions?: AskingOption[];
 }) {
-  const reactionsByComment: Record<string, Reaction[]> = {}
+  const reactionsByComment: Record<string, Reaction[]> = {};
   for (const reaction of reactions) {
     if (!reactionsByComment[reaction.commentId]) {
-      reactionsByComment[reaction.commentId] = []
+      reactionsByComment[reaction.commentId] = [];
     }
-    reactionsByComment[reaction.commentId].push(reaction)
+    reactionsByComment[reaction.commentId].push(reaction);
   }
 
   return (
@@ -284,5 +284,5 @@ export function CommentThread({
         threadCommentId={null}
       />
     </div>
-  )
+  );
 }

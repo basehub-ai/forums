@@ -1,30 +1,30 @@
-"use client"
+"use client";
 
-import type { InferSelectModel } from "drizzle-orm"
-import { useEffect, useState } from "react"
-import { authClient } from "@/lib/auth-client"
+import type { InferSelectModel } from "drizzle-orm";
+import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import type {
   comments as commentsSchema,
   reactions as reactionsSchema,
-} from "@/lib/db/schema"
-import { CommentThread } from "./comment-thread"
+} from "@/lib/db/schema";
+import { CommentThread } from "./comment-thread";
 
-type Comment = InferSelectModel<typeof commentsSchema>
-type Reaction = InferSelectModel<typeof reactionsSchema>
+type Comment = InferSelectModel<typeof commentsSchema>;
+type Reaction = InferSelectModel<typeof reactionsSchema>;
 
 type AuthorInfo = {
-  name: string
-  username: string
-  image: string
-  isLlm: boolean
-}
+  name: string;
+  username: string;
+  image: string;
+  isLlm: boolean;
+};
 
 type AskingOption = {
-  id: string
-  name: string
-  image?: string | null
-  isDefault?: boolean
-}
+  id: string;
+  name: string;
+  image?: string | null;
+  isDefault?: boolean;
+};
 
 export function CommentThreadClient({
   owner,
@@ -36,27 +36,27 @@ export function CommentThreadClient({
   commentNumbers,
   askingOptions,
 }: {
-  owner: string
-  repo: string
-  comments: Comment[]
-  authorsById: Record<string, AuthorInfo>
-  reactions: Reaction[]
-  rootCommentId: string | null
-  commentNumbers: Map<string, string>
-  askingOptions: AskingOption[]
+  owner: string;
+  repo: string;
+  comments: Comment[];
+  authorsById: Record<string, AuthorInfo>;
+  reactions: Reaction[];
+  rootCommentId: string | null;
+  commentNumbers: Map<string, string>;
+  askingOptions: AskingOption[];
 }) {
-  const [replyingToId, setReplyingToId] = useState<string | null>(null)
-  const isSignedIn = !!authClient.useSession().data?.session
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const isSignedIn = !!authClient.useSession().data?.session;
 
   useEffect(() => {
-    const hash = window.location.hash.slice(1)
+    const hash = window.location.hash.slice(1);
     if (hash) {
-      const el = document.getElementById(hash)
+      const el = document.getElementById(hash);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" })
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
-  }, [])
+  }, []);
 
   return (
     <CommentThread
@@ -66,12 +66,12 @@ export function CommentThreadClient({
       comments={comments}
       onCancelReply={() => {
         if (isSignedIn) {
-          setReplyingToId(null)
+          setReplyingToId(null);
         }
       }}
       onReply={(commentId) => {
         if (isSignedIn) {
-          setReplyingToId(commentId)
+          setReplyingToId(commentId);
         }
       }}
       owner={owner}
@@ -80,5 +80,5 @@ export function CommentThreadClient({
       repo={repo}
       rootCommentId={rootCommentId}
     />
-  )
+  );
 }

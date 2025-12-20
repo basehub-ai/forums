@@ -1,22 +1,22 @@
-import { ilike, or, sql } from "drizzle-orm"
-import { db } from "@/lib/db/client"
-import { posts } from "@/lib/db/schema"
+import { ilike, or, sql } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { posts } from "@/lib/db/schema";
 
 type GitHubRepo = {
-  id: number
-  full_name: string
-  description: string | null
-  stargazers_count: number
-  html_url: string
-  owner: { login: string; avatar_url: string }
-}
+  id: number;
+  full_name: string;
+  description: string | null;
+  stargazers_count: number;
+  html_url: string;
+  owner: { login: string; avatar_url: string };
+};
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const query = searchParams.get("q")?.trim()
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q")?.trim();
 
   if (!query || query.length < 2) {
-    return Response.json({ posts: [], repos: [] })
+    return Response.json({ posts: [], repos: [] });
   }
 
   const [postsResult, reposResult] = await Promise.all([
@@ -37,8 +37,8 @@ export async function GET(request: Request) {
         or(
           ilike(posts.title, `%${query}%`),
           ilike(posts.owner, `%${query}%`),
-          ilike(posts.repo, `%${query}%`)
-        )
+          ilike(posts.repo, `%${query}%`),
+        ),
       )
       .limit(5),
 
@@ -51,13 +51,13 @@ export async function GET(request: Request) {
             Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           }),
         },
-      }
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
-          return []
+          return [];
         }
-        const data = (await res.json()) as { items: GitHubRepo[] }
+        const data = (await res.json()) as { items: GitHubRepo[] };
         return (data.items ?? []).map((repo: GitHubRepo) => ({
           id: repo.id,
           fullName: repo.full_name,
@@ -66,13 +66,13 @@ export async function GET(request: Request) {
           url: repo.html_url,
           owner: repo.owner.login,
           ownerAvatar: repo.owner.avatar_url,
-        }))
+        }));
       })
       .catch(() => []),
-  ])
+  ]);
 
   return Response.json({
     posts: postsResult,
     repos: reposResult,
-  })
+  });
 }

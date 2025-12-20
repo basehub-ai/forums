@@ -1,151 +1,151 @@
-import { Sandbox } from "@vercel/sandbox"
-import ms from "ms"
-import { ResultAsync } from "neverthrow"
+import { Sandbox } from "@vercel/sandbox";
+import ms from "ms";
+import { ResultAsync } from "neverthrow";
 import {
   extendSandboxTTL,
   getOrLockSandbox,
   releaseSandboxLock,
   removeSandboxIf,
   storeSandbox,
-} from "@/lib/redis"
+} from "@/lib/redis";
 export type GitContext = {
-  owner: string
-  repo: string
-  ref?: string
-}
+  owner: string;
+  repo: string;
+  ref?: string;
+};
 
-const timeout = ms("10m")
-const CREATION_LOCK_TTL = ms("30s")
-const MAX_RETRIES = 10
-const BASE_RETRY_DELAY = 100
+const timeout = ms("10m");
+const CREATION_LOCK_TTL = ms("30s");
+const MAX_RETRIES = 10;
+const BASE_RETRY_DELAY = 100;
 
 export type Workspace = {
-  path: string
-  sandbox: Sandbox
-}
+  path: string;
+  sandbox: Sandbox;
+};
 
-const cleanupRegex = /^\.\.\//
+const cleanupRegex = /^\.\.\//;
 
 const sleep = (duration: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, duration))
+  new Promise((resolve) => setTimeout(resolve, duration));
 
 async function tryRetrieveSandbox(sandboxId: string): Promise<Sandbox | null> {
   const result = await ResultAsync.fromPromise(
     Sandbox.get({ sandboxId }),
-    (e) => e
+    (e) => e,
   ).mapErr((err) => {
-    console.error(`Failed to retrieve sandbox ${sandboxId}:`, err)
-    return err
-  })
+    console.error(`Failed to retrieve sandbox ${sandboxId}:`, err);
+    return err;
+  });
 
-  return result.isOk() ? result.value : null
+  return result.isOk() ? result.value : null;
 }
 
 async function createSandbox(): Promise<Sandbox> {
   const result = await ResultAsync.fromPromise(
     Sandbox.create({ resources: { vcpus: 2 }, timeout }),
-    (e) => e
+    (e) => e,
   ).mapErr((err) => {
-    console.error("Failed to create sandbox:", err)
-    return err
-  })
+    console.error("Failed to create sandbox:", err);
+    return err;
+  });
 
   if (result.isOk()) {
-    return result.value
+    return result.value;
   }
-  throw new Error("Failed to create sandbox")
+  throw new Error("Failed to create sandbox");
 }
 
 async function extendSandboxTimeout(
   sandbox: Sandbox,
-  gitContext: GitContext
+  gitContext: GitContext,
 ): Promise<void> {
   await ResultAsync.fromPromise(
     sandbox.extendTimeout(timeout),
-    (e) => e
+    (e) => e,
   ).mapErr((err) => {
-    console.error(`Failed to extend timeout for ${sandbox.sandboxId}:`, err)
-    return err
-  })
+    console.error(`Failed to extend timeout for ${sandbox.sandboxId}:`, err);
+    return err;
+  });
 
-  await extendSandboxTTL(gitContext.owner, gitContext.repo, timeout)
+  await extendSandboxTTL(gitContext.owner, gitContext.repo, timeout);
 }
 
 async function getOrCreateSharedSandbox(
   gitContext: GitContext,
-  retryCount = 0
+  retryCount = 0,
 ): Promise<Sandbox> {
-  const { owner, repo } = gitContext
+  const { owner, repo } = gitContext;
 
-  const result = await getOrLockSandbox(owner, repo, CREATION_LOCK_TTL)
+  const result = await getOrLockSandbox(owner, repo, CREATION_LOCK_TTL);
 
   if (result.type === "existing") {
-    const sandbox = await tryRetrieveSandbox(result.sandboxId)
+    const sandbox = await tryRetrieveSandbox(result.sandboxId);
 
     if (sandbox) {
-      await extendSandboxTimeout(sandbox, gitContext)
-      return sandbox
+      await extendSandboxTimeout(sandbox, gitContext);
+      return sandbox;
     }
     console.warn(
-      `Stale sandbox ${result.sandboxId} for ${owner}/${repo}, removing`
-    )
-    await removeSandboxIf(owner, repo, result.sandboxId)
-    return getOrCreateSharedSandbox(gitContext, retryCount)
+      `Stale sandbox ${result.sandboxId} for ${owner}/${repo}, removing`,
+    );
+    await removeSandboxIf(owner, repo, result.sandboxId);
+    return getOrCreateSharedSandbox(gitContext, retryCount);
   }
 
   if (result.type === "create") {
     try {
-      const sandbox = await createSandbox()
+      const sandbox = await createSandbox();
 
-      await storeSandbox(owner, repo, sandbox.sandboxId, timeout)
+      await storeSandbox(owner, repo, sandbox.sandboxId, timeout);
 
       console.log(
-        `Created shared sandbox ${sandbox.sandboxId} for ${owner}/${repo}`
-      )
+        `Created shared sandbox ${sandbox.sandboxId} for ${owner}/${repo}`,
+      );
 
-      return sandbox
+      return sandbox;
     } catch (error) {
-      await releaseSandboxLock(owner, repo)
-      throw error
+      await releaseSandboxLock(owner, repo);
+      throw error;
     }
   }
 
   if (retryCount >= MAX_RETRIES) {
     throw new Error(
-      `Timed out waiting for sandbox creation for ${owner}/${repo}`
-    )
+      `Timed out waiting for sandbox creation for ${owner}/${repo}`,
+    );
   }
 
-  const delay = BASE_RETRY_DELAY * 2 ** retryCount
-  const jitter = Math.random() * delay * 0.1
-  await sleep(delay + jitter)
+  const delay = BASE_RETRY_DELAY * 2 ** retryCount;
+  const jitter = Math.random() * delay * 0.1;
+  await sleep(delay + jitter);
 
-  return getOrCreateSharedSandbox(gitContext, retryCount + 1)
+  return getOrCreateSharedSandbox(gitContext, retryCount + 1);
 }
 
 export const getWorkspace = async ({
   sandboxId,
   gitContext,
 }: {
-  sandboxId: string | null
-  gitContext: GitContext
+  sandboxId: string | null;
+  gitContext: GitContext;
 }): Promise<Workspace> => {
-  let sandbox: Sandbox | null = null
+  let sandbox: Sandbox | null = null;
 
   if (sandboxId) {
-    sandbox = await tryRetrieveSandbox(sandboxId)
+    sandbox = await tryRetrieveSandbox(sandboxId);
     if (sandbox) {
-      await extendSandboxTimeout(sandbox, gitContext)
+      await extendSandboxTimeout(sandbox, gitContext);
     }
   }
 
   if (!sandbox) {
-    sandbox = await getOrCreateSharedSandbox(gitContext)
+    sandbox = await getOrCreateSharedSandbox(gitContext);
   }
-  const repoUrl = `https://github.com/${gitContext.owner}/${gitContext.repo}.git`
-  const repoDir = `${gitContext.repo}.git` // Use .git suffix for bare repo
-  const providedRef = gitContext.ref
-  const worktreesBase = `${gitContext.repo}-worktrees`
+  const repoUrl = `https://github.com/${gitContext.owner}/${gitContext.repo}.git`;
+  const repoDir = `${gitContext.repo}.git`; // Use .git suffix for bare repo
+  const providedRef = gitContext.ref;
+  const worktreesBase = `${gitContext.repo}-worktrees`;
 
   const result = await sandbox.runCommand({
     cmd: "bash",
@@ -218,23 +218,23 @@ export const getWorkspace = async ({
       worktreesBase,
       providedRef || "",
     ],
-  })
+  });
 
-  const stdout = await result.stdout()
-  const stderr = await result.stderr()
+  const stdout = await result.stdout();
+  const stderr = await result.stderr();
 
   if (stderr) {
-    console.error(`Git initialization stderr: ${stderr}`)
+    console.error(`Git initialization stderr: ${stderr}`);
   }
 
-  const worktreePath = stdout.trim().replace(cleanupRegex, "")
+  const worktreePath = stdout.trim().replace(cleanupRegex, "");
 
   if (!worktreePath) {
     console.error(
-      `Empty worktree path! stdout: "${stdout}", stderr: "${stderr}"`
-    )
-    throw new Error("Failed to initialize git worktree")
+      `Empty worktree path! stdout: "${stdout}", stderr: "${stderr}"`,
+    );
+    throw new Error("Failed to initialize git worktree");
   }
 
-  return { path: worktreePath, sandbox }
-}
+  return { path: worktreePath, sandbox };
+};

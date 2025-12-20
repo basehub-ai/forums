@@ -1,15 +1,15 @@
-"use server"
+"use server";
 
-import { waitUntil } from "@vercel/functions"
-import { and, eq, sql } from "drizzle-orm"
-import { updateTag } from "next/cache"
-import { headers } from "next/headers"
-import { start } from "workflow/api"
-import { runCategoryAgent } from "@/agent/category-agent"
-import { responseAgent } from "@/agent/response-agent"
-import type { AgentUIMessage } from "@/agent/types"
-import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
-import { db } from "@/lib/db/client"
+import { waitUntil } from "@vercel/functions";
+import { and, eq, sql } from "drizzle-orm";
+import { updateTag } from "next/cache";
+import { headers } from "next/headers";
+import { start } from "workflow/api";
+import { runCategoryAgent } from "@/agent/category-agent";
+import { responseAgent } from "@/agent/response-agent";
+import type { AgentUIMessage } from "@/agent/types";
+import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth";
+import { db } from "@/lib/db/client";
 import {
   categories,
   comments,
@@ -17,60 +17,64 @@ import {
   postCounters,
   posts,
   reactions,
-} from "@/lib/db/schema"
-import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
-import { nanoid } from "@/lib/utils"
-import { run } from "../run"
+} from "@/lib/db/schema";
+import {
+  indexComment,
+  indexPost,
+  updatePostIndex,
+} from "@/lib/typesense-index";
+import { nanoid } from "@/lib/utils";
+import { run } from "../run";
 
 function extractMentions(content: AgentUIMessage): string[] {
-  const mentions = new Set<string>()
+  const mentions = new Set<string>();
   for (const part of content.parts) {
     if (part.type === "text") {
-      const matches = part.text.matchAll(/@([a-zA-Z0-9_-]+)/g)
+      const matches = part.text.matchAll(/@([a-zA-Z0-9_-]+)/g);
       for (const match of matches) {
-        mentions.add(match[1])
+        mentions.add(match[1]);
       }
     }
   }
-  return [...mentions]
+  return [...mentions];
 }
 
 async function getSessionOrThrow() {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
-    throw new Error("Unauthorized")
+    throw new Error("Unauthorized");
   }
-  return session
+  return session;
 }
 
 async function getGitHubUsername(
-  image: string | null | undefined
+  image: string | null | undefined,
 ): Promise<string | null> {
-  const userId = extractGitHubUserId(image)
+  const userId = extractGitHubUserId(image);
   if (!userId) {
-    return null
+    return null;
   }
-  const user = await gitHubUserByIdLoader.load(userId)
-  return user?.login ?? null
+  const user = await gitHubUserByIdLoader.load(userId);
+  return user?.login ?? null;
 }
 
 export async function createPost(data: {
-  owner: string
-  repo: string
-  content: AgentUIMessage
-  seekingAnswerFrom?: string | null
+  owner: string;
+  repo: string;
+  content: AgentUIMessage;
+  seekingAnswerFrom?: string | null;
 }) {
-  const session = await getSessionOrThrow()
-  const authorUsername = await getGitHubUsername(session.user.image)
-  const now = Date.now()
-  const postId = nanoid()
-  const commentId = nanoid()
+  const session = await getSessionOrThrow();
+  const authorUsername = await getGitHubUsername(session.user.image);
+  const now = Date.now();
+  const postId = nanoid();
+  const commentId = nanoid();
 
   const [llm, newPost] = await Promise.all([
     run(
       async () => {
         if (data.seekingAnswerFrom === "human") {
-          return null
+          return null;
         }
         if (data.seekingAnswerFrom?.startsWith("llm_")) {
           return await db
@@ -78,16 +82,16 @@ export async function createPost(data: {
             .from(llmUsers)
             .where(eq(llmUsers.id, data.seekingAnswerFrom))
             .limit(1)
-            .then((r) => r[0] ?? null)
+            .then((r) => r[0] ?? null);
         }
         return await db
           .select()
           .from(llmUsers)
           .where(eq(llmUsers.isDefault, true))
           .limit(1)
-          .then((r) => r[0] ?? null)
+          .then((r) => r[0] ?? null);
       },
-      { noCatch: true }
+      { noCatch: true },
     ),
     db
       .insert(postCounters)
@@ -111,7 +115,7 @@ export async function createPost(data: {
             updatedAt: now,
           })
           .returning()
-          .then((p) => p[0])
+          .then((p) => p[0]);
       }),
     db.insert(comments).values({
       id: commentId,
@@ -124,15 +128,15 @@ export async function createPost(data: {
       createdAt: now,
       updatedAt: now,
     }),
-  ])
+  ]);
 
-  let llmCommentId: string | undefined
-  let streamId: string | undefined
+  let llmCommentId: string | undefined;
+  let streamId: string | undefined;
 
   if (llm) {
-    const newCommentId = nanoid()
-    llmCommentId = nanoid()
-    streamId = String(now)
+    const newCommentId = nanoid();
+    llmCommentId = nanoid();
+    streamId = String(now);
 
     await Promise.all([
       db.insert(comments).values({
@@ -155,15 +159,15 @@ export async function createPost(data: {
           model: llm.model,
         },
       ]).then(({ runId }) =>
-        db.update(comments).set({ runId }).where(eq(comments.id, newCommentId))
+        db.update(comments).set({ runId }).where(eq(comments.id, newCommentId)),
       ),
-    ])
+    ]);
   }
 
   const contentText = data.content.parts
     .filter((p): p is { type: "text"; text: string } => p.type === "text")
     .map((p) => p.text)
-    .join("\n\n")
+    .join("\n\n");
 
   if (contentText) {
     waitUntil(
@@ -172,8 +176,8 @@ export async function createPost(data: {
         owner: data.owner,
         repo: data.repo,
         content: contentText,
-      })
-    )
+      }),
+    );
   }
 
   waitUntil(
@@ -182,23 +186,23 @@ export async function createPost(data: {
         .select()
         .from(posts)
         .where(eq(posts.id, postId))
-        .limit(1)
+        .limit(1);
       if (post) {
-        await indexPost(post, 1)
+        await indexPost(post, 1);
         const [comment] = await db
           .select()
           .from(comments)
           .where(eq(comments.id, commentId))
-          .limit(1)
+          .limit(1);
         if (comment) {
-          await indexComment(comment, data.owner, data.repo, true)
+          await indexComment(comment, data.owner, data.repo, true);
         }
       }
-    })()
-  )
+    })(),
+  );
 
-  updateTag(`repo:${data.owner}:${data.repo}`)
-  updateTag(`post:${postId}`)
+  updateTag(`repo:${data.owner}:${data.repo}`);
+  updateTag(`post:${postId}`);
 
   return {
     postId,
@@ -206,19 +210,19 @@ export async function createPost(data: {
     commentId,
     ...(llmCommentId && { llmCommentId }),
     ...(streamId && { streamId }),
-  }
+  };
 }
 
 export async function createComment(data: {
-  postId: string
-  content: AgentUIMessage
-  threadCommentId?: string
-  seekingAnswerFrom?: string | null
+  postId: string;
+  content: AgentUIMessage;
+  threadCommentId?: string;
+  seekingAnswerFrom?: string | null;
 }) {
-  const session = await getSessionOrThrow()
-  const authorUsername = await getGitHubUsername(session.user.image)
-  const now = Date.now()
-  const commentId = nanoid()
+  const session = await getSessionOrThrow();
+  const authorUsername = await getGitHubUsername(session.user.image);
+  const now = Date.now();
+  const commentId = nanoid();
 
   const [post, llm] = await Promise.all([
     db
@@ -230,7 +234,7 @@ export async function createComment(data: {
     run(
       async () => {
         if (data.seekingAnswerFrom === "human") {
-          return null
+          return null;
         }
         if (data.seekingAnswerFrom?.startsWith("llm_")) {
           return await db
@@ -238,33 +242,33 @@ export async function createComment(data: {
             .from(llmUsers)
             .where(eq(llmUsers.id, data.seekingAnswerFrom))
             .limit(1)
-            .then((r) => r[0] ?? null)
+            .then((r) => r[0] ?? null);
         }
         return await db
           .select()
           .from(llmUsers)
           .where(eq(llmUsers.isDefault, true))
           .limit(1)
-          .then((r) => r[0] ?? null)
+          .then((r) => r[0] ?? null);
       },
-      { noCatch: true }
+      { noCatch: true },
     ),
-  ])
+  ]);
 
   if (!post) {
-    throw new Error("Post not found")
+    throw new Error("Post not found");
   }
 
-  const isOp = session.user.id === post.authorId
-  const isTopLevel = !data.threadCommentId
+  const isOp = session.user.id === post.authorId;
+  const isTopLevel = !data.threadCommentId;
   // LLM replies to same thread as user (flat), or creates new thread if user is OP posting top-level
   const llmThreadCommentId =
     llm && !(isTopLevel && isOp)
       ? (data.threadCommentId ?? commentId)
-      : undefined
+      : undefined;
 
-  let llmCommentId: string | undefined
-  let streamId: string | undefined
+  let llmCommentId: string | undefined;
+  let streamId: string | undefined;
 
   const promises: Promise<unknown>[] = [
     db.insert(comments).values({
@@ -279,12 +283,12 @@ export async function createComment(data: {
       createdAt: now,
       updatedAt: now,
     }),
-  ]
+  ];
 
   if (llm) {
-    const newCommentId = nanoid()
-    llmCommentId = newCommentId
-    streamId = String(now)
+    const newCommentId = nanoid();
+    llmCommentId = newCommentId;
+    streamId = String(now);
 
     promises.push(
       db.insert(comments).values({
@@ -308,12 +312,12 @@ export async function createComment(data: {
           model: llm.model,
         },
       ]).then(({ runId }) =>
-        db.update(comments).set({ runId }).where(eq(comments.id, newCommentId))
-      )
-    )
+        db.update(comments).set({ runId }).where(eq(comments.id, newCommentId)),
+      ),
+    );
   }
 
-  await Promise.all(promises)
+  await Promise.all(promises);
 
   waitUntil(
     (async () => {
@@ -321,27 +325,27 @@ export async function createComment(data: {
         .select()
         .from(comments)
         .where(eq(comments.id, commentId))
-        .limit(1)
+        .limit(1);
       if (comment) {
-        await indexComment(comment, post.owner, post.repo, false)
+        await indexComment(comment, post.owner, post.repo, false);
       }
       const commentCount = await db
         .select({ count: sql<number>`count(*)` })
         .from(comments)
         .where(eq(comments.postId, data.postId))
-        .then((r) => Number(r[0]?.count ?? 0))
-      await updatePostIndex(data.postId, { commentCount })
-    })()
-  )
+        .then((r) => Number(r[0]?.count ?? 0));
+      await updatePostIndex(data.postId, { commentCount });
+    })(),
+  );
 
-  updateTag(`repo:${post.owner}:${post.repo}`)
-  updateTag(`post:${post.id}`)
+  updateTag(`repo:${post.owner}:${post.repo}`);
+  updateTag(`post:${post.id}`);
 
   return {
     commentId,
     ...(llmCommentId && { llmCommentId }),
     ...(streamId && { streamId }),
-  }
+  };
 }
 
 export async function addReaction({
@@ -351,13 +355,13 @@ export async function addReaction({
   commentId,
   type,
 }: {
-  owner: string
-  repo: string
-  postId: string
-  commentId: string
-  type: string
+  owner: string;
+  repo: string;
+  postId: string;
+  commentId: string;
+  type: string;
 }) {
-  const session = await getSessionOrThrow()
+  const session = await getSessionOrThrow();
   await db
     .insert(reactions)
     .values({
@@ -367,9 +371,9 @@ export async function addReaction({
       type,
       createdAt: Date.now(),
     })
-    .onConflictDoNothing()
-  updateTag(`repo:${owner}:${repo}`)
-  updateTag(`post:${postId}`)
+    .onConflictDoNothing();
+  updateTag(`repo:${owner}:${repo}`);
+  updateTag(`post:${postId}`);
 }
 
 export async function removeReaction({
@@ -379,24 +383,24 @@ export async function removeReaction({
   commentId,
   type,
 }: {
-  owner: string
-  repo: string
-  postId: string
-  commentId: string
-  type: string
+  owner: string;
+  repo: string;
+  postId: string;
+  commentId: string;
+  type: string;
 }) {
-  const session = await getSessionOrThrow()
+  const session = await getSessionOrThrow();
   await db
     .delete(reactions)
     .where(
       and(
         eq(reactions.userId, session.user.id),
         eq(reactions.commentId, commentId),
-        eq(reactions.type, type)
-      )
-    )
-  updateTag(`repo:${owner}:${repo}`)
-  updateTag(`post:${postId}`)
+        eq(reactions.type, type),
+      ),
+    );
+  updateTag(`repo:${owner}:${repo}`);
+  updateTag(`post:${postId}`);
 }
 
 export async function getPostMetadata(postId: string) {
@@ -409,18 +413,18 @@ export async function getPostMetadata(postId: string) {
     })
     .from(posts)
     .where(eq(posts.id, postId))
-    .limit(1)
+    .limit(1);
 
   if (!post) {
-    throw new Error("Post not found")
+    throw new Error("Post not found");
   }
 
   if (typeof post.title !== "string") {
-    return null
+    return null;
   }
 
-  updateTag(`repo:${post.owner}:${post.repo}`)
-  updateTag(`post:${postId}`)
+  updateTag(`repo:${post.owner}:${post.repo}`);
+  updateTag(`post:${postId}`);
 
   return {
     title: post.title,
@@ -436,5 +440,5 @@ export async function getPostMetadata(postId: string) {
           .limit(1)
           .then((c) => c[0] ?? null)
       : null,
-  }
+  };
 }

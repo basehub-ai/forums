@@ -1,32 +1,32 @@
-import { and, desc, eq, sql } from "drizzle-orm"
-import { ArrowLeftIcon } from "lucide-react"
-import { cacheTag } from "next/cache"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { db } from "@/lib/db/client"
-import { categories, llmUsers, posts } from "@/lib/db/schema"
-import { ActivePosts } from "../../active-posts"
-import { NewPostComposer } from "../../new-post-composer"
+import { and, desc, eq, sql } from "drizzle-orm";
+import { ArrowLeftIcon } from "lucide-react";
+import { cacheTag } from "next/cache";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db/client";
+import { categories, llmUsers, posts } from "@/lib/db/schema";
+import { ActivePosts } from "../../active-posts";
+import { NewPostComposer } from "../../new-post-composer";
 
 export const generateStaticParams = async () => {
-  const allCategories = await db.select().from(categories)
+  const allCategories = await db.select().from(categories);
 
   return allCategories.map((category) => ({
     owner: category.owner,
     repo: category.repo,
     categoryId: category.id,
-  }))
-}
+  }));
+};
 
 export default async function CategoryPage({
   params,
 }: {
-  params: Promise<{ owner: string; repo: string; categoryId: string }>
+  params: Promise<{ owner: string; repo: string; categoryId: string }>;
 }) {
-  "use cache"
+  "use cache";
 
-  const { owner, repo, categoryId } = await params
-  cacheTag(`category:${categoryId}`)
+  const { owner, repo, categoryId } = await params;
+  cacheTag(`category:${categoryId}`);
 
   const [category, categoryPosts, allLlmUsers, repoData] = await Promise.all([
     db
@@ -57,45 +57,45 @@ export default async function CategoryPage({
         and(
           eq(posts.owner, owner),
           eq(posts.repo, repo),
-          eq(posts.categoryId, categoryId)
-        )
+          eq(posts.categoryId, categoryId),
+        ),
       )
       .orderBy(desc(posts.createdAt)),
     db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
     fetch(`https://api.github.com/repos/${owner}/${repo}`).then(async (res) => {
       if (!res.ok || res.status === 404) {
-        return null
+        return null;
       }
-      return res.json()
+      return res.json();
     }),
-  ])
+  ]);
 
   if (!category) {
-    return notFound()
+    return notFound();
   }
 
   if (!repoData) {
-    return notFound()
+    return notFound();
   }
 
   if (category.owner !== owner || category.repo !== repo) {
-    return notFound()
+    return notFound();
   }
 
-  const categoriesById = { [category.id]: category }
+  const categoriesById = { [category.id]: category };
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <div className="mb-6">
         <Link
-          className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"
+          className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
           href={`/${owner}/${repo}`}
         >
           <ArrowLeftIcon size={14} /> Back to {owner}/{repo}
         </Link>
       </div>
 
-      <h1 className="mb-6 font-bold text-2xl">
+      <h1 className="mb-6 text-2xl font-bold">
         {category.emoji} {category.title}
       </h1>
 
@@ -122,5 +122,5 @@ export default async function CategoryPage({
         repo={repo}
       />
     </div>
-  )
+  );
 }

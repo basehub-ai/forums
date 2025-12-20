@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { ArrowUpIcon } from "lucide-react"
-import { usePathname } from "next/navigation"
-import { useEffect, useRef, useState, useTransition } from "react"
-import { AskingSelector } from "@/components/asking-selector"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { createComment } from "@/lib/actions/posts"
-import { authClient } from "@/lib/auth-client"
+import { ArrowUpIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { AskingSelector } from "@/components/asking-selector";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { createComment } from "@/lib/actions/posts";
+import { authClient } from "@/lib/auth-client";
 
 type AskingOption = {
-  id: string
-  name: string
-  image?: string | null
-  isDefault?: boolean
-}
+  id: string;
+  name: string;
+  image?: string | null;
+  isDefault?: boolean;
+};
 
 export function PostComposer({
   postId,
@@ -25,70 +25,70 @@ export function PostComposer({
   connected,
   storageKey,
 }: {
-  postId: string
-  askingOptions: AskingOption[]
-  threadCommentId?: string
-  autoFocus?: boolean
-  onCancel?: () => void
-  connected?: boolean
-  storageKey?: string
+  postId: string;
+  askingOptions: AskingOption[];
+  threadCommentId?: string;
+  autoFocus?: boolean;
+  onCancel?: () => void;
+  connected?: boolean;
+  storageKey?: string;
 }) {
-  const { data: auth } = authClient.useSession()
-  const isSignedIn = !!auth?.session
-  const pathname = usePathname()
-  const [isPending, startTransition] = useTransition()
-  const formRef = useRef<HTMLFormElement>(null)
-  const [message, setMessage] = useState("")
+  const { data: auth } = authClient.useSession();
+  const isSignedIn = !!auth?.session;
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [message, setMessage] = useState("");
   const [seekingAnswerFrom, setSeekingAnswerFrom] = useState<string | null>(
-    null
-  )
+    null,
+  );
 
   useEffect(() => {
     if (!storageKey) {
-      return
+      return;
     }
-    const saved = sessionStorage.getItem(storageKey)
+    const saved = sessionStorage.getItem(storageKey);
     if (saved) {
-      setMessage(saved)
+      setMessage(saved);
     }
-  }, [storageKey])
+  }, [storageKey]);
 
   useEffect(() => {
     if (!storageKey) {
-      return
+      return;
     }
     if (message) {
-      sessionStorage.setItem(storageKey, message)
+      sessionStorage.setItem(storageKey, message);
     } else {
-      sessionStorage.removeItem(storageKey)
+      sessionStorage.removeItem(storageKey);
     }
-  }, [storageKey, message])
+  }, [storageKey, message]);
 
   const handleBlur = (e: React.FocusEvent) => {
     if (!onCancel) {
-      return
+      return;
     }
-    const form = formRef.current
+    const form = formRef.current;
     if (!form) {
-      return
+      return;
     }
-    const relatedTarget = e.relatedTarget as Node | null
+    const relatedTarget = e.relatedTarget as Node | null;
     if (relatedTarget && form.contains(relatedTarget)) {
-      return
+      return;
     }
-    onCancel()
-  }
+    onCancel();
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!isSignedIn) {
-      authClient.signIn.social({ provider: "github", callbackURL: pathname })
-      return
+      authClient.signIn.social({ provider: "github", callbackURL: pathname });
+      return;
     }
 
     if (!message.trim()) {
-      return
+      return;
     }
 
     startTransition(async () => {
@@ -101,22 +101,22 @@ export function PostComposer({
         },
         threadCommentId,
         seekingAnswerFrom,
-      })
+      });
 
-      setMessage("")
+      setMessage("");
       if (storageKey) {
-        sessionStorage.removeItem(storageKey)
+        sessionStorage.removeItem(storageKey);
       }
-    })
-  }
+    });
+  };
 
   return (
     // biome-ignore lint/a11y/noNoninteractiveElementInteractions: .
     <form
       className={
         connected
-          ? "-mt-px rounded-b-lg border border-t-0 bg-card p-4"
-          : "rounded-lg border bg-card p-4"
+          ? "bg-card -mt-px rounded-b-lg border border-t-0 p-4"
+          : "bg-card rounded-lg border p-4"
       }
       onBlur={handleBlur}
       onSubmit={handleSubmit}
@@ -143,5 +143,5 @@ export function PostComposer({
         </Button>
       </div>
     </form>
-  )
+  );
 }

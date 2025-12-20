@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { usePostMetadata } from "./post-metadata-context"
+import { usePostMetadata } from "./post-metadata-context";
 
 type Participant = {
-  id: string
-  name: string
-  image: string | null
-}
+  id: string;
+  name: string;
+  image: string | null;
+};
 
 export function PostSidebar({ participants }: { participants: Participant[] }) {
-  const { category } = usePostMetadata()
+  const { category } = usePostMetadata();
 
   return (
     <aside className="w-64 shrink-0 space-y-6">
       <div>
-        <h3 className="mb-2 font-medium text-muted-foreground text-sm">
+        <h3 className="text-muted-foreground mb-2 text-sm font-medium">
           {participants.length} participant
           {participants.length !== 1 ? "s" : ""}
         </h3>
@@ -36,24 +36,24 @@ export function PostSidebar({ participants }: { participants: Participant[] }) {
       </div>
 
       <div>
-        <h3 className="mb-2 font-medium text-muted-foreground text-sm">
+        <h3 className="text-muted-foreground mb-2 text-sm font-medium">
           Category
         </h3>
         {category ? (
-          <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+          <div className="bg-muted flex items-center gap-2 rounded-lg px-3 py-2">
             <span className="text-lg">{category.emoji || "?"}</span>
-            <span className="font-medium text-sm">{category.title}</span>
+            <span className="text-sm font-medium">{category.title}</span>
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-lg bg-muted px-3 py-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="bg-muted relative overflow-hidden rounded-lg px-3 py-2">
+            <div className="text-muted-foreground flex items-center gap-2">
               <span className="text-lg">?</span>
-              <span className="font-medium text-sm">Generating...</span>
+              <span className="text-sm font-medium">Generating...</span>
             </div>
-            <span className="-translate-x-full absolute inset-0 animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent" />
+            <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent" />
           </div>
         )}
       </div>
     </aside>
-  )
+  );
 }

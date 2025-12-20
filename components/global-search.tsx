@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { FileTextIcon, GitBranchIcon, StarIcon } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { FileTextIcon, GitBranchIcon, StarIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Command,
   CommandDialog,
@@ -11,74 +11,74 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 type PostResult = {
-  id: string
-  number: number
-  owner: string
-  repo: string
-  title: string | null
-  createdAt: number
-  commentCount: number
-}
+  id: string;
+  number: number;
+  owner: string;
+  repo: string;
+  title: string | null;
+  createdAt: number;
+  commentCount: number;
+};
 
 type RepoResult = {
-  id: number
-  fullName: string
-  description: string | null
-  stars: number
-  url: string
-  owner: string
-  ownerAvatar: string
-}
+  id: number;
+  fullName: string;
+  description: string | null;
+  stars: number;
+  url: string;
+  owner: string;
+  ownerAvatar: string;
+};
 
 type SearchResults = {
-  posts: PostResult[]
-  repos: RepoResult[]
-}
+  posts: PostResult[];
+  repos: RepoResult[];
+};
 
 function useGlobalSearch() {
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults>({
     posts: [],
     repos: [],
-  })
-  const [isLoading, setIsLoading] = useState(false)
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (query.length < 2) {
-      setResults({ posts: [], repos: [] })
-      return
+      setResults({ posts: [], repos: [] });
+      return;
     }
 
-    const controller = new AbortController()
+    const controller = new AbortController();
     const timeoutId = setTimeout(async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
         const res = await fetch(
           `/api/search/global?q=${encodeURIComponent(query)}`,
-          { signal: controller.signal }
-        )
+          { signal: controller.signal },
+        );
         if (res.ok) {
-          const data = (await res.json()) as SearchResults
-          setResults(data)
+          const data = (await res.json()) as SearchResults;
+          setResults(data);
         }
       } catch {
         // Ignore aborted requests
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }, 200)
+    }, 200);
 
     return () => {
-      clearTimeout(timeoutId)
-      controller.abort()
-    }
-  }, [query])
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [query]);
 
-  return { query, setQuery, results, isLoading }
+  return { query, setQuery, results, isLoading };
 }
 
 function SearchContent({
@@ -90,34 +90,34 @@ function SearchContent({
   onSelect,
   showResults,
 }: {
-  query: string
-  setQuery: (q: string) => void
-  results: SearchResults
-  isLoading: boolean
-  onSelect: () => void
-  mode: "inline" | "dialog"
-  showResults?: boolean
+  query: string;
+  setQuery: (q: string) => void;
+  results: SearchResults;
+  isLoading: boolean;
+  onSelect: () => void;
+  mode: "inline" | "dialog";
+  showResults?: boolean;
 }) {
-  const router = useRouter()
+  const router = useRouter();
 
   const handlePostSelect = useCallback(
     (post: PostResult) => {
-      router.push(`/${post.owner}/${post.repo}/${post.number}`)
-      onSelect()
+      router.push(`/${post.owner}/${post.repo}/${post.number}`);
+      onSelect();
     },
-    [router, onSelect]
-  )
+    [router, onSelect],
+  );
 
   const handleRepoSelect = useCallback(
     (repo: RepoResult) => {
-      router.push(`/${repo.fullName}`)
-      onSelect()
+      router.push(`/${repo.fullName}`);
+      onSelect();
     },
-    [router, onSelect]
-  )
+    [router, onSelect],
+  );
 
-  const hasResults = results.posts.length > 0 || results.repos.length > 0
-  const shouldShowResults = showResults ?? (query.length >= 2 || hasResults)
+  const hasResults = results.posts.length > 0 || results.repos.length > 0;
+  const shouldShowResults = showResults ?? (query.length >= 2 || hasResults);
 
   return (
     <>
@@ -132,7 +132,7 @@ function SearchContent({
         <CommandList
           className={cn(
             mode === "inline" &&
-              "absolute inset-x-0 top-full z-50 mt-1 rounded-lg border bg-popover shadow-lg"
+              "bg-popover absolute inset-x-0 top-full z-50 mt-1 rounded-lg border shadow-lg",
           )}
         >
           {query.length >= 2 && !isLoading && !hasResults ? (
@@ -140,7 +140,7 @@ function SearchContent({
           ) : null}
           {isLoading ? (
             query.length >= 2 ? (
-              <div className="py-6 text-center text-muted-foreground text-sm">
+              <div className="text-muted-foreground py-6 text-center text-sm">
                 Searching...
               </div>
             ) : null
@@ -176,12 +176,12 @@ function SearchContent({
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span>{repo.fullName}</span>
                     {repo.description ? (
-                      <span className="truncate text-muted-foreground text-xs">
+                      <span className="text-muted-foreground truncate text-xs">
                         {repo.description}
                       </span>
                     ) : null}
                   </div>
-                  <span className="ml-2 flex items-center gap-1 text-muted-foreground text-xs">
+                  <span className="text-muted-foreground ml-2 flex items-center gap-1 text-xs">
                     <StarIcon className="size-3" />
                     {repo.stars.toLocaleString()}
                   </span>
@@ -192,36 +192,36 @@ function SearchContent({
         </CommandList>
       ) : null}
     </>
-  )
+  );
 }
 
 export function GlobalSearch() {
-  const { query, setQuery, results, isLoading } = useGlobalSearch()
-  const [isOpen, setIsOpen] = useState(true)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const { query, setQuery, results, isLoading } = useGlobalSearch();
+  const [isOpen, setIsOpen] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = useCallback(() => {
-    setQuery("")
-  }, [setQuery])
+    setQuery("");
+  }, [setQuery]);
 
   // Re-open results when query changes
   useEffect(() => {
     if (query.length >= 2) {
-      setIsOpen(true)
+      setIsOpen(true);
     }
-  }, [query])
+  }, [query]);
 
   // Handle Escape key - close results but keep query
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen])
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
 
   // Handle click outside - close results but keep query
   useEffect(() => {
@@ -230,15 +230,15 @@ export function GlobalSearch() {
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const showResults = isOpen && query.length >= 2
+  const showResults = isOpen && query.length >= 2;
 
   return (
     <Command
@@ -255,39 +255,39 @@ export function GlobalSearch() {
         showResults={showResults}
       />
     </Command>
-  )
+  );
 }
 
 export function GlobalSearchDialog() {
-  const [open, setOpen] = useState(false)
-  const { query, setQuery, results, isLoading } = useGlobalSearch()
+  const [open, setOpen] = useState(false);
+  const { query, setQuery, results, isLoading } = useGlobalSearch();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((prev) => !prev)
+        e.preventDefault();
+        setOpen((prev) => !prev);
       }
-    }
+    };
 
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
-      setOpen(isOpen)
+      setOpen(isOpen);
       if (!isOpen) {
-        setQuery("")
+        setQuery("");
       }
     },
-    [setQuery]
-  )
+    [setQuery],
+  );
 
   const handleSelect = useCallback(() => {
-    setOpen(false)
-    setQuery("")
-  }, [setQuery])
+    setOpen(false);
+    setQuery("");
+  }, [setQuery]);
 
   return (
     <CommandDialog
@@ -305,5 +305,5 @@ export function GlobalSearchDialog() {
         setQuery={setQuery}
       />
     </CommandDialog>
-  )
+  );
 }

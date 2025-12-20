@@ -1,22 +1,22 @@
-"use client"
-import type { Session, User } from "better-auth"
-import { useRouter } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
+"use client";
+import type { Session, User } from "better-auth";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
+} from "./ui/dropdown-menu";
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
-  const router = useRouter()
+  const router = useRouter();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="focus-visible:ring-ring flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2"
           type="button"
         >
           <img
@@ -34,15 +34,15 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             src={user.image || ""}
           />
           <div className="flex flex-col">
-            <span className="font-medium text-sm">{user.name}</span>
+            <span className="text-sm font-medium">{user.name}</span>
             <span className="text-muted-foreground text-xs">{user.email}</span>
           </div>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
-            await authClient.signOut()
-            router.refresh()
+            await authClient.signOut();
+            router.refresh();
           }}
           variant="destructive"
         >
@@ -50,5 +50,5 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
+  );
+};

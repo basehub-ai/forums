@@ -1,50 +1,50 @@
-"use client"
+"use client";
 
-import type { ToolUIPart } from "ai"
-import { CopyIcon } from "lucide-react"
-import { Fragment, type ReactNode } from "react"
-import type { AgentToolName, AgentTools } from "@/agent/tools"
-import type { AgentUIMessage } from "@/agent/types"
+import type { ToolUIPart } from "ai";
+import { CopyIcon } from "lucide-react";
+import { Fragment, type ReactNode } from "react";
+import type { AgentToolName, AgentTools } from "@/agent/tools";
+import type { AgentUIMessage } from "@/agent/types";
 import {
   Message,
   MessageAction,
   MessageActions,
   MessageContent,
   MessageResponse,
-} from "@/components/ai-elements/message"
+} from "@/components/ai-elements/message";
 import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
-} from "@/components/ai-elements/reasoning"
+} from "@/components/ai-elements/reasoning";
 import {
   Tool,
   ToolContent,
   ToolHeader,
   ToolInput,
   ToolOutput as ToolOutputComponent,
-} from "@/components/ai-elements/tool"
+} from "@/components/ai-elements/tool";
 
-type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T
+type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T;
 type InferToolResult<T> = T extends {
   // biome-ignore lint/suspicious/noExplicitAny: required for type inference from function signatures
-  execute: (...args: any[]) => infer R
+  execute: (...args: any[]) => infer R;
 }
   ? ExtractNonAsync<Awaited<R>>
-  : never
-type ToolResult<N extends AgentToolName> = InferToolResult<AgentTools[N]>
+  : never;
+type ToolResult<N extends AgentToolName> = InferToolResult<AgentTools[N]>;
 
 const toolRenderers: Partial<
   Record<AgentToolName, (toolPart: ToolUIPart) => ReactNode>
 > = {
   Read: (toolPart) => {
-    const output = toolPart.output as ToolResult<"Read"> | undefined
+    const output = toolPart.output as ToolResult<"Read"> | undefined;
     if (!output) {
-      return null
+      return null;
     }
     return (
       <div className="space-y-2 p-4">
-        <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+        <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
           <span>{output.metadata.path}</span>
           <span>•</span>
           <span>{output.metadata.fileSize}</span>
@@ -62,17 +62,17 @@ const toolRenderers: Partial<
           <code>{output.content}</code>
         </pre> */}
       </div>
-    )
+    );
   },
   Grep: (toolPart) => {
-    const output = toolPart.output as ToolResult<"Grep"> | undefined
+    const output = toolPart.output as ToolResult<"Grep"> | undefined;
     return (
       <Tool>
         <ToolHeader state={toolPart.state} title="Grep" type={toolPart.type} />
         <ToolContent>
           {output ? (
             <div className="space-y-2 p-4">
-              <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+              <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
                 <span>Pattern: {output.summary.pattern}</span>
                 <span>•</span>
                 <span>
@@ -80,7 +80,7 @@ const toolRenderers: Partial<
                   {output.summary.fileCount} files
                 </span>
               </div>
-              <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs">
+              <pre className="bg-muted/50 overflow-x-auto rounded-md p-3 text-xs">
                 <code>{output.matches}</code>
               </pre>
             </div>
@@ -89,17 +89,17 @@ const toolRenderers: Partial<
           )}
         </ToolContent>
       </Tool>
-    )
+    );
   },
   List: (toolPart) => {
-    const output = toolPart.output as ToolResult<"List"> | undefined
+    const output = toolPart.output as ToolResult<"List"> | undefined;
     return (
       <Tool>
         <ToolHeader state={toolPart.state} title="List" type={toolPart.type} />
         <ToolContent>
           {output ? (
             <div className="space-y-2 p-4">
-              <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+              <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
                 <span>{output.summary.totalFiles} files</span>
                 <span>•</span>
                 <span>{output.summary.totalDirs} directories</span>
@@ -110,7 +110,7 @@ const toolRenderers: Partial<
                   </>
                 ) : null}
               </div>
-              <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs">
+              <pre className="bg-muted/50 overflow-x-auto rounded-md p-3 text-xs">
                 <code>{output.listing}</code>
               </pre>
             </div>
@@ -119,14 +119,14 @@ const toolRenderers: Partial<
           )}
         </ToolContent>
       </Tool>
-    )
+    );
   },
-}
+};
 
 function renderTool(toolName: string, toolPart: ToolUIPart) {
-  const renderer = toolRenderers[toolName as AgentToolName]
+  const renderer = toolRenderers[toolName as AgentToolName];
   if (renderer) {
-    return renderer(toolPart)
+    return renderer(toolPart);
   }
   return (
     <Tool>
@@ -143,13 +143,13 @@ function renderTool(toolName: string, toolPart: ToolUIPart) {
         />
       </ToolContent>
     </Tool>
-  )
+  );
 }
 
 type CommentContentProps = {
-  content: AgentUIMessage[]
-  isStreaming?: boolean
-}
+  content: AgentUIMessage[];
+  isStreaming?: boolean;
+};
 
 export function CommentContent({
   content,
@@ -186,7 +186,7 @@ export function CommentContent({
                       </MessageActions>
                     )}
                   </Message>
-                )
+                );
               case "reasoning":
                 return (
                   <Reasoning
@@ -202,22 +202,22 @@ export function CommentContent({
                     <ReasoningTrigger />
                     <ReasoningContent>{part.text}</ReasoningContent>
                   </Reasoning>
-                )
+                );
               default:
                 if (part.type.startsWith("tool-") && "state" in part) {
-                  const toolPart = part as ToolUIPart
-                  const toolName = toolPart.type.slice(5)
+                  const toolPart = part as ToolUIPart;
+                  const toolName = toolPart.type.slice(5);
                   return (
                     <Fragment key={`${msg.id}-${idx}`}>
                       {renderTool(toolName, toolPart)}
                     </Fragment>
-                  )
+                  );
                 }
-                return null
+                return null;
             }
           })}
         </Fragment>
       ))}
     </div>
-  )
+  );
 }

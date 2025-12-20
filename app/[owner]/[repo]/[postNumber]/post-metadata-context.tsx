@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   createContext,
@@ -6,22 +6,22 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react"
-import { getPostMetadata } from "@/lib/actions/posts"
+} from "react";
+import { getPostMetadata } from "@/lib/actions/posts";
 
 type Category = {
-  id: string
-  title: string
-  emoji: string | null
-}
+  id: string;
+  title: string;
+  emoji: string | null;
+};
 
 type PostMetadata = {
-  title: string | null
-  category: Category | null
-  isPolling: boolean
-}
+  title: string | null;
+  category: Category | null;
+  isPolling: boolean;
+};
 
-const PostMetadataContext = createContext<PostMetadata | null>(null)
+const PostMetadataContext = createContext<PostMetadata | null>(null);
 
 export function PostMetadataProvider({
   postId,
@@ -29,59 +29,61 @@ export function PostMetadataProvider({
   initialCategory,
   children,
 }: {
-  postId: string
-  initialTitle: string | null
-  initialCategory: Category | null
-  children: React.ReactNode
+  postId: string;
+  initialTitle: string | null;
+  initialCategory: Category | null;
+  children: React.ReactNode;
 }) {
-  const [title, setTitle] = useState(initialTitle)
-  const [category, setCategory] = useState<Category | null>(initialCategory)
-  const [isPolling, setIsPolling] = useState(!(initialTitle && initialCategory))
+  const [title, setTitle] = useState(initialTitle);
+  const [category, setCategory] = useState<Category | null>(initialCategory);
+  const [isPolling, setIsPolling] = useState(
+    !(initialTitle && initialCategory),
+  );
 
   const poll = useCallback(async () => {
-    const result = await getPostMetadata(postId)
+    const result = await getPostMetadata(postId);
     if (result) {
-      setTitle(result.title)
-      setCategory(result.category)
-      setIsPolling(false)
-      return true
+      setTitle(result.title);
+      setCategory(result.category);
+      setIsPolling(false);
+      return true;
     }
-    return false
-  }, [postId])
+    return false;
+  }, [postId]);
 
   useEffect(() => {
     if (!isPolling) {
-      return
+      return;
     }
 
-    let cancelled = false
+    let cancelled = false;
     const interval = setInterval(async () => {
       if (cancelled) {
-        return
+        return;
       }
-      const done = await poll()
+      const done = await poll();
       if (done) {
-        clearInterval(interval)
+        clearInterval(interval);
       }
-    }, 1000)
+    }, 1000);
 
     return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [isPolling, poll])
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isPolling, poll]);
 
   return (
     <PostMetadataContext.Provider value={{ title, category, isPolling }}>
       {children}
     </PostMetadataContext.Provider>
-  )
+  );
 }
 
 export function usePostMetadata() {
-  const context = useContext(PostMetadataContext)
+  const context = useContext(PostMetadataContext);
   if (!context) {
-    throw new Error("usePostMetadata must be used within PostMetadataProvider")
+    throw new Error("usePostMetadata must be used within PostMetadataProvider");
   }
-  return context
+  return context;
 }

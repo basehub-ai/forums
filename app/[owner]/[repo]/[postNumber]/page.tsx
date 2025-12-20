@@ -1,46 +1,46 @@
-import { and, asc, eq } from "drizzle-orm"
-import { ArrowLeftIcon } from "lucide-react"
-import { cacheTag } from "next/cache"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { gitHubUserLoader } from "@/lib/auth"
-import { db } from "@/lib/db/client"
+import { gitHubUserLoader } from "@/lib/auth";
+import { db } from "@/lib/db/client";
 import {
   categories,
   comments,
   llmUsers,
   posts,
   reactions,
-} from "@/lib/db/schema"
-import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
-import { CommentThreadClient } from "./comment-thread-client"
-import { PostComposer } from "./post-composer"
-import { PostMetadataProvider } from "./post-metadata-context"
-import { PostSidebar } from "./post-sidebar"
-import { PostTitle } from "./post-title"
+} from "@/lib/db/schema";
+import { computeCommentNumbers } from "@/lib/utils/comment-numbers";
+import { and, asc, eq } from "drizzle-orm";
+import { ArrowLeftIcon } from "lucide-react";
+import { cacheTag } from "next/cache";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CommentThreadClient } from "./comment-thread-client";
+import { PostComposer } from "./post-composer";
+import { PostMetadataProvider } from "./post-metadata-context";
+import { PostSidebar } from "./post-sidebar";
+import { PostTitle } from "./post-title";
 
 export const generateStaticParams = async () => {
-  const allPosts = await db.select().from(posts)
+  const allPosts = await db.select().from(posts);
 
   return allPosts.map((post) => ({
     owner: post.owner,
     repo: post.repo,
     postNumber: String(post.number),
-  }))
-}
+  }));
+};
 
 export default async function PostPage({
   params,
 }: {
-  params: Promise<{ owner: string; repo: string; postNumber: string }>
+  params: Promise<{ owner: string; repo: string; postNumber: string }>;
 }) {
-  "use cache"
+  "use cache";
 
-  const { postNumber: postNumberStr, owner, repo } = await params
-  const postNumber = Number.parseInt(postNumberStr, 10)
+  const { postNumber: postNumberStr, owner, repo } = await params;
+  const postNumber = Number.parseInt(postNumberStr, 10);
 
   if (Number.isNaN(postNumber)) {
-    notFound()
+    notFound();
   }
 
   const [postWithCategory, allLlmUsers, postComments, postReactions] =
@@ -69,8 +69,8 @@ export default async function PostPage({
           and(
             eq(posts.owner, owner),
             eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
+            eq(posts.number, postNumber),
+          ),
         )
         .limit(1)
         .then((r) => r[0]),
@@ -83,8 +83,8 @@ export default async function PostPage({
           and(
             eq(posts.owner, owner),
             eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
+            eq(posts.number, postNumber),
+          ),
         )
         .orderBy(asc(comments.createdAt))
         .then((r) => r.map((row) => row.comments)),
@@ -97,73 +97,77 @@ export default async function PostPage({
           and(
             eq(posts.owner, owner),
             eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
+            eq(posts.number, postNumber),
+          ),
         )
         .then((r) => r.map((row) => row.reactions)),
-    ])
+    ]);
 
   if (!postWithCategory) {
-    notFound()
+    notFound();
   }
 
-  const { category, ...post } = postWithCategory
+  const { category, ...post } = postWithCategory;
 
-  cacheTag(`post:${post.id}`)
+  cacheTag(`post:${post.id}`);
 
-  const llmUsersById = Object.fromEntries(allLlmUsers.map((u) => [u.id, u]))
+  const llmUsersById = Object.fromEntries(allLlmUsers.map((u) => [u.id, u]));
 
-  const humanAuthors: { authorId: string; username: string }[] = []
-  const llmAuthorIds = new Set<string>()
+  const humanAuthors: { authorId: string; username: string }[] = [];
+  const llmAuthorIds = new Set<string>();
   for (const c of postComments) {
     if (c.authorId.startsWith("llm_")) {
-      llmAuthorIds.add(c.authorId)
+      llmAuthorIds.add(c.authorId);
     } else if (c.authorUsername) {
-      humanAuthors.push({ authorId: c.authorId, username: c.authorUsername })
+      humanAuthors.push({ authorId: c.authorId, username: c.authorUsername });
     }
   }
 
-  const uniqueHumanUsernames = [...new Set(humanAuthors.map((a) => a.username))]
+  const uniqueHumanUsernames = [
+    ...new Set(humanAuthors.map((a) => a.username)),
+  ];
   const humanUsersByUsername = Object.fromEntries(
     await Promise.all(
       uniqueHumanUsernames.map(async (username) => {
-        const user = await gitHubUserLoader.load(username)
-        return [username, user] as const
-      })
-    )
-  )
+        const user = await gitHubUserLoader.load(username);
+        return [username, user] as const;
+      }),
+    ),
+  );
 
   const authorsById: Record<
     string,
     { name: string; username: string; image: string; isLlm: boolean }
-  > = {}
+  > = {};
 
   for (const { authorId, username } of humanAuthors) {
     if (authorsById[authorId]) {
-      continue
+      continue;
     }
-    const user = humanUsersByUsername[username]
+    const user = humanUsersByUsername[username];
     if (user) {
       authorsById[authorId] = {
         name: user.name,
         username,
         image: user.image,
         isLlm: false,
-      }
+      };
     }
   }
 
   for (const llmId of llmAuthorIds) {
-    const llm = llmUsersById[llmId]
+    const llm = llmUsersById[llmId];
     if (llm) {
       authorsById[llmId] = {
         name: llm.name,
         username: llm.model,
         image:
           llm.image ??
-          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(llm.name)}`,
+          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+            llm.name,
+          )}`,
         isLlm: true,
-      }
+      };
     }
   }
 
@@ -171,9 +175,9 @@ export default async function PostPage({
     id: a.username,
     name: a.name,
     image: a.image,
-  }))
+  }));
 
-  const commentNumbers = computeCommentNumbers(postComments)
+  const commentNumbers = computeCommentNumbers(postComments);
 
   const askingOptions = [
     ...allLlmUsers.map((u) => ({
@@ -183,7 +187,7 @@ export default async function PostPage({
       isDefault: u.isDefault,
     })),
     { id: "human", name: "Human only" },
-  ]
+  ];
 
   return (
     <PostMetadataProvider
@@ -195,7 +199,7 @@ export default async function PostPage({
         <div className="min-w-0 flex-1">
           <div className="mb-6">
             <Link
-              className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"
+              className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
               href={`/${owner}/${repo}`}
             >
               <ArrowLeftIcon size={14} /> Back to {owner}/{repo}
@@ -233,5 +237,5 @@ export default async function PostPage({
         <PostSidebar participants={participants} />
       </div>
     </PostMetadataProvider>
-  )
+  );
 }

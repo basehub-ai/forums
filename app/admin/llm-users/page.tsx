@@ -2,16 +2,16 @@ import {
   createLlmUser,
   deleteLlmUser,
   setDefaultLlmUser,
-} from "@/lib/actions/admin"
-import { db } from "@/lib/db/client"
-import { llmUsers } from "@/lib/db/schema"
+} from "@/lib/actions/admin";
+import { db } from "@/lib/db/client";
+import { llmUsers } from "@/lib/db/schema";
 
 export default async function LlmUsersPage() {
-  const users = await db.select().from(llmUsers).orderBy(llmUsers.createdAt)
+  const users = await db.select().from(llmUsers).orderBy(llmUsers.createdAt);
 
   return (
     <div className="space-y-8">
-      <h2 className="font-semibold text-xl">LLM Users</h2>
+      <h2 className="text-xl font-semibold">LLM Users</h2>
 
       <div className="overflow-hidden rounded-lg border">
         <table className="w-full text-sm">
@@ -70,13 +70,13 @@ export default async function LlmUsersPage() {
         <h3 className="mb-4 font-semibold">Add LLM User</h3>
         <form
           action={async (formData: FormData) => {
-            "use server"
+            "use server";
             await createLlmUser({
               name: formData.get("name") as string,
               model: formData.get("model") as string,
               provider: formData.get("provider") as string,
               image: (formData.get("image") as string) || undefined,
-            })
+            });
           }}
           className="grid grid-cols-2 gap-4"
         >
@@ -112,5 +112,5 @@ export default async function LlmUsersPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

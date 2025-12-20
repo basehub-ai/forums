@@ -1,10 +1,10 @@
-"use client"
-import { usePathname } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
-import { Button } from "./ui/button"
+"use client";
+import { usePathname } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "./ui/button";
 
 export const SignInButton = () => {
-  const pathname = usePathname()
+  const pathname = usePathname();
   return (
     <Button
       onClick={() =>
@@ -13,5 +13,5 @@ export const SignInButton = () => {
     >
       Sign in with GitHub
     </Button>
-  )
-}
+  );
+};

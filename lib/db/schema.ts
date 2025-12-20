@@ -1,5 +1,5 @@
-import * as p from "drizzle-orm/pg-core"
-import type { AgentUIMessage } from "@/agent/types"
+import * as p from "drizzle-orm/pg-core";
+import type { AgentUIMessage } from "@/agent/types";
 
 export const posts = p.pgTable(
   "posts",
@@ -26,8 +26,8 @@ export const posts = p.pgTable(
       .index("idx_posts_owner_repo")
       .on(table.owner, table.repo, table.id.desc()),
     p.index("idx_posts_author").on(table.authorId),
-  ]
-)
+  ],
+);
 
 export const comments = p.pgTable(
   "comments",
@@ -55,8 +55,8 @@ export const comments = p.pgTable(
     p.index("idx_comments_thread").on(table.threadCommentId),
     p.index("idx_comments_author").on(table.authorId),
     p.index("idx_comments_stream").on(table.streamId),
-  ]
-)
+  ],
+);
 
 export const categories = p.pgTable(
   "categories",
@@ -72,8 +72,8 @@ export const categories = p.pgTable(
     p
       .uniqueIndex("idx_categories_owner_repo_title")
       .on(table.owner, table.repo, table.title),
-  ]
-)
+  ],
+);
 
 export const reactions = p.pgTable(
   "reactions",
@@ -89,8 +89,8 @@ export const reactions = p.pgTable(
       .uniqueIndex("idx_reactions_unique")
       .on(table.userId, table.commentId, table.type),
     p.index("idx_reactions_comment").on(table.commentId),
-  ]
-)
+  ],
+);
 
 export const llmUsers = p.pgTable("llm_users", {
   id: p.varchar({ length: 32 }).primaryKey(),
@@ -102,7 +102,7 @@ export const llmUsers = p.pgTable("llm_users", {
   isInModelPicker: p.boolean("is_in_model_picker").notNull(),
   deprecatedAt: p.bigint("deprecated_at", { mode: "number" }),
   createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
-})
+});
 
 export const postCounters = p.pgTable(
   "post_counters",
@@ -111,5 +111,5 @@ export const postCounters = p.pgTable(
     repo: p.varchar({ length: 255 }).notNull(),
     lastNumber: p.integer("last_number").notNull().default(0),
   },
-  (table) => [p.primaryKey({ columns: [table.owner, table.repo] })]
-)
+  (table) => [p.primaryKey({ columns: [table.owner, table.repo] })],
+);

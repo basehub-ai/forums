@@ -1,10 +1,10 @@
-import { desc, sql } from "drizzle-orm"
-import Link from "next/link"
-import { db } from "@/lib/db/client"
-import { posts } from "@/lib/db/schema"
+import { desc, sql } from "drizzle-orm";
+import Link from "next/link";
+import { db } from "@/lib/db/client";
+import { posts } from "@/lib/db/schema";
 
 export default async function Home() {
-  "use cache"
+  "use cache";
 
   const allPosts = await db
     .select({
@@ -24,17 +24,17 @@ export default async function Home() {
     })
     .from(posts)
     .orderBy(desc(posts.createdAt))
-    .limit(20)
+    .limit(20);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       {allPosts.length > 0 && (
         <div>
-          <h2 className="mb-4 font-semibold text-xl">Featured Posts</h2>
+          <h2 className="mb-4 text-xl font-semibold">Featured Posts</h2>
           <div className="space-y-2">
             {allPosts.map((post) => (
               <Link
-                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                className="bg-card hover:bg-accent block rounded-lg border p-4 transition-colors"
                 href={`/${post.owner}/${post.repo}/${post.number}`}
                 key={post.id}
               >
@@ -52,7 +52,7 @@ export default async function Home() {
                       {post.title || `Post #${post.number}`}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                  <div className="text-muted-foreground flex items-center gap-3 text-sm">
                     {post.reactionCount > 0 && (
                       <span title="Reactions">👍 {post.reactionCount}</span>
                     )}
@@ -67,5 +67,5 @@ export default async function Home() {
         </div>
       )}
     </div>
-  )
+  );
 }

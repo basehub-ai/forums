@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { ChevronDownIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ChevronDownIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 type Option = {
-  id: string
-  name: string
-  image?: string | null
-  isDefault?: boolean
-}
+  id: string;
+  name: string;
+  image?: string | null;
+  isDefault?: boolean;
+};
 
 export function AskingSelector({
   options,
@@ -22,15 +22,15 @@ export function AskingSelector({
   onChange,
   disabled,
 }: {
-  options: Option[]
-  value: string | null
-  onChange: (value: string | null) => void
-  disabled?: boolean
+  options: Option[];
+  value: string | null;
+  onChange: (value: string | null) => void;
+  disabled?: boolean;
 }) {
-  const defaultOption = options.find((o) => o.isDefault)
+  const defaultOption = options.find((o) => o.isDefault);
   const selectedOption = value
     ? options.find((o) => o.id === value)
-    : defaultOption
+    : defaultOption;
 
   return (
     <div className="flex items-center gap-2">
@@ -81,5 +81,5 @@ export function AskingSelector({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }

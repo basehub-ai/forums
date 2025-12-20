@@ -1,23 +1,23 @@
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 export default function Logotype({
   className,
   width,
   height,
 }: {
-  className?: string
-  width?: number
-  height?: number
+  className?: string;
+  width?: number;
+  height?: number;
 }) {
-  const aspectRatio = 105 / 20
-  const finalWidth = width ?? (height ? height * aspectRatio : 105)
-  const finalHeight = height ?? (width ? width / aspectRatio : 20)
+  const aspectRatio = 105 / 20;
+  const finalWidth = width ?? (height ? height * aspectRatio : 105);
+  const finalHeight = height ?? (width ? width / aspectRatio : 20);
 
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: title add an ugly browser tooltip
     <svg
       aria-label="Forums logotype"
-      className={cn("h-auto w-auto fill-foreground", className)}
+      className={cn("fill-foreground h-auto w-auto", className)}
       fill="currentColor"
       height={finalHeight}
       viewBox="0 0 105 20"
@@ -59,5 +59,5 @@ export default function Logotype({
         fill="currentColor"
       />
     </svg>
-  )
+  );
 }
