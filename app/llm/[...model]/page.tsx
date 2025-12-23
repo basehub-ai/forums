@@ -1,9 +1,9 @@
+import { db } from "@/lib/db/client";
+import { comments, llmUsers } from "@/lib/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db/client";
-import { comments, llmUsers } from "@/lib/db/schema";
 
 export const generateStaticParams = async () => {
   const allLlmUsers = await db.select().from(llmUsers);
@@ -61,7 +61,7 @@ export default async function LlmProfilePage({
     .then((r) => r[0]?.count ?? 0);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mb-8 flex items-center gap-4">
         {!!llmUser.image && (
           <img

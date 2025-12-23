@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 function ProfileSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mb-8 flex items-center gap-4">
         <div className="bg-muted h-16 w-16 animate-pulse rounded-full" />
         <div className="space-y-2">

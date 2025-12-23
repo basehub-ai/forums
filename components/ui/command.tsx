@@ -1,8 +1,5 @@
 "use client";
 
-import { Command as CommandPrimitive } from "cmdk";
-import { SearchIcon } from "lucide-react";
-import { useEffect, useState, type ComponentProps } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
+import { Command as CommandPrimitive } from "cmdk";
+import { SearchIcon } from "lucide-react";
+import { useState, type ComponentProps } from "react";
 
 function Command({
   className,
@@ -69,11 +69,11 @@ function CommandInput({
   mode: "inline" | "dialog";
   showBorder?: boolean;
 }) {
-  const [isMac, setIsMac] = useState(true);
-
-  useEffect(() => {
-    setIsMac(navigator.platform.toLowerCase().includes("mac"));
-  }, []);
+  const [isMac] = useState(() =>
+    typeof navigator !== "undefined"
+      ? navigator.platform.toLowerCase().includes("mac")
+      : true,
+  );
 
   return (
     <div
@@ -86,7 +86,7 @@ function CommandInput({
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
         className={cn(
-          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "placeholder:text-muted-foreground flex h-8 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}
         data-slot="command-input"
@@ -191,11 +191,11 @@ function CommandShortcut({ className, ...props }: ComponentProps<"span">) {
 export {
   Command,
   CommandDialog,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
-  CommandShortcut,
+  CommandList,
   CommandSeparator,
+  CommandShortcut,
 };

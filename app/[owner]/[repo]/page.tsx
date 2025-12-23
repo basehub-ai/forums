@@ -1,8 +1,8 @@
+import { db } from "@/lib/db/client";
+import { categories, llmUsers, posts } from "@/lib/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db/client";
-import { categories, llmUsers, posts } from "@/lib/db/schema";
 import { ActivePosts } from "./active-posts";
 import { NewPostComposer } from "./new-post-composer";
 
@@ -72,7 +72,7 @@ export default async function RepoPage({
   );
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">
         {owner}/{repo}
       </h1>

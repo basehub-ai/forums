@@ -1,7 +1,5 @@
 "use client";
 
-import { SmilePlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
-import { useTransition } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +14,8 @@ import {
 import { addReaction, removeReaction } from "@/lib/actions/posts";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { SmilePlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
+import { useTransition } from "react";
 
 const REACTION_TYPES = [
   { type: "+1", emoji: "👍" },
@@ -176,7 +176,7 @@ export function ReactionButtons({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="hover:bg-muted inline-flex items-center rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-50"
+              className="hover:bg-muted inline-flex h-5.5 items-center rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-50"
               disabled={isPending}
               type="button"
             >

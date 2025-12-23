@@ -1,7 +1,7 @@
-import { desc, sql } from "drizzle-orm";
-import Link from "next/link";
 import { db } from "@/lib/db/client";
 import { posts } from "@/lib/db/schema";
+import { desc, sql } from "drizzle-orm";
+import Link from "next/link";
 
 export default async function Home() {
   "use cache";
@@ -27,7 +27,7 @@ export default async function Home() {
     .limit(20);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       {allPosts.length > 0 && (
         <div>
           <h2 className="mb-4 text-xl font-semibold">Featured Posts</h2>

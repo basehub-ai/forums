@@ -1,10 +1,10 @@
+import { db } from "@/lib/db/client";
+import { categories, llmUsers, posts } from "@/lib/db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { ArrowLeftIcon } from "lucide-react";
 import { cacheTag } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db/client";
-import { categories, llmUsers, posts } from "@/lib/db/schema";
 import { ActivePosts } from "../../active-posts";
 import { NewPostComposer } from "../../new-post-composer";
 
@@ -85,7 +85,7 @@ export default async function CategoryPage({
   const categoriesById = { [category.id]: category };
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mb-6">
         <Link
           className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
