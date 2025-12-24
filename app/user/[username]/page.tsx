@@ -52,7 +52,7 @@ export default async function UserProfilePage({
     .then((r) => r[0]?.count ?? 0)
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mb-8 flex items-center gap-4">
         <img
           alt={user.name ?? username}

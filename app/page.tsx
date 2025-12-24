@@ -27,7 +27,7 @@ export default async function Home() {
     .limit(20)
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       {allPosts.length > 0 && (
         <div>
           <h2 className="mb-4 font-semibold text-xl">Featured Posts</h2>

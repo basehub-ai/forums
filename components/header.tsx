@@ -9,26 +9,28 @@ import { UserDropdown } from "./user-dropdown"
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background">
-      <div className="grid h-14 grid-cols-3 items-center px-4">
-        <Link className="justify-self-start hover:opacity-80" href="/">
-          <Logotype className="fill-foreground" />
-        </Link>
+    <header className="sticky top-0 z-50 bg-linear-to-b from-80% from-background via-92% via-background/40 to-transparent">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-3 pb-6 lg:flex-nowrap">
+        <div className="grid h-10 w-full grid-cols-3 items-center">
+          <Link className="justify-self-start hover:opacity-80" href="/">
+            <Logotype className="fill-foreground" />
+          </Link>
 
-        <Suspense>
-          <div className="flex w-full max-w-md items-center justify-self-center">
-            <GlobalSearch />
-          </div>
-        </Suspense>
-
-        <div className="flex justify-self-end">
-          <Suspense
-            fallback={
-              <div className="h-9 w-32 animate-pulse rounded-md bg-muted" />
-            }
-          >
-            <User />
+          <Suspense>
+            <div className="flex w-full max-w-md items-center justify-self-center">
+              <GlobalSearch />
+            </div>
           </Suspense>
+
+          <div className="flex justify-self-end">
+            <Suspense
+              fallback={
+                <div className="h-9 w-32 animate-pulse rounded-md bg-muted" />
+              }
+            >
+              <User />
+            </Suspense>
+          </div>
         </div>
       </div>
     </header>

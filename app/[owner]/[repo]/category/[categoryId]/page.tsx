@@ -85,7 +85,7 @@ export default async function CategoryPage({
   const categoriesById = { [category.id]: category }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mb-6">
         <Link
           className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"

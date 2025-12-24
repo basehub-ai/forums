@@ -27,8 +27,7 @@ import {
 
 type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T
 type InferToolResult<T> = T extends {
-  // biome-ignore lint/suspicious/noExplicitAny: required for type inference from function signatures
-  execute: (...args: any[]) => infer R
+  execute: (...args: infer _P) => infer R
 }
   ? ExtractNonAsync<Awaited<R>>
   : never

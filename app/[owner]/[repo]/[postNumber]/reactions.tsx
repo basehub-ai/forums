@@ -176,7 +176,7 @@ export function ReactionButtons({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
+              className="inline-flex h-5.5 items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
               disabled={isPending}
               type="button"
             >
