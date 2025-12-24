@@ -21,6 +21,10 @@ export async function GET(request: NextRequest) {
 
   const postNumber = Number.parseInt(postNumberStr, 10)
 
+  if (Number.isNaN(postNumber)) {
+    return new Response("Invalid post number", { status: 400 })
+  }
+
   const postWithCategory = await db
     .select({
       title: posts.title,

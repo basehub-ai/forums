@@ -6,6 +6,11 @@ const size = {
   height: 630,
 }
 
+interface GitHubRepoData {
+  description: string | null
+  [key: string]: unknown
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const owner = searchParams.get("owner")
@@ -16,8 +21,15 @@ export async function GET(request: NextRequest) {
   }
 
   const repoData = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`
-  ).then((res) => (res.ok ? res.json() : null))
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      headers: {
+        ...(process.env.GITHUB_TOKEN && {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        }),
+      },
+    }
+  ).then((res) => (res.ok ? res.json() : null)) as GitHubRepoData | null
 
   const description = repoData?.description || "Forum discussions"
 

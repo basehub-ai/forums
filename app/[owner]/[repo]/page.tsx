@@ -18,7 +18,9 @@ export async function generateMetadata({
 
   return {
     openGraph: {
-      images: [`${origin}/api/og/repo?owner=${owner}&repo=${repo}`],
+      images: [
+        `${origin}/api/og/repo?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+      ],
     },
   }
 }
