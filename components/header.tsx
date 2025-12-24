@@ -9,7 +9,7 @@ import { UserDropdown } from "./user-dropdown";
 
 export function Header() {
   return (
-    <header className="from-background via-background/50 sticky top-0 z-50 bg-linear-to-b from-80% via-92% to-transparent">
+    <header className="from-background via-background/40 sticky top-0 z-50 bg-linear-to-b from-80% via-92% to-transparent">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-3 pb-6 lg:flex-nowrap">
         <div className="grid h-10 w-full grid-cols-3 items-center">
           <Link className="justify-self-start hover:opacity-80" href="/">

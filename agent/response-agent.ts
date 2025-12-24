@@ -115,6 +115,7 @@ async function streamTextStep({
   const workspace = await getWorkspace({
     sandboxId,
     gitContext: { owner, repo },
+    extendTimeout: false,
   });
   const allMessages = [...initialMessages, ...newMessages];
 

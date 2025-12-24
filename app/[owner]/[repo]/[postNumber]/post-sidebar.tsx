@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { usePostMetadata } from "./post-metadata-context";
 
 type Participant = {
@@ -9,10 +11,11 @@ type Participant = {
 };
 
 export function PostSidebar({ participants }: { participants: Participant[] }) {
+  const { owner, repo } = useParams<{ owner: string; repo: string }>();
   const { category } = usePostMetadata();
 
   return (
-    <aside className="w-64 shrink-0 space-y-6">
+    <aside className="w-64 shrink-0 space-y-4">
       <div>
         <h3 className="text-muted-foreground mb-2 text-sm font-medium">
           {participants.length} participant
@@ -37,13 +40,16 @@ export function PostSidebar({ participants }: { participants: Participant[] }) {
 
       <div>
         <h3 className="text-muted-foreground mb-2 text-sm font-medium">
-          Category
+          Categories
         </h3>
         {category ? (
-          <div className="bg-muted flex items-center gap-2 rounded-lg px-3 py-2">
+          <Link
+            href={`/${owner}/${repo}/category/${category.id}`}
+            className="bg-card text-card-foreground flex w-fit items-center gap-2 rounded-full border px-3.5 py-0.5"
+          >
             <span className="text-lg">{category.emoji || "?"}</span>
             <span className="text-sm font-medium">{category.title}</span>
-          </div>
+          </Link>
         ) : (
           <div className="bg-muted relative overflow-hidden rounded-lg px-3 py-2">
             <div className="text-muted-foreground flex items-center gap-2">

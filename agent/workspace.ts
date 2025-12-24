@@ -59,16 +59,19 @@ async function createSandbox(): Promise<Sandbox> {
 async function extendSandboxTimeout(
   sandbox: Sandbox,
   gitContext: GitContext,
-): Promise<void> {
-  await ResultAsync.fromPromise(
+): Promise<boolean> {
+  const result = await ResultAsync.fromPromise(
     sandbox.extendTimeout(timeout),
     (e) => e,
-  ).mapErr((err) => {
-    console.error(`Failed to extend timeout for ${sandbox.sandboxId}:`, err);
-    return err;
-  });
+  );
+
+  if (result.isErr()) {
+    console.error(`Failed to extend timeout for ${sandbox.sandboxId}:`, result.error);
+    return false;
+  }
 
   await extendSandboxTTL(gitContext.owner, gitContext.repo, timeout);
+  return true;
 }
 
 async function getOrCreateSharedSandbox(
@@ -83,12 +86,18 @@ async function getOrCreateSharedSandbox(
     const sandbox = await tryRetrieveSandbox(result.sandboxId);
 
     if (sandbox) {
-      await extendSandboxTimeout(sandbox, gitContext);
-      return sandbox;
+      const extended = await extendSandboxTimeout(sandbox, gitContext);
+      if (extended) {
+        return sandbox;
+      }
+      console.warn(
+        `Sandbox ${result.sandboxId} for ${owner}/${repo} hit max timeout, replacing`,
+      );
+    } else {
+      console.warn(
+        `Stale sandbox ${result.sandboxId} for ${owner}/${repo}, removing`,
+      );
     }
-    console.warn(
-      `Stale sandbox ${result.sandboxId} for ${owner}/${repo}, removing`,
-    );
     await removeSandboxIf(owner, repo, result.sandboxId);
     return getOrCreateSharedSandbox(gitContext, retryCount);
   }
@@ -126,16 +135,22 @@ async function getOrCreateSharedSandbox(
 export const getWorkspace = async ({
   sandboxId,
   gitContext,
+  extendTimeout = true,
 }: {
   sandboxId: string | null;
   gitContext: GitContext;
+  extendTimeout?: boolean;
 }): Promise<Workspace> => {
   let sandbox: Sandbox | null = null;
 
   if (sandboxId) {
     sandbox = await tryRetrieveSandbox(sandboxId);
-    if (sandbox) {
-      await extendSandboxTimeout(sandbox, gitContext);
+    if (sandbox && extendTimeout) {
+      const extended = await extendSandboxTimeout(sandbox, gitContext);
+      if (!extended) {
+        await removeSandboxIf(gitContext.owner, gitContext.repo, sandboxId);
+        sandbox = null;
+      }
     }
   }
 

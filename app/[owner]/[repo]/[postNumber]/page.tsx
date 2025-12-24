@@ -197,18 +197,13 @@ export default async function PostPage({
     >
       <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-8">
         <div className="min-w-0 flex-1">
-          <div className="mb-6">
+          <div className="mb-4 flex flex-col gap-2">
             <Link
               className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
               href={`/${owner}/${repo}`}
             >
               <ArrowLeftIcon size={14} /> Back to {owner}/{repo}
             </Link>
-            <div className="mt-2">
-              <span className="text-muted-foreground text-sm">
-                #{post.number}
-              </span>
-            </div>
             <PostTitle />
           </div>
 

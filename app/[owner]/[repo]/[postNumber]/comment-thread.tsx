@@ -1,14 +1,16 @@
-import type { InferSelectModel } from "drizzle-orm";
-import Link from "next/link";
 import type { AgentUIMessage } from "@/agent/types";
+import { CopyLinkButton } from "@/components/copy-link-button";
 import type {
   comments as commentsSchema,
   reactions as reactionsSchema,
 } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import type { InferSelectModel } from "drizzle-orm";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Suspense } from "react";
 import { CommentContent } from "./comment-content";
 import { PostComposer } from "./post-composer";
-import { ReactionButtons } from "./reactions";
 import { StreamingContent } from "./streaming-content";
 
 type Comment = InferSelectModel<typeof commentsSchema>;
@@ -65,6 +67,8 @@ function CommentItem({
 
   const canReply = depth === 0 && !isRootComment && onReply;
 
+  const { postNumber } = useParams<{ postNumber: string }>();
+
   return (
     <div
       className={cn("relative", {
@@ -73,7 +77,7 @@ function CommentItem({
       id={commentNumber}
     >
       <div
-        className={cn("bg-card border p-4", {
+        className={cn("group bg-card text-card-foreground border p-2.5", {
           "rounded-lg": !canReply,
           "rounded-t-lg": canReply,
         })}
@@ -86,18 +90,27 @@ function CommentItem({
               src={author.image}
             />
           </Link>
+
           <Link
             className="text-sm font-semibold hover:underline"
             href={profileUrl}
           >
             {author.name}
           </Link>
-          <Link
-            className="text-muted-foreground text-xs hover:underline"
-            href={`#${commentNumber}`}
-          >
-            #{commentNumber}
-          </Link>
+
+          {/* Comment timestamp */}
+          <span className="text-muted-foreground text-xs">
+            {new Date(comment.createdAt).toLocaleString()}
+          </span>
+
+          <Suspense>
+            <CopyLinkButton
+              owner={owner}
+              repo={repo}
+              postNumber={postNumber}
+              commentNumber={commentNumber}
+            />
+          </Suspense>
         </div>
 
         {comment.streamId ? (
@@ -106,7 +119,7 @@ function CommentItem({
           <CommentContent content={comment.content as AgentUIMessage[]} />
         )}
 
-        <div className="mt-3">
+        {/* <div className="mt-3">
           <ReactionButtons
             commentId={comment.id}
             owner={owner}
@@ -114,7 +127,7 @@ function CommentItem({
             reactions={reactions}
             repo={repo}
           />
-        </div>
+        </div> */}
       </div>
 
       {children}

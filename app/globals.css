@@ -94,11 +94,10 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(10.7% 0 0deg);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --card: oklch(18.2% 0 0deg);
+  --card-foreground: oklch(96.4% 0deg) --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -134,6 +133,25 @@
   body {
     @apply bg-background text-foreground selection:bg-foreground selection:text-background font-sans;
   }
+}
+
+@utility transition-instant-hover {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: 200ms;
+  &:hover {
+    transition-duration: 0ms;
+  }
+}
+
+@utility transition-normal {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: 200ms;
 }
 
 @keyframes shimmer {

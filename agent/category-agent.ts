@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
-import { categories, posts } from "@/lib/db/schema";
+import { categories, llmUsers, posts } from "@/lib/db/schema";
 import { updatePostIndex } from "@/lib/typesense-index";
 import { nanoid } from "@/lib/utils";
 
@@ -18,14 +18,22 @@ export async function runCategoryAgent({
   repo: string;
   content: string;
 }) {
-  const existingCategories = await db
-    .select({
-      id: categories.id,
-      title: categories.title,
-      emoji: categories.emoji,
-    })
-    .from(categories)
-    .where(eq(categories.owner, owner));
+  const [existingCategories, defaultLlmUser] = await Promise.all([
+    db
+      .select({
+        id: categories.id,
+        title: categories.title,
+        emoji: categories.emoji,
+      })
+      .from(categories)
+      .where(eq(categories.owner, owner)),
+    db
+      .select({ model: llmUsers.model })
+      .from(llmUsers)
+      .where(eq(llmUsers.isDefault, true))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ]);
 
   const result: {
     title: string;
@@ -34,7 +42,7 @@ export async function runCategoryAgent({
   } = { title: "" };
 
   const stream = streamText({
-    model: "anthropic/claude-haiku-4.5",
+    model: defaultLlmUser?.model ?? "anthropic/claude-haiku-4.5",
     system: `You are a forum assistant. Given a post's content, you must:
 1. Set a concise post title (5-7 words max) using setTitle
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
