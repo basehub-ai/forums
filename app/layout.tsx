@@ -1,23 +1,15 @@
 import { Analytics } from "@vercel/analytics/next"
+import { GeistMono } from "geist/font/mono"
+import { GeistSans } from "geist/font/sans"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "next-themes"
 
+import { GlobalSearchDialog } from "@/components/global-search"
 import { Header } from "@/components/header"
 import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-})
-
 export const metadata: Metadata = {
-  title: "Forums",
+  title: "Forums | A BaseHub Experiment",
   description: "An experiment by BaseHub.",
 }
 
@@ -27,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"
@@ -37,6 +29,7 @@ export default function RootLayout({
         >
           <Header />
           {children}
+          <GlobalSearchDialog />
         </ThemeProvider>
         <Analytics />
       </body>

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "ctx7sk-7e30c2f8-f36b-4631-8186-e47dc3fdd5bd"
+      ]
+    }
+  }
+}

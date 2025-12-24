@@ -8,6 +8,18 @@ type Comment = InferSelectModel<typeof comments>
 const POSTS_COLLECTION = "posts"
 const COMMENTS_COLLECTION = "comments"
 
+let collectionsEnsured: Promise<void> | null = null
+
+function ensureCollectionsOnce() {
+  if (!collectionsEnsured) {
+    collectionsEnsured = ensureCollections().catch((err) => {
+      collectionsEnsured = null
+      throw err
+    })
+  }
+  return collectionsEnsured
+}
+
 export async function ensureCollections() {
   const collections = await typesense.collections().retrieve()
   const existingNames = new Set(collections.map((c) => c.name))
@@ -49,6 +61,7 @@ export async function ensureCollections() {
 }
 
 export async function indexPost(post: Post, commentCount: number) {
+  await ensureCollectionsOnce()
   await typesense
     .collections(POSTS_COLLECTION)
     .documents()
@@ -73,6 +86,7 @@ export async function updatePostIndex(
     commentCount?: number
   }
 ) {
+  await ensureCollectionsOnce()
   const doc: Record<string, unknown> = { id: postId }
   if (updates.title !== undefined) {
     doc.title = updates.title
@@ -108,6 +122,7 @@ export async function indexComment(
     return
   }
 
+  await ensureCollectionsOnce()
   await typesense.collections(COMMENTS_COLLECTION).documents().upsert({
     id: comment.id,
     postId: comment.postId,

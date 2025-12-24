@@ -9,6 +9,10 @@ export type ToolContext = {
 }
 
 export function getTools(context: ToolContext) {
+  return createTools(context)
+}
+
+function createTools(context: ToolContext) {
   return {
     Read: tool({
       name: "Read",
@@ -427,3 +431,6 @@ export function getTools(context: ToolContext) {
     WebExtract: extractTool,
   } satisfies ToolSet
 }
+
+export type AgentTools = ReturnType<typeof createTools>
+export type AgentToolName = keyof AgentTools

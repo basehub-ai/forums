@@ -25,6 +25,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -41,48 +42,62 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* #46A758 */
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.875rem;
+  --background: oklch(98.5% 0.002 240deg); /* #F9FAFB */
+  --foreground: oklch(18% 0.015 240deg); /* #0C1318 */
+  --card: oklch(98.5% 0.002 240deg); /* #F9FAFB */
+  --card-foreground: oklch(18% 0.015 240deg); /* #0C1318 */
+
+  --popover: oklch(99.5% 0.001 240deg); /* Pure white-ish */
+  --popover-foreground: oklch(18% 0.015 240deg);
+
+  --primary: oklch(22% 0.02 240deg);
+  --primary-foreground: oklch(98.5% 0.002 240deg);
+
+  --secondary: oklch(95% 0.005 240deg);
+  --secondary-foreground: oklch(25% 0.015 240deg);
+
+  --muted: oklch(94% 0.004 240deg);
+  --muted-foreground: oklch(45% 0.01 240deg);
+
+  --accent: oklch(95.5% 0 240deg); /* #F0F0F0 */
+  --accent-foreground: oklch(20% 0.015 240deg); /* #10171C */
+
+  --destructive: oklch(66.9% 0.218 25.3deg); /* #FF4949 */
+  --success: oklch(65.1% 0.147 147deg); /* #46A758 */
+
+  --border: oklch(90.9% 0.00687 146deg); /* #DEE2DE */
+  --input: oklch(90.9% 0.00687 146deg); /* #DEE2DE */
+  --ring: oklch(90.9% 0.00687 146deg); /* #DEE2DE */
+
+  /* Charts - Meadow palette */
+  --chart-1: oklch(58% 0.14 145deg); /* Meadow green */
+  --chart-2: oklch(70% 0.1 230deg); /* Sky blue */
+  --chart-3: oklch(65% 0.15 55deg); /* Sunflower/marigold */
+  --chart-4: oklch(62% 0.16 45deg); /* Terracotta (BaseHub) */
+  --chart-5: oklch(55% 0.12 320deg); /* Wildflower pink */
+
+  /* Sidebar */
+  --sidebar: oklch(97% 0.003 240deg);
+  --sidebar-foreground: oklch(18% 0.015 240deg);
+  --sidebar-primary: oklch(22% 0.02 240deg);
+  --sidebar-primary-foreground: oklch(98.5% 0.002 240deg);
+  --sidebar-accent: oklch(95% 0.005 240deg);
+  --sidebar-accent-foreground: oklch(25% 0.015 240deg);
+  --sidebar-border: oklch(92% 0.004 240deg);
+  --sidebar-ring: oklch(58% 0.14 145deg);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(10.7% 0 0deg);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --card: oklch(18.2% 0 0deg);
+  --card-foreground: oklch(96.4% 0deg);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
@@ -117,8 +132,27 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground selection:bg-foreground selection:text-background font-sans;
   }
+}
+
+@utility transition-instant-hover {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: 200ms;
+  &:hover {
+    transition-duration: 0ms;
+  }
+}
+
+@utility transition-normal {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: 200ms;
 }
 
 @keyframes shimmer {
