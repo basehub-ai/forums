@@ -1,8 +1,6 @@
 import { ImageResponse } from "next/og"
 import { NextRequest } from "next/server"
 
-export const runtime = "edge"
-
 const size = {
   width: 1200,
   height: 630,

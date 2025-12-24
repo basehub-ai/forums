@@ -1,9 +1,27 @@
 import { desc, eq, sql } from "drizzle-orm"
 import { cacheLife } from "next/cache"
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ model: string[] }>
+}): Promise<Metadata> {
+  const { model: modelSplit } = await params
+  const model = modelSplit.join("/")
+  const origin = getSiteOrigin()
+
+  return {
+    openGraph: {
+      images: [`${origin}/api/og/llm?model=${encodeURIComponent(model)}`],
+    },
+  }
+}
 
 export const generateStaticParams = async () => {
   const allLlmUsers = await db.select().from(llmUsers)

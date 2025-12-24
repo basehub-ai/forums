@@ -5,8 +5,6 @@ import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
 
-export const runtime = "edge"
-
 const size = {
   width: 1200,
   height: 630,

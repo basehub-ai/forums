@@ -4,8 +4,6 @@ import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import { categories, posts } from "@/lib/db/schema"
 
-export const runtime = "edge"
-
 const size = {
   width: 1200,
   height: 630,
