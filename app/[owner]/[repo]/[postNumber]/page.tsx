@@ -1,6 +1,7 @@
 import { and, asc, eq } from "drizzle-orm"
 import { ArrowLeftIcon } from "lucide-react"
 import { cacheTag } from "next/cache"
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { gitHubUserLoader } from "@/lib/auth"
@@ -12,12 +13,30 @@ import {
   posts,
   reactions,
 } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
 import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
 import { PostMetadataProvider } from "./post-metadata-context"
 import { PostSidebar } from "./post-sidebar"
 import { PostTitle } from "./post-title"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ owner: string; repo: string; postNumber: string }>
+}): Promise<Metadata> {
+  const { owner, repo, postNumber } = await params
+  const origin = getSiteOrigin()
+
+  return {
+    openGraph: {
+      images: [
+        `${origin}/api/og/post?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&postNumber=${encodeURIComponent(postNumber)}`,
+      ],
+    },
+  }
+}
 
 export const generateStaticParams = async () => {
   const allPosts = await db.select().from(posts)

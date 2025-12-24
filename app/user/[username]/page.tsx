@@ -1,10 +1,27 @@
 import { desc, eq, sql } from "drizzle-orm"
 import { cacheLife } from "next/cache"
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>
+}): Promise<Metadata> {
+  const { username } = await params
+  const origin = getSiteOrigin()
+
+  return {
+    openGraph: {
+      images: [`${origin}/api/og/user?username=${username}`],
+    },
+  }
+}
 
 export default async function UserProfilePage({
   params,

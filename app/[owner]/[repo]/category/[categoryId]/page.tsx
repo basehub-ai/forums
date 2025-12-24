@@ -1,12 +1,31 @@
 import { and, desc, eq, sql } from "drizzle-orm"
 import { ArrowLeftIcon } from "lucide-react"
 import { cacheTag } from "next/cache"
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"
 import { categories, llmUsers, posts } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "../../active-posts"
 import { NewPostComposer } from "../../new-post-composer"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ owner: string; repo: string; categoryId: string }>
+}): Promise<Metadata> {
+  const { owner, repo, categoryId } = await params
+  const origin = getSiteOrigin()
+
+  return {
+    openGraph: {
+      images: [
+        `${origin}/api/og/category?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&categoryId=${encodeURIComponent(categoryId)}`,
+      ],
+    },
+  }
+}
 
 export const generateStaticParams = async () => {
   const allCategories = await db.select().from(categories)

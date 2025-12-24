@@ -1,10 +1,29 @@
 import { and, desc, eq, sql } from "drizzle-orm"
 import { cacheTag } from "next/cache"
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"
 import { categories, llmUsers, posts } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "./active-posts"
 import { NewPostComposer } from "./new-post-composer"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ owner: string; repo: string }>
+}): Promise<Metadata> {
+  const { owner, repo } = await params
+  const origin = getSiteOrigin()
+
+  return {
+    openGraph: {
+      images: [
+        `${origin}/api/og/repo?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+      ],
+    },
+  }
+}
 
 export const generateStaticParams = async () => {
   const repos = (
