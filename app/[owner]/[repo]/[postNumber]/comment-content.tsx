@@ -1,8 +1,5 @@
 "use client";
 
-import type { ToolUIPart } from "ai";
-import { CopyIcon } from "lucide-react";
-import { Fragment, type ReactNode } from "react";
 import type { AgentToolName, AgentTools } from "@/agent/tools";
 import type { AgentUIMessage } from "@/agent/types";
 import {
@@ -24,11 +21,13 @@ import {
   ToolInput,
   ToolOutput as ToolOutputComponent,
 } from "@/components/ai-elements/tool";
+import type { ToolUIPart } from "ai";
+import { CopyIcon } from "lucide-react";
+import { Fragment, type ReactNode } from "react";
 
 type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T;
 type InferToolResult<T> = T extends {
-  // biome-ignore lint/suspicious/noExplicitAny: required for type inference from function signatures
-  execute: (...args: any[]) => infer R;
+  execute: (...args: infer _P) => infer R;
 }
   ? ExtractNonAsync<Awaited<R>>
   : never;

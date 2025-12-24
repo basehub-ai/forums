@@ -1,5 +1,7 @@
 "use client";
 
+import { CommitIcon } from "@radix-ui/react-icons";
+import { GitBranchIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { usePostMetadata } from "./post-metadata-context";
@@ -59,6 +61,18 @@ export function PostSidebar({ participants }: { participants: Participant[] }) {
             <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent" />
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="text-muted-foreground flex items-center gap-1">
+          <GitBranchIcon className="size-4" />
+          <span className="text-sm font-medium">main</span>
+        </div>
+
+        <div className="text-muted-foreground flex items-center gap-1">
+          <CommitIcon className="size-4" />
+          <span className="text-sm font-medium">d8af6b2</span>
+        </div>
       </div>
     </aside>
   );
