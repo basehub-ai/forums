@@ -1,0 +1,86 @@
+import { ImageResponse } from "next/og"
+import { eq } from "drizzle-orm"
+import { db } from "@/lib/db/client"
+import { categories } from "@/lib/db/schema"
+
+export const runtime = "edge"
+export const alt = "Category"
+export const size = {
+  width: 1200,
+  height: 630,
+}
+export const contentType = "image/png"
+
+export default async function Image({
+  params,
+}: {
+  params: Promise<{ owner: string; repo: string; categoryId: string }>
+}) {
+  const { owner, repo, categoryId } = await params
+
+  const category = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.id, categoryId))
+    .limit(1)
+    .then((r) => r[0])
+
+  const title = category
+    ? `${category.emoji} ${category.title}`
+    : "Category"
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          backgroundColor: "#09090b",
+          padding: 60,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 28,
+              color: "#71717a",
+            }}
+          >
+            {owner}/{repo}
+          </div>
+          <div
+            style={{
+              fontSize: 72,
+              fontWeight: "bold",
+              color: "#fafafa",
+              lineHeight: 1.2,
+            }}
+          >
+            {title}
+          </div>
+        </div>
+        <div
+          style={{
+            fontSize: 28,
+            color: "#a1a1aa",
+          }}
+        >
+          Category
+        </div>
+      </div>
+    ),
+    {
+      ...size,
+    }
+  )
+}
