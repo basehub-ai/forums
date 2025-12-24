@@ -13,7 +13,7 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
   return messages
     .map((msg) => {
       if (msg.role === "user" || msg.role === "assistant") {
-        const parts = msg.content
+        const parts = msg.parts
           .map((part) => {
             if (typeof part === "string") {
               return part
