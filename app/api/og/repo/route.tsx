@@ -1,33 +1,27 @@
 import { ImageResponse } from "next/og"
-import { eq } from "drizzle-orm"
-import { db } from "@/lib/db/client"
-import { categories } from "@/lib/db/schema"
+import { NextRequest } from "next/server"
 
 export const runtime = "edge"
-export const alt = "Category"
-export const size = {
+
+const size = {
   width: 1200,
   height: 630,
 }
-export const contentType = "image/png"
 
-export default async function Image({
-  params,
-}: {
-  params: Promise<{ owner: string; repo: string; categoryId: string }>
-}) {
-  const { owner, repo, categoryId } = await params
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const owner = searchParams.get("owner")
+  const repo = searchParams.get("repo")
 
-  const category = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, categoryId))
-    .limit(1)
-    .then((r) => r[0])
+  if (!owner || !repo) {
+    return new Response("Missing parameters", { status: 400 })
+  }
 
-  const title = category
-    ? `${category.emoji} ${category.title}`
-    : "Category"
+  const repoData = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`
+  ).then((res) => (res.ok ? res.json() : null))
+
+  const description = repoData?.description || "Forum discussions"
 
   return new ImageResponse(
     (
@@ -52,30 +46,31 @@ export default async function Image({
         >
           <div
             style={{
-              fontSize: 28,
-              color: "#71717a",
-            }}
-          >
-            {owner}/{repo}
-          </div>
-          <div
-            style={{
               fontSize: 72,
               fontWeight: "bold",
               color: "#fafafa",
               lineHeight: 1.2,
             }}
           >
-            {title}
+            {owner}/{repo}
+          </div>
+          <div
+            style={{
+              fontSize: 32,
+              color: "#a1a1aa",
+              maxWidth: 1080,
+            }}
+          >
+            {description}
           </div>
         </div>
         <div
           style={{
             fontSize: 28,
-            color: "#a1a1aa",
+            color: "#71717a",
           }}
         >
-          Category
+          Forum
         </div>
       </div>
     ),

@@ -1,22 +1,26 @@
 import { ImageResponse } from "next/og"
+import { NextRequest } from "next/server"
 import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import { categories, posts } from "@/lib/db/schema"
 
 export const runtime = "edge"
-export const alt = "Post"
-export const size = {
+
+const size = {
   width: 1200,
   height: 630,
 }
-export const contentType = "image/png"
 
-export default async function Image({
-  params,
-}: {
-  params: Promise<{ owner: string; repo: string; postNumber: string }>
-}) {
-  const { postNumber: postNumberStr, owner, repo } = await params
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const owner = searchParams.get("owner")
+  const repo = searchParams.get("repo")
+  const postNumberStr = searchParams.get("postNumber")
+
+  if (!owner || !repo || !postNumberStr) {
+    return new Response("Missing parameters", { status: 400 })
+  }
+
   const postNumber = Number.parseInt(postNumberStr, 10)
 
   const postWithCategory = await db
