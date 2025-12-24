@@ -21,9 +21,6 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
             if (part.type === "text") {
               return part.text
             }
-            if (part.type === "image") {
-              return `![Image](${part.image})`
-            }
             return ""
           })
           .filter(Boolean)
