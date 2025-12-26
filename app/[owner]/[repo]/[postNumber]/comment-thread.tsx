@@ -305,11 +305,13 @@ export function CommentThread({
         if (item.type === "mention") {
           const author = authorsById[item.data.authorId]
           return (
-            <MentionBanner
-              author={author}
-              key={`mention-${item.data.id}`}
-              mention={item.data}
-            />
+            <Suspense>
+              <MentionBanner
+                author={author}
+                key={`mention-${item.data.id}`}
+                mention={item.data}
+              />
+            </Suspense>
           )
         }
 

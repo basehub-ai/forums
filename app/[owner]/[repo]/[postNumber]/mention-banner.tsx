@@ -1,3 +1,5 @@
+"use client"
+
 import type { InferSelectModel } from "drizzle-orm"
 import { MessageCircleIcon } from "lucide-react"
 import Link from "next/link"
