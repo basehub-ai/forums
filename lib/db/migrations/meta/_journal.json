@@ -29,6 +29,13 @@
       "when": 1766787644958,
       "tag": "0003_melted_hellfire_club",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766790135987,
+      "tag": "0004_large_black_tarantula",
+      "breakpoints": true
     }
   ]
 }

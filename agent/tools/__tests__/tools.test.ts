@@ -268,7 +268,7 @@ describe("ReadPost Tool", () => {
     queryCount = 0
   })
 
-  test("throws error when post is not found", () => {
+  test("throws error when post params are missing", () => {
     mockDbData = { posts: [], comments: [] }
 
     const workspace = createTestWorkspace(testDir)
@@ -276,10 +276,10 @@ describe("ReadPost Tool", () => {
 
     expect(
       tools.ReadPost.execute?.(
-        { postId: "nonexistent" },
+        {},
         { messages: [], toolCallId: "" }
       )
-    ).rejects.toThrow("Post not found: nonexistent")
+    ).rejects.toThrow("Post number, owner, and repository are required")
   })
 
   test("correctly identifies LLM-authored comments via authorId prefix", async () => {
@@ -310,7 +310,6 @@ describe("ReadPost Tool", () => {
             },
           ],
           createdAt: now,
-          mentionSourcePostId: null,
         },
         {
           id: "c1",
@@ -325,7 +324,6 @@ describe("ReadPost Tool", () => {
             },
           ],
           createdAt: now + 1000,
-          mentionSourcePostId: null,
         },
         {
           id: "c2",
@@ -340,7 +338,6 @@ describe("ReadPost Tool", () => {
             },
           ],
           createdAt: now + 2000,
-          mentionSourcePostId: null,
         },
       ],
     }
@@ -348,7 +345,7 @@ describe("ReadPost Tool", () => {
     const workspace = createTestWorkspace(testDir)
     const tools = getTools({ workspace })
     const result = await tools.ReadPost.execute?.(
-      { postId: "post-1" },
+      { postNumber: 1, postOwner: "org", postRepo: "repo" },
       { messages: [], toolCallId: "" }
     )
 
@@ -358,83 +355,6 @@ describe("ReadPost Tool", () => {
       expect(result.comments[0].authorUsername).toBe("assistant")
       expect(result.comments[1].isFromLLM).toBe(false)
       expect(result.comments[1].authorUsername).toBe("another-human")
-    }
-  })
-
-  test("filters out comments that are mention sources", async () => {
-    const now = Date.now()
-    mockDbData = {
-      posts: [
-        {
-          id: "post-1",
-          number: 1,
-          owner: "org",
-          repo: "repo",
-          title: "Test",
-          createdAt: now,
-          rootCommentId: "root",
-        },
-      ],
-      comments: [
-        {
-          id: "root",
-          postId: "post-1",
-          authorId: "user-1",
-          authorUsername: "author",
-          content: [
-            {
-              id: "m1",
-              role: "user",
-              parts: [{ type: "text", text: "Original" }],
-            },
-          ],
-          createdAt: now,
-          mentionSourcePostId: null,
-        },
-        {
-          id: "mention-comment",
-          postId: "post-1",
-          authorId: "user-2",
-          authorUsername: "mentioner",
-          content: [
-            {
-              id: "m2",
-              role: "user",
-              parts: [{ type: "text", text: "Mentioned from #42" }],
-            },
-          ],
-          createdAt: now + 1000,
-          mentionSourcePostId: "post-42",
-        },
-        {
-          id: "regular-comment",
-          postId: "post-1",
-          authorId: "user-3",
-          authorUsername: "regular",
-          content: [
-            {
-              id: "m3",
-              role: "user",
-              parts: [{ type: "text", text: "Normal reply" }],
-            },
-          ],
-          createdAt: now + 2000,
-          mentionSourcePostId: null,
-        },
-      ],
-    }
-
-    const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
-    const result = await tools.ReadPost.execute?.(
-      { postId: "post-1" },
-      { messages: [], toolCallId: "" }
-    )
-
-    if (result && "comments" in result) {
-      expect(result.comments).toHaveLength(1)
-      expect(result.comments[0].authorUsername).toBe("regular")
-      expect(result.summary.totalComments).toBe(1)
     }
   })
 
@@ -475,7 +395,6 @@ describe("ReadPost Tool", () => {
             },
           ],
           createdAt: now,
-          mentionSourcePostId: null,
         },
       ],
     }
@@ -483,7 +402,7 @@ describe("ReadPost Tool", () => {
     const workspace = createTestWorkspace(testDir)
     const tools = getTools({ workspace })
     const result = await tools.ReadPost.execute?.(
-      { postId: "post-1" },
+      { postNumber: 1, postOwner: "org", postRepo: "repo" },
       { messages: [], toolCallId: "" }
     )
 

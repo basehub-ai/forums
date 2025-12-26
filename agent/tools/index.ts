@@ -502,7 +502,7 @@ function createTools(context: ToolContext) {
 
         const rootComment = allComments.find((c) => c.id === post.rootCommentId)
         const otherComments = allComments.filter(
-          (c) => c.id !== post.rootCommentId && !c.mentionSourcePostId
+          (c) => c.id !== post.rootCommentId
         )
 
         function extractText(content: AgentUIMessage[]): string {

@@ -10,6 +10,7 @@ import {
   categories,
   comments,
   llmUsers,
+  mentions,
   posts,
   reactions,
 } from "@/lib/db/schema"
@@ -62,7 +63,7 @@ export default async function PostPage({
     notFound()
   }
 
-  const [postWithCategory, allLlmUsers, postComments, postReactions] =
+  const [postWithCategory, allLlmUsers, postComments, postReactions, postMentions] =
     await Promise.all([
       db
         .select({
@@ -120,6 +121,19 @@ export default async function PostPage({
           )
         )
         .then((r) => r.map((row) => row.reactions)),
+      db
+        .select()
+        .from(mentions)
+        .innerJoin(posts, eq(mentions.targetPostId, posts.id))
+        .where(
+          and(
+            eq(posts.owner, owner),
+            eq(posts.repo, repo),
+            eq(posts.number, postNumber)
+          )
+        )
+        .orderBy(asc(mentions.createdAt))
+        .then((r) => r.map((row) => row.mentions)),
     ])
 
   if (!postWithCategory) {
@@ -139,6 +153,11 @@ export default async function PostPage({
       llmAuthorIds.add(c.authorId)
     } else if (c.authorUsername) {
       humanAuthors.push({ authorId: c.authorId, username: c.authorUsername })
+    }
+  }
+  for (const m of postMentions) {
+    if (m.authorUsername) {
+      humanAuthors.push({ authorId: m.authorId, username: m.authorUsername })
     }
   }
 
@@ -230,6 +249,7 @@ export default async function PostPage({
               authorsById={authorsById}
               commentNumbers={commentNumbers}
               comments={postComments}
+              mentions={postMentions}
               owner={owner}
               reactions={postReactions}
               repo={repo}

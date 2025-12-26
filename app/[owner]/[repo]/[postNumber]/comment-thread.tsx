@@ -6,14 +6,17 @@ import type { AgentUIMessage } from "@/agent/types"
 import { CopyLinkButton } from "@/components/copy-link-button"
 import type {
   comments as commentsSchema,
+  mentions as mentionsSchema,
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
+import { MentionBanner } from "./mention-banner"
 import { PostComposer } from "./post-composer"
 import { StreamingContent } from "./streaming-content"
 
 type Comment = InferSelectModel<typeof commentsSchema>
+type Mention = InferSelectModel<typeof mentionsSchema>
 type Reaction = InferSelectModel<typeof reactionsSchema>
 
 type AuthorInfo = {
@@ -246,10 +249,15 @@ function CommentTreeRecursive({
   )
 }
 
+type TimelineItem =
+  | { type: "comment"; data: Comment; createdAt: number }
+  | { type: "mention"; data: Mention; createdAt: number }
+
 export function CommentThread({
   owner,
   repo,
   comments,
+  mentions,
   authorsById,
   reactions,
   rootCommentId,
@@ -262,6 +270,7 @@ export function CommentThread({
   owner: string
   repo: string
   comments: Comment[]
+  mentions: Mention[]
   authorsById: Record<string, AuthorInfo>
   reactions: Reaction[]
   rootCommentId: string | null
@@ -279,23 +288,74 @@ export function CommentThread({
     reactionsByComment[reaction.commentId].push(reaction)
   }
 
+  const topLevelComments = comments.filter((c) => c.threadCommentId === null)
+
+  const timeline: TimelineItem[] = [
+    ...topLevelComments.map(
+      (c) => ({ type: "comment", data: c, createdAt: c.createdAt }) as const
+    ),
+    ...mentions.map(
+      (m) => ({ type: "mention", data: m, createdAt: m.createdAt }) as const
+    ),
+  ].sort((a, b) => a.createdAt - b.createdAt)
+
   return (
     <div className="space-y-4">
-      <CommentTreeRecursive
-        askingOptions={askingOptions}
-        authorsById={authorsById}
-        commentNumbers={commentNumbers}
-        comments={comments}
-        depth={0}
-        onCancelReply={onCancelReply}
-        onReply={onReply}
-        owner={owner}
-        reactionsByComment={reactionsByComment}
-        replyingToId={replyingToId}
-        repo={repo}
-        rootCommentId={rootCommentId}
-        threadCommentId={null}
-      />
+      {timeline.map((item) => {
+        if (item.type === "mention") {
+          const author = authorsById[item.data.authorId]
+          return (
+            <MentionBanner
+              author={author}
+              key={`mention-${item.data.id}`}
+              mention={item.data}
+            />
+          )
+        }
+
+        const comment = item.data
+        const author = authorsById[comment.authorId]
+        if (!author) {
+          return null
+        }
+        const commentNumber = commentNumbers.get(comment.id) ?? "?"
+        const isRootComment = comment.id === rootCommentId
+
+        return (
+          <CommentItem
+            askingOptions={askingOptions}
+            author={author}
+            comment={comment}
+            commentId={comment.id}
+            commentNumber={commentNumber}
+            depth={0}
+            isReplying={replyingToId === comment.id}
+            isRootComment={isRootComment}
+            key={comment.id}
+            onCancelReply={onCancelReply}
+            onReply={onReply}
+            owner={owner}
+            reactions={reactionsByComment[comment.id] ?? []}
+            repo={repo}
+          >
+            <CommentTreeRecursive
+              askingOptions={askingOptions}
+              authorsById={authorsById}
+              commentNumbers={commentNumbers}
+              comments={comments}
+              depth={1}
+              onCancelReply={onCancelReply}
+              onReply={onReply}
+              owner={owner}
+              reactionsByComment={reactionsByComment}
+              replyingToId={replyingToId}
+              repo={repo}
+              rootCommentId={rootCommentId}
+              threadCommentId={comment.id}
+            />
+          </CommentItem>
+        )
+      })}
     </div>
   )
 }

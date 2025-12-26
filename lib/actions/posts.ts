@@ -14,6 +14,7 @@ import {
   categories,
   comments,
   llmUsers,
+  mentions,
   postCounters,
   posts,
   reactions,
@@ -24,7 +25,7 @@ import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
 
-export async function createMentionComments({
+export async function createMentions({
   sourcePostId,
   sourceCommentId,
   authorId,
@@ -49,18 +50,32 @@ export async function createMentionComments({
   const resolved = await resolvePostLinks(parsedLinks, owner, repo)
   const now = Date.now()
 
+  const sourcePost = await db
+    .select({
+      number: posts.number,
+      title: posts.title,
+    })
+    .from(posts)
+    .where(eq(posts.id, sourcePostId))
+    .limit(1)
+    .then((r) => r[0])
+
+  if (!sourcePost) {
+    return
+  }
+
   for (const { postId: targetPostId } of resolved.values()) {
     if (targetPostId === sourcePostId) {
       continue
     }
 
     const existing = await db
-      .select({ id: comments.id })
-      .from(comments)
+      .select({ id: mentions.id })
+      .from(mentions)
       .where(
         and(
-          eq(comments.postId, targetPostId),
-          eq(comments.mentionSourceCommentId, sourceCommentId)
+          eq(mentions.targetPostId, targetPostId),
+          eq(mentions.sourceCommentId, sourceCommentId)
         )
       )
       .limit(1)
@@ -69,35 +84,18 @@ export async function createMentionComments({
       continue
     }
 
-    await db.insert(comments).values({
+    await db.insert(mentions).values({
       id: nanoid(),
-      postId: targetPostId,
+      targetPostId,
+      sourcePostId,
+      sourceCommentId,
+      sourcePostNumber: sourcePost.number,
+      sourcePostTitle: sourcePost.title,
+      sourcePostOwner: owner,
+      sourcePostRepo: repo,
       authorId,
       authorUsername,
-      content: [
-        {
-          id: nanoid(),
-          role: "user",
-          parts: [
-            {
-              type: "text",
-              text: `sourcePostId:${sourcePostId}`,
-            },
-            {
-              type: "text",
-              text: `sourceCommentId:${sourceCommentId}`,
-            },
-            {
-              type: "text",
-              text: `${authorUsername} mentioned this post.`,
-            },
-          ],
-        },
-      ],
-      mentionSourcePostId: sourcePostId,
-      mentionSourceCommentId: sourceCommentId,
       createdAt: now,
-      updatedAt: now,
     })
 
     const targetPost = await db
@@ -272,7 +270,7 @@ export async function createPost(data: {
   )
 
   waitUntil(
-    createMentionComments({
+    createMentions({
       sourcePostId: postId,
       sourceCommentId: commentId,
       authorId: session.user.id,
@@ -420,7 +418,7 @@ export async function createComment(data: {
   )
 
   waitUntil(
-    createMentionComments({
+    createMentions({
       sourcePostId: data.postId,
       sourceCommentId: commentId,
       authorId: session.user.id,

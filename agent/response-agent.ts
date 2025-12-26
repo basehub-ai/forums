@@ -7,7 +7,7 @@ import {
 import { asc, eq } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { getWritable } from "workflow"
-import { createMentionComments } from "@/lib/actions/posts"
+import { createMentions } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
 import { getTools } from "./tools"
@@ -200,7 +200,7 @@ async function closeStreamStep({
     // check each internal message for mentions
     // if there are no mentions in the message the function does nothing
     for (const message of content) {
-      createMentionComments({
+      createMentions({
         sourcePostId: postId,
         sourceCommentId: commentId,
         authorId: comment.authorId,
