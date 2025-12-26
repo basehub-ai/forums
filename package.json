@@ -20,6 +20,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/ms": "^2.1.0",
     "@upstash/redis": "^1.35.7",
     "@vercel/analytics": "^1.6.1",
