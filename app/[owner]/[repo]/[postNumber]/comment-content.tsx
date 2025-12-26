@@ -157,6 +157,7 @@ export function CommentContent({
   isStreaming = false,
   onRetry,
 }: CommentContentProps) {
+  console.log(content)
   return (
     <div className="space-y-2">
       {content.map((msg) => (
