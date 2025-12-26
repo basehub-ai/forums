@@ -18,8 +18,10 @@ import {
   posts,
   reactions,
 } from "@/lib/db/schema"
+import { resolvePostLinks } from "@/lib/post-links"
+import { extractPostLinks } from "@/lib/post-links-parser"
 import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
-import { nanoid } from "@/lib/utils"
+import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
 
 function extractMentions(content: AgentUIMessage): string[] {
@@ -33,6 +35,99 @@ function extractMentions(content: AgentUIMessage): string[] {
     }
   }
   return [...mentions]
+}
+
+export async function createMentionComments({
+  sourcePostId,
+  sourceCommentId,
+  authorId,
+  authorUsername,
+  content,
+  owner,
+  repo,
+}: {
+  sourcePostId: string
+  sourceCommentId: string
+  authorId: string
+  authorUsername: string | null
+  content: AgentUIMessage
+  owner: string
+  repo: string
+}) {
+  const parsedLinks = extractPostLinks(content)
+  if (parsedLinks.length === 0) {
+    return
+  }
+
+  const resolved = await resolvePostLinks(parsedLinks, owner, repo)
+  const now = Date.now()
+
+  for (const { postId: targetPostId } of resolved.values()) {
+    if (targetPostId === sourcePostId) {
+      continue
+    }
+
+    const existing = await db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(
+        and(
+          eq(comments.postId, targetPostId),
+          eq(comments.mentionSourceCommentId, sourceCommentId)
+        )
+      )
+      .limit(1)
+
+    if (existing.length > 0) {
+      continue
+    }
+
+    await db.insert(comments).values({
+      id: nanoid(),
+      postId: targetPostId,
+      authorId,
+      authorUsername,
+      content: [
+        {
+          id: nanoid(),
+          role: "user",
+          parts: [
+            {
+              type: "text",
+              text: `sourcePostId:${sourcePostId}`,
+            },
+            {
+              type: "text",
+              text: `sourceCommentId:${sourceCommentId}`,
+            },
+            {
+              type: "text",
+              text: `${authorUsername} mentioned this post.`,
+            },
+          ],
+        },
+      ],
+      mentionSourcePostId: sourcePostId,
+      mentionSourceCommentId: sourceCommentId,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    const targetPost = await db
+      .select({ owner: posts.owner, repo: posts.repo })
+      .from(posts)
+      .where(eq(posts.id, targetPostId))
+      .limit(1)
+      .then((r) => r[0])
+    if (targetPost) {
+      await Promise.all([
+        fetch(
+          `${getSiteOrigin()}/api/revalidate?tag=repo:${targetPost.owner}:${targetPost.repo}`
+        ),
+        fetch(`${getSiteOrigin()}/api/revalidate?tag=post:${targetPostId}`),
+      ])
+    }
+  }
 }
 
 async function getSessionOrThrow() {
@@ -165,36 +260,41 @@ export async function createPost(data: {
     .map((p) => p.text)
     .join("\n\n")
 
+  // Index post first so category agent can update it
+  await indexPost(newPost, 1)
+
   if (contentText) {
-    waitUntil(
-      runCategoryAgent({
-        postId,
-        owner: data.owner,
-        repo: data.repo,
-        content: contentText,
-      })
-    )
+    await runCategoryAgent({
+      postId,
+      owner: data.owner,
+      repo: data.repo,
+      content: contentText,
+    })
   }
 
   waitUntil(
     (async () => {
-      const [post] = await db
+      const [comment] = await db
         .select()
-        .from(posts)
-        .where(eq(posts.id, postId))
+        .from(comments)
+        .where(eq(comments.id, commentId))
         .limit(1)
-      if (post) {
-        await indexPost(post, 1)
-        const [comment] = await db
-          .select()
-          .from(comments)
-          .where(eq(comments.id, commentId))
-          .limit(1)
-        if (comment) {
-          await indexComment(comment, data.owner, data.repo, true)
-        }
+      if (comment) {
+        await indexComment(comment, data.owner, data.repo, true)
       }
     })()
+  )
+
+  waitUntil(
+    createMentionComments({
+      sourcePostId: postId,
+      sourceCommentId: commentId,
+      authorId: session.user.id,
+      authorUsername,
+      content: data.content,
+      owner: data.owner,
+      repo: data.repo,
+    })
   )
 
   updateTag(`repo:${data.owner}:${data.repo}`)
@@ -334,6 +434,18 @@ export async function createComment(data: {
     })()
   )
 
+  waitUntil(
+    createMentionComments({
+      sourcePostId: data.postId,
+      sourceCommentId: commentId,
+      authorId: session.user.id,
+      authorUsername,
+      content: data.content,
+      owner: post.owner,
+      repo: post.repo,
+    })
+  )
+
   updateTag(`repo:${post.owner}:${post.repo}`)
   updateTag(`post:${post.id}`)
 
@@ -395,19 +507,6 @@ export async function removeReaction({
         eq(reactions.type, type)
       )
     )
-  updateTag(`repo:${owner}:${repo}`)
-  updateTag(`post:${postId}`)
-}
-
-export async function revalidateAfterStream({
-  owner,
-  repo,
-  postId,
-}: {
-  owner: string
-  repo: string
-  postId: string
-}) {
   updateTag(`repo:${owner}:${repo}`)
   updateTag(`post:${postId}`)
 }

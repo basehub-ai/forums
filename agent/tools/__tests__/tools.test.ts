@@ -1,7 +1,33 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+
+let mockDbData: { posts: any[]; comments: any[] } = { posts: [], comments: [] }
+let queryCount = 0
+
+mock.module("@/lib/db/client", () => ({
+  db: {
+    select: () => {
+      // biome-ignore lint/nursery/noIncrementDecrement: mock db
+      const currentQuery = queryCount++
+      return {
+        from: () => ({
+          where: () => ({
+            limit: () =>
+              Promise.resolve(
+                currentQuery === 0 ? mockDbData.posts.slice(0, 1) : []
+              ),
+            orderBy: () =>
+              Promise.resolve(currentQuery === 1 ? mockDbData.comments : []),
+          }),
+          orderBy: () => Promise.resolve([]),
+        }),
+      }
+    },
+  },
+}))
+
 import { getTools } from "../index"
 import { createTestWorkspace } from "./test-helpers"
 
@@ -232,6 +258,239 @@ describe("List Tool", () => {
 
     if (result && "summary" in result) {
       expect(result.summary.totalFiles).toBe(0)
+    }
+  })
+})
+
+describe("ReadPost Tool", () => {
+  beforeEach(() => {
+    mockDbData = { posts: [], comments: [] }
+    queryCount = 0
+  })
+
+  test("throws error when post is not found", () => {
+    mockDbData = { posts: [], comments: [] }
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+
+    expect(
+      tools.ReadPost.execute?.(
+        { postId: "nonexistent" },
+        { messages: [], toolCallId: "" }
+      )
+    ).rejects.toThrow("Post not found: nonexistent")
+  })
+
+  test("correctly identifies LLM-authored comments via authorId prefix", async () => {
+    const now = Date.now()
+    mockDbData = {
+      posts: [
+        {
+          id: "post-1",
+          number: 1,
+          owner: "org",
+          repo: "repo",
+          title: "Test",
+          createdAt: now,
+          rootCommentId: "root",
+        },
+      ],
+      comments: [
+        {
+          id: "root",
+          postId: "post-1",
+          authorId: "user-123",
+          authorUsername: "human",
+          content: [
+            {
+              id: "m1",
+              role: "user",
+              parts: [{ type: "text", text: "Question" }],
+            },
+          ],
+          createdAt: now,
+          mentionSourcePostId: null,
+        },
+        {
+          id: "c1",
+          postId: "post-1",
+          authorId: "llm_claude",
+          authorUsername: "assistant",
+          content: [
+            {
+              id: "m2",
+              role: "assistant",
+              parts: [{ type: "text", text: "AI response" }],
+            },
+          ],
+          createdAt: now + 1000,
+          mentionSourcePostId: null,
+        },
+        {
+          id: "c2",
+          postId: "post-1",
+          authorId: "user-456",
+          authorUsername: "another-human",
+          content: [
+            {
+              id: "m3",
+              role: "user",
+              parts: [{ type: "text", text: "Follow-up" }],
+            },
+          ],
+          createdAt: now + 2000,
+          mentionSourcePostId: null,
+        },
+      ],
+    }
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+    const result = await tools.ReadPost.execute?.(
+      { postId: "post-1" },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result && "comments" in result) {
+      expect(result.comments).toHaveLength(2)
+      expect(result.comments[0].isFromLLM).toBe(true)
+      expect(result.comments[0].authorUsername).toBe("assistant")
+      expect(result.comments[1].isFromLLM).toBe(false)
+      expect(result.comments[1].authorUsername).toBe("another-human")
+    }
+  })
+
+  test("filters out comments that are mention sources", async () => {
+    const now = Date.now()
+    mockDbData = {
+      posts: [
+        {
+          id: "post-1",
+          number: 1,
+          owner: "org",
+          repo: "repo",
+          title: "Test",
+          createdAt: now,
+          rootCommentId: "root",
+        },
+      ],
+      comments: [
+        {
+          id: "root",
+          postId: "post-1",
+          authorId: "user-1",
+          authorUsername: "author",
+          content: [
+            {
+              id: "m1",
+              role: "user",
+              parts: [{ type: "text", text: "Original" }],
+            },
+          ],
+          createdAt: now,
+          mentionSourcePostId: null,
+        },
+        {
+          id: "mention-comment",
+          postId: "post-1",
+          authorId: "user-2",
+          authorUsername: "mentioner",
+          content: [
+            {
+              id: "m2",
+              role: "user",
+              parts: [{ type: "text", text: "Mentioned from #42" }],
+            },
+          ],
+          createdAt: now + 1000,
+          mentionSourcePostId: "post-42",
+        },
+        {
+          id: "regular-comment",
+          postId: "post-1",
+          authorId: "user-3",
+          authorUsername: "regular",
+          content: [
+            {
+              id: "m3",
+              role: "user",
+              parts: [{ type: "text", text: "Normal reply" }],
+            },
+          ],
+          createdAt: now + 2000,
+          mentionSourcePostId: null,
+        },
+      ],
+    }
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+    const result = await tools.ReadPost.execute?.(
+      { postId: "post-1" },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result && "comments" in result) {
+      expect(result.comments).toHaveLength(1)
+      expect(result.comments[0].authorUsername).toBe("regular")
+      expect(result.summary.totalComments).toBe(1)
+    }
+  })
+
+  test("extracts text from multi-part messages and joins with double newlines", async () => {
+    const now = Date.now()
+    mockDbData = {
+      posts: [
+        {
+          id: "post-1",
+          number: 1,
+          owner: "org",
+          repo: "repo",
+          title: "Test",
+          createdAt: now,
+          rootCommentId: "root",
+        },
+      ],
+      comments: [
+        {
+          id: "root",
+          postId: "post-1",
+          authorId: "user-1",
+          authorUsername: "author",
+          content: [
+            {
+              id: "m1",
+              role: "user",
+              parts: [{ type: "text", text: "First paragraph" }],
+            },
+            {
+              id: "m2",
+              role: "user",
+              parts: [
+                { type: "text", text: "Second paragraph" },
+                { type: "tool-invocation", toolName: "Read", args: {} },
+                { type: "text", text: "Third paragraph" },
+              ],
+            },
+          ],
+          createdAt: now,
+          mentionSourcePostId: null,
+        },
+      ],
+    }
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+    const result = await tools.ReadPost.execute?.(
+      { postId: "post-1" },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result && "rootComment" in result) {
+      expect(result.rootComment.content).toBe(
+        "First paragraph\n\nSecond paragraph\n\nThird paragraph"
+      )
     }
   })
 })

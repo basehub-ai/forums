@@ -87,7 +87,7 @@ export async function updatePostIndex(
   }
 ) {
   await ensureCollectionsOnce()
-  const doc: Record<string, unknown> = { id: postId }
+  const doc: Record<string, unknown> = {}
   if (updates.title !== undefined) {
     doc.title = updates.title
   }
@@ -98,7 +98,10 @@ export async function updatePostIndex(
     doc.commentCount = updates.commentCount
   }
 
-  await typesense.collections(POSTS_COLLECTION).documents().upsert(doc)
+  await typesense
+    .collections(POSTS_COLLECTION)
+    .documents(postId)
+    .update(doc)
 }
 
 function extractText(comment: Comment): string {

@@ -42,10 +42,13 @@ export const comments = p.pgTable(
     seekingAnswerFrom: p.varchar("seeking_answer_from", { length: 32 }),
 
     content: p.jsonb().$type<AgentUIMessage[]>().notNull(),
-    mentions: p.jsonb("mentions").$type<string[]>().default([]),
 
     runId: p.varchar("run_id", { length: 255 }),
     streamId: p.varchar("stream_id", { length: 32 }),
+    mentionSourcePostId: p.varchar("mention_source_post_id", { length: 32 }),
+    mentionSourceCommentId: p.varchar("mention_source_comment_id", {
+      length: 32,
+    }),
 
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: p.bigint("updated_at", { mode: "number" }).notNull(),
@@ -55,6 +58,7 @@ export const comments = p.pgTable(
     p.index("idx_comments_thread").on(table.threadCommentId),
     p.index("idx_comments_author").on(table.authorId),
     p.index("idx_comments_stream").on(table.streamId),
+    p.index("idx_comments_mention_source").on(table.mentionSourcePostId),
   ]
 )
 
