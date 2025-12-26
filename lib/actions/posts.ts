@@ -24,19 +24,6 @@ import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
 
-function extractMentions(content: AgentUIMessage): string[] {
-  const mentions = new Set<string>()
-  for (const part of content.parts) {
-    if (part.type === "text") {
-      const matches = part.text.matchAll(/@([a-zA-Z0-9_-]+)/g)
-      for (const match of matches) {
-        mentions.add(match[1])
-      }
-    }
-  }
-  return [...mentions]
-}
-
 export async function createMentionComments({
   sourcePostId,
   sourceCommentId,
@@ -214,7 +201,6 @@ export async function createPost(data: {
       authorId: session.user.id,
       authorUsername,
       content: [data.content],
-      mentions: extractMentions(data.content),
       seekingAnswerFrom: data.seekingAnswerFrom,
       createdAt: now,
       updatedAt: now,
@@ -374,7 +360,6 @@ export async function createComment(data: {
       authorId: session.user.id,
       authorUsername,
       content: [data.content],
-      mentions: extractMentions(data.content),
       seekingAnswerFrom: data.seekingAnswerFrom,
       createdAt: now,
       updatedAt: now,
