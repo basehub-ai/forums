@@ -33,8 +33,10 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
 }
 
 export async function GET(
-  request: Request,
-  context: { params: Promise<{ owner: string; repo: string; postNumber: string }> }
+  _request: Request,
+  context: {
+    params: Promise<{ owner: string; repo: string; postNumber: string }>
+  }
 ) {
   const { owner, repo, postNumber: postNumberStr } = await context.params
   const postNumber = Number.parseInt(postNumberStr, 10)

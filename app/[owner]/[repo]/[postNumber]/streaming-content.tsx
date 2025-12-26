@@ -22,10 +22,11 @@ export function StreamingContent({ commentId }: { commentId: string }) {
     [commentId]
   )
 
-  const { messages, status, resumeStream } = useChat<AgentUIMessage>({
-    id: commentId,
-    transport,
-  })
+  const { messages, status, resumeStream, regenerate } =
+    useChat<AgentUIMessage>({
+      id: commentId,
+      transport,
+    })
 
   useEffect(() => {
     if (started.current) {
@@ -58,6 +59,7 @@ export function StreamingContent({ commentId }: { commentId: string }) {
       <CommentContent
         content={lastMessage ? [lastMessage] : []}
         isStreaming={isStreaming}
+        onRetry={() => regenerate()}
       />
     </>
   )

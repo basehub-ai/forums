@@ -399,6 +399,7 @@ export async function removeReaction({
   updateTag(`post:${postId}`)
 }
 
+// biome-ignore lint/suspicious/useAwait: server actions need to be async
 export async function revalidateAfterStream({
   owner,
   repo,

@@ -10,6 +10,7 @@ import { getWritable } from "workflow"
 import { revalidateAfterStream } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
+import { ERROR_CODES } from "@/lib/errors"
 import { getTools } from "./tools"
 import type { AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
@@ -43,18 +44,34 @@ export async function responseAgent({
   let stepCount = 0
   const newMessages: AgentUIMessage[] = []
   while (finishReason !== "stop" && stepCount < 100) {
-    const result = await streamTextStep({
-      owner,
-      repo,
-      model,
-      writable,
-      sandboxId,
-      initialMessages,
-      newMessages,
-    })
-    finishReason = result.finishReason
-    newMessages.push(...result.newMessages)
-    stepCount += 1
+    try {
+      const result = await streamTextStep({
+        owner,
+        repo,
+        model,
+        writable,
+        sandboxId,
+        initialMessages,
+        newMessages,
+      })
+      finishReason = result.finishReason
+      newMessages.push(...result.newMessages)
+      stepCount += 1
+    } catch (err) {
+      console.error(err)
+      newMessages.push({
+        role: "assistant",
+        id: `${streamId}-error-${ERROR_CODES.STREAM_STEP_ERROR}`,
+        metadata: { errorCode: ERROR_CODES.STREAM_STEP_ERROR },
+        parts: [
+          {
+            type: "text",
+            text: "Sorry, I encountered an error while trying to respond. Please try again later.",
+          },
+        ],
+      })
+      break
+    }
   }
 
   await closeStreamStep({
@@ -174,5 +191,5 @@ async function closeStreamStep({
       .where(eq(comments.id, commentId)),
   ])
 
-  await revalidateAfterStream({ owner, repo, postId })
+  revalidateAfterStream({ owner, repo, postId })
 }

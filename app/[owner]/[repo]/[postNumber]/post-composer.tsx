@@ -124,7 +124,7 @@ export function PostComposer({
     >
       <Textarea
         autoFocus={autoFocus}
-        className="mb-3 min-h-[100px] resize-none"
+        className="mb-3 min-h-25 resize-none"
         disabled={isPending}
         onChange={(e) => setMessage(e.target.value)}
         placeholder={threadCommentId ? "Write a reply..." : "Add a comment..."}

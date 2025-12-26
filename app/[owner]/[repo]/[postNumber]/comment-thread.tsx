@@ -35,7 +35,6 @@ function CommentItem({
   repo,
   comment,
   commentId,
-  reactions,
   isRootComment,
   author,
   commentNumber,

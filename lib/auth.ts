@@ -5,6 +5,7 @@ import DataLoader from "dataloader"
 import { cacheLife } from "next/cache"
 import { productionOrigin } from "./constants"
 import { redis } from "./redis"
+import { getSiteOrigin } from "./utils"
 
 export const auth = betterAuth({
   secondaryStorage: {
@@ -26,6 +27,7 @@ export const auth = betterAuth({
       refreshCache: false,
     },
   },
+  baseURL: getSiteOrigin(),
   plugins: [oAuthProxy({ productionURL: productionOrigin })],
   socialProviders: {
     github: {
