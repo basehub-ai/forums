@@ -1,29 +1,11 @@
 "use client"
 
+import { Collapsible } from "@base-ui/react/collapsible"
 import type { ToolUIPart } from "ai"
 import { CopyIcon, RefreshCcwIcon } from "lucide-react"
 import { Fragment, type ReactNode } from "react"
 import type { AgentToolName, AgentTools } from "@/agent/tools"
 import type { AgentUIMessage } from "@/agent/types"
-import {
-  Message,
-  MessageAction,
-  MessageActions,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message"
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/components/ai-elements/reasoning"
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput as ToolOutputComponent,
-} from "@/components/ai-elements/tool"
 import { ERROR_CODES } from "@/lib/errors"
 
 type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T
@@ -43,14 +25,14 @@ const toolRenderers: Partial<
       return null
     }
     return (
-      <div className="space-y-2 p-4">
-        <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+      <div>
+        <div>
           <span>{output.metadata.path}</span>
-          <span>•</span>
+          <span> - </span>
           <span>{output.metadata.fileSize}</span>
           {output.metadata.isPaginated ? (
             <>
-              <span>•</span>
+              <span> - </span>
               <span>
                 Lines {output.metadata.startLine}-{output.metadata.endLine} of{" "}
                 {output.metadata.totalLines}
@@ -58,67 +40,64 @@ const toolRenderers: Partial<
             </>
           ) : null}
         </div>
-        {/* <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs">
-          <code>{output.content}</code>
-        </pre> */}
       </div>
     )
   },
   Grep: (toolPart) => {
     const output = toolPart.output as ToolResult<"Grep"> | undefined
     return (
-      <Tool>
-        <ToolHeader state={toolPart.state} title="Grep" type={toolPart.type} />
-        <ToolContent>
+      <div data-state={toolPart.state} data-tool="Grep">
+        <div>Grep</div>
+        <div>
           {output ? (
-            <div className="space-y-2 p-4">
-              <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+            <div>
+              <div>
                 <span>Pattern: {output.summary.pattern}</span>
-                <span>•</span>
+                <span> - </span>
                 <span>
                   {output.summary.matchCount} matches in{" "}
                   {output.summary.fileCount} files
                 </span>
               </div>
-              <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs">
+              <pre>
                 <code>{output.matches}</code>
               </pre>
             </div>
           ) : (
-            <ToolInput input={toolPart.input} />
+            <pre>{JSON.stringify(toolPart.input, null, 2)}</pre>
           )}
-        </ToolContent>
-      </Tool>
+        </div>
+      </div>
     )
   },
   List: (toolPart) => {
     const output = toolPart.output as ToolResult<"List"> | undefined
     return (
-      <Tool>
-        <ToolHeader state={toolPart.state} title="List" type={toolPart.type} />
-        <ToolContent>
+      <div data-state={toolPart.state} data-tool="List">
+        <div>List</div>
+        <div>
           {output ? (
-            <div className="space-y-2 p-4">
-              <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+            <div>
+              <div>
                 <span>{output.summary.totalFiles} files</span>
-                <span>•</span>
+                <span> - </span>
                 <span>{output.summary.totalDirs} directories</span>
                 {output.summary.depth !== undefined ? (
                   <>
-                    <span>•</span>
+                    <span> - </span>
                     <span>Depth: {output.summary.depth}</span>
                   </>
                 ) : null}
               </div>
-              <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs">
+              <pre>
                 <code>{output.listing}</code>
               </pre>
             </div>
           ) : (
-            <ToolInput input={toolPart.input} />
+            <pre>{JSON.stringify(toolPart.input, null, 2)}</pre>
           )}
-        </ToolContent>
-      </Tool>
+        </div>
+      </div>
     )
   },
 }
@@ -129,20 +108,16 @@ function renderTool(toolName: string, toolPart: ToolUIPart) {
     return renderer(toolPart)
   }
   return (
-    <Tool>
-      <ToolHeader
-        state={toolPart.state}
-        title={toolName}
-        type={toolPart.type}
-      />
-      <ToolContent>
-        <ToolInput input={toolPart.input} />
-        <ToolOutputComponent
-          errorText={toolPart.errorText}
-          output={toolPart.output}
-        />
-      </ToolContent>
-    </Tool>
+    <div data-state={toolPart.state} data-tool={toolName}>
+      <div>{toolName}</div>
+      <div>
+        <pre>{JSON.stringify(toolPart.input, null, 2)}</pre>
+        {!!toolPart.output && (
+          <pre>{JSON.stringify(toolPart.output, null, 2)}</pre>
+        )}
+        {!!toolPart.errorText && <div data-error>{toolPart.errorText}</div>}
+      </div>
+    </div>
   )
 }
 
@@ -159,7 +134,7 @@ export function CommentContent({
 }: CommentContentProps) {
   console.log(content)
   return (
-    <div className="space-y-2">
+    <div>
       {content.map((msg) => (
         <Fragment key={msg.id}>
           {msg.parts.map((part, idx) => {
@@ -168,54 +143,53 @@ export function CommentContent({
                 const hasError: boolean =
                   msg.metadata?.errorCode === ERROR_CODES.STREAM_STEP_ERROR
                 return (
-                  <Message from={msg.role} key={`${msg.id}-${idx}`}>
-                    <MessageContent
-                      className={
-                        // biome-ignore lint/nursery/noLeakedRender: wtf
-                        hasError === true
-                          ? "text-destructive-foreground"
-                          : undefined
-                      }
-                    >
-                      <MessageResponse>{part.text}</MessageResponse>
-                    </MessageContent>
+                  <div data-from={msg.role} key={`${msg.id}-${idx}`}>
+                    <div data-error={hasError || undefined}>
+                      <div>{part.text}</div>
+                    </div>
                     {msg.role === "assistant" && (
-                      <MessageActions>
+                      <div data-actions>
                         {hasError === true ? (
                           onRetry ? (
-                            <MessageAction label="Retry" onClick={onRetry}>
+                            <button
+                              aria-label="Retry"
+                              onClick={onRetry}
+                              type="button"
+                            >
                               <RefreshCcwIcon className="size-3" />
-                            </MessageAction>
+                            </button>
                           ) : null
                         ) : null}
-                        <MessageAction
-                          label="Copy"
+                        <button
+                          aria-label="Copy"
                           onClick={() =>
                             navigator.clipboard.writeText(part.text)
                           }
+                          type="button"
                         >
                           <CopyIcon className="size-3" />
-                        </MessageAction>
-                      </MessageActions>
+                        </button>
+                      </div>
                     )}
-                  </Message>
+                  </div>
                 )
               }
               case "reasoning":
                 return (
-                  <Reasoning
-                    className="w-full"
-                    isStreaming={
-                      // biome-ignore lint/nursery/noLeakedRender: sfsaf
-                      isStreaming &&
-                      idx === msg.parts.length - 1 &&
-                      msg.id === content.at(-1)?.id
-                    }
+                  <Collapsible.Root
                     key={`${msg.id}-${idx}`}
+                    open={Boolean(
+                      // biome-ignore lint/nursery/noLeakedRender: wtf
+                      isStreaming &&
+                        idx === msg.parts.length - 1 &&
+                        msg.id === content.at(-1)?.id
+                        ? ""
+                        : undefined
+                    )}
                   >
-                    <ReasoningTrigger />
-                    <ReasoningContent>{part.text}</ReasoningContent>
-                  </Reasoning>
+                    <Collapsible.Trigger>Thinking...</Collapsible.Trigger>
+                    <Collapsible.Panel>{part.text}</Collapsible.Panel>
+                  </Collapsible.Root>
                 )
               default:
                 if (part.type.startsWith("tool-") && "state" in part) {

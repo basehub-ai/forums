@@ -1,18 +1,17 @@
 "use client"
 import { usePathname } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
-import { Button } from "./ui/button"
 
 export const SignInButton = () => {
   const pathname = usePathname()
   return (
-    <Button
+    <button
       onClick={() =>
         authClient.signIn.social({ provider: "github", callbackURL: pathname })
       }
-      variant={"secondary"}
+      type="button"
     >
       Log In
-    </Button>
+    </button>
   )
 }

@@ -4,8 +4,6 @@ import { ArrowUpIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import { AskingSelector } from "@/components/asking-selector"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { createComment } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 
@@ -111,7 +109,6 @@ export function PostComposer({
   }
 
   return (
-    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: .
     <form
       className={
         connected
@@ -122,9 +119,9 @@ export function PostComposer({
       onSubmit={handleSubmit}
       ref={formRef}
     >
-      <Textarea
+      <textarea
         autoFocus={autoFocus}
-        className="mb-3 min-h-25 resize-none"
+        className="mb-3 min-h-25 w-full resize-none"
         disabled={isPending}
         onChange={(e) => setMessage(e.target.value)}
         placeholder={threadCommentId ? "Write a reply..." : "Add a comment..."}
@@ -137,10 +134,10 @@ export function PostComposer({
           options={askingOptions}
           value={seekingAnswerFrom}
         />
-        <Button disabled={isPending} size="sm" type="submit">
+        <button disabled={isPending} type="submit">
           <ArrowUpIcon className="mr-1 h-4 w-4" />
           {isPending ? "Sending..." : isSignedIn ? "Send" : "Sign in to send"}
-        </Button>
+        </button>
       </div>
     </form>
   )

@@ -4,8 +4,6 @@ import { ArrowUpIcon } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { AskingSelector } from "@/components/asking-selector"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { createPost } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 
@@ -74,8 +72,8 @@ export function NewPostComposer({
       onSubmit={handleSubmit}
       ref={formRef}
     >
-      <Textarea
-        className="mb-3 min-h-[120px] resize-none"
+      <textarea
+        className="mb-3 min-h-[120px] w-full resize-none"
         disabled={isPending}
         name="message"
         placeholder="Start a discussion..."
@@ -87,10 +85,10 @@ export function NewPostComposer({
           options={askingOptions}
           value={seekingAnswerFrom}
         />
-        <Button disabled={isPending} size="sm" type="submit">
+        <button disabled={isPending} type="submit">
           <ArrowUpIcon className="mr-1 h-4 w-4" />
           {isPending ? "Creating..." : isSignedIn ? "Create post" : "Sign in"}
-        </Button>
+        </button>
       </div>
     </form>
   )

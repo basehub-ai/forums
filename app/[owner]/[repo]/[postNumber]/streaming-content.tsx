@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react"
 import { WorkflowChatTransport } from "@workflow/ai"
 import { useEffect, useMemo, useRef } from "react"
 import type { AgentUIMessage } from "@/agent/types"
-import { Tool, ToolContent, ToolHeader } from "@/components/ai-elements/tool"
 import { CommentContent } from "./comment-content"
 
 export function StreamingContent({ commentId }: { commentId: string }) {
@@ -43,18 +42,12 @@ export function StreamingContent({ commentId }: { commentId: string }) {
   return (
     <>
       {!hasContent && (
-        <Tool>
-          <ToolHeader
-            state="input-available"
-            title="Workspace"
-            type="tool-Workspace"
-          />
-          <ToolContent>
-            <div className="p-4 text-muted-foreground text-xs">
-              Setting up workspace...
-            </div>
-          </ToolContent>
-        </Tool>
+        <div data-tool="Workspace" data-state="input-available">
+          <div>Workspace</div>
+          <div>
+            <div>Setting up workspace...</div>
+          </div>
+        </div>
       )}
       <CommentContent
         content={lastMessage ? [lastMessage] : []}

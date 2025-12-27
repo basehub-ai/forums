@@ -1,13 +1,8 @@
 "use client"
 
+import { Tooltip } from "@base-ui/react/tooltip"
 import { CheckIcon, Link2Icon } from "@radix-ui/react-icons"
 import { useState } from "react"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 export function CopyLinkButton({
   owner,
@@ -33,21 +28,22 @@ export function CopyLinkButton({
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            className="text-muted-foreground text-xs opacity-0 transition-instant-hover group-hover:opacity-100"
-            onClick={copyToClipboard}
-            type="button"
-          >
-            <Icon className="size-4" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{isCopied ? "Copied" : "Copy link to this comment"}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          className="text-muted-foreground text-xs opacity-0 transition-instant-hover group-hover:opacity-100"
+          onClick={copyToClipboard}
+        >
+          <Icon className="size-4" />
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Positioner>
+            <Tooltip.Popup>
+              {isCopied ? "Copied" : "Copy link to this comment"}
+            </Tooltip.Popup>
+          </Tooltip.Positioner>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   )
 }

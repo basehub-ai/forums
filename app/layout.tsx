@@ -19,16 +19,18 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          enableSystem
-        >
-          <Header />
-          <main className="pt-4">{children}</main>
-        </ThemeProvider>
-        <Analytics />
+        <div className="root">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            disableTransitionOnChange
+            enableSystem
+          >
+            <Header />
+            <main className="pt-4">{children}</main>
+          </ThemeProvider>
+          <Analytics />
+        </div>
       </body>
     </html>
   )

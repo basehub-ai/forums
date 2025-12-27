@@ -4,7 +4,6 @@ import { Suspense } from "react"
 import { auth } from "@/lib/auth"
 import { Container } from "./container"
 import { SignInButton } from "./sign-in-button"
-import { Button } from "./ui/button"
 import { UserDropdown } from "./user-dropdown"
 
 export function Header() {
@@ -143,9 +142,9 @@ export function Header() {
           </Link>
           <Suspense
             fallback={
-              <Button disabled variant={"secondary"}>
+              <button disabled type="button">
                 Loading
-              </Button>
+              </button>
             }
           >
             <User />

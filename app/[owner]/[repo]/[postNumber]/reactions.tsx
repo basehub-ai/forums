@@ -1,18 +1,9 @@
 "use client"
 
+import { Menu } from "@base-ui/react/menu"
+import { Tooltip } from "@base-ui/react/tooltip"
 import { SmilePlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react"
 import { useTransition } from "react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { addReaction, removeReaction } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -124,83 +115,98 @@ export function ReactionButtons({
   const signedOutTooltip = "You must be signed in to react"
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
-      {isSignedIn ? (
-        upvoteButton
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>{upvoteButton}</TooltipTrigger>
-          <TooltipContent>{signedOutTooltip}</TooltipContent>
-        </Tooltip>
-      )}
-
-      {isSignedIn ? (
-        downvoteButton
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>{downvoteButton}</TooltipTrigger>
-          <TooltipContent>{signedOutTooltip}</TooltipContent>
-        </Tooltip>
-      )}
-
-      {otherActiveReactions.map((r) => {
-        const button = (
-          <button
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
-              userReactions.has(r.type)
-                ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-                : "hover:bg-muted",
-              !isSignedIn && "cursor-not-allowed opacity-50"
-            )}
-            disabled={isPending || !isSignedIn}
-            key={r.type}
-            onClick={() => handleReaction(r.type)}
-            type="button"
-          >
-            <span>{r.emoji}</span>
-            <span>{reactionCounts[r.type]}</span>
-          </button>
-        )
-        return isSignedIn ? (
-          button
+    <Tooltip.Provider>
+      <div className="flex flex-wrap items-center gap-1">
+        {isSignedIn ? (
+          upvoteButton
         ) : (
-          <Tooltip key={r.type}>
-            <TooltipTrigger asChild>{button}</TooltipTrigger>
-            <TooltipContent>{signedOutTooltip}</TooltipContent>
-          </Tooltip>
-        )
-      })}
+          <Tooltip.Root>
+            <Tooltip.Trigger render={upvoteButton} />
+            <Tooltip.Portal>
+              <Tooltip.Positioner>
+                <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
+              </Tooltip.Positioner>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        )}
 
-      {isSignedIn ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {isSignedIn ? (
+          downvoteButton
+        ) : (
+          <Tooltip.Root>
+            <Tooltip.Trigger render={downvoteButton} />
+            <Tooltip.Portal>
+              <Tooltip.Positioner>
+                <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
+              </Tooltip.Positioner>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        )}
+
+        {otherActiveReactions.map((r) => {
+          const button = (
             <button
-              className="inline-flex h-5.5 items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
-              disabled={isPending}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+                userReactions.has(r.type)
+                  ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
+                  : "hover:bg-muted",
+                !isSignedIn && "cursor-not-allowed opacity-50"
+              )}
+              disabled={isPending || !isSignedIn}
+              key={r.type}
+              onClick={() => handleReaction(r.type)}
               type="button"
             >
-              <SmilePlusIcon className="size-3" />
+              <span>{r.emoji}</span>
+              <span>{reactionCounts[r.type]}</span>
             </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <div className="grid grid-cols-4 gap-1 p-1">
-              {OTHER_REACTIONS.map((r) => (
-                <DropdownMenuItem
-                  className={cn(
-                    "flex cursor-pointer items-center justify-center rounded p-2 text-base",
-                    userReactions.has(r.type) && "bg-blue-50 dark:bg-blue-900"
-                  )}
-                  key={r.type}
-                  onClick={() => handleReaction(r.type)}
-                >
-                  {r.emoji}
-                </DropdownMenuItem>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
-    </div>
+          )
+          return isSignedIn ? (
+            <span key={r.type}>{button}</span>
+          ) : (
+            <Tooltip.Root key={r.type}>
+              <Tooltip.Trigger render={button} />
+              <Tooltip.Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
+                </Tooltip.Positioner>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          )
+        })}
+
+        {isSignedIn ? (
+          <Menu.Root>
+            <Menu.Trigger
+              className="inline-flex h-5.5 items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
+              disabled={isPending}
+            >
+              <SmilePlusIcon className="size-3" />
+            </Menu.Trigger>
+            <Menu.Portal>
+              <Menu.Positioner align="start">
+                <Menu.Popup>
+                  <div className="grid grid-cols-4 gap-1 p-1">
+                    {OTHER_REACTIONS.map((r) => (
+                      <Menu.Item
+                        className={cn(
+                          "flex cursor-pointer items-center justify-center rounded p-2 text-base",
+                          userReactions.has(r.type) && "bg-blue-50 dark:bg-blue-900"
+                        )}
+                        key={r.type}
+                        onClick={() => handleReaction(r.type)}
+                      >
+                        {r.emoji}
+                      </Menu.Item>
+                    ))}
+                  </div>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
+        ) : null}
+      </div>
+    </Tooltip.Provider>
   )
 }
