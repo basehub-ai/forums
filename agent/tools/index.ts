@@ -429,7 +429,6 @@ function createTools(context: ToolContext) {
         }
       },
     }),
-
     ReadPost: tool({
       name: "ReadPost",
       description:

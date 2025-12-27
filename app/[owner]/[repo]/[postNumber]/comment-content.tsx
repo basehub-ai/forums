@@ -1,7 +1,7 @@
 "use client"
 
 import type { ToolUIPart } from "ai"
-import { CopyIcon } from "lucide-react"
+import { CopyIcon, RefreshCcwIcon } from "lucide-react"
 import { Fragment, type ReactNode } from "react"
 import type { AgentToolName, AgentTools } from "@/agent/tools"
 import type { AgentUIMessage } from "@/agent/types"
@@ -24,6 +24,7 @@ import {
   ToolInput,
   ToolOutput as ToolOutputComponent,
 } from "@/components/ai-elements/tool"
+import { ERROR_CODES } from "@/lib/errors"
 
 type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T
 type InferToolResult<T> = T extends {
@@ -148,32 +149,45 @@ function renderTool(toolName: string, toolPart: ToolUIPart) {
 type CommentContentProps = {
   content: AgentUIMessage[]
   isStreaming?: boolean
+  onRetry?: () => void
 }
 
 export function CommentContent({
   content,
   isStreaming = false,
+  onRetry,
 }: CommentContentProps) {
+  console.log(content)
   return (
     <div className="space-y-2">
       {content.map((msg) => (
         <Fragment key={msg.id}>
           {msg.parts.map((part, idx) => {
             switch (part.type) {
-              case "text":
+              case "text": {
+                const hasError: boolean =
+                  msg.metadata?.errorCode === ERROR_CODES.STREAM_STEP_ERROR
                 return (
                   <Message from={msg.role} key={`${msg.id}-${idx}`}>
-                    <MessageContent>
+                    <MessageContent
+                      className={
+                        // biome-ignore lint/nursery/noLeakedRender: wtf
+                        hasError === true
+                          ? "text-destructive-foreground"
+                          : undefined
+                      }
+                    >
                       <MessageResponse>{part.text}</MessageResponse>
                     </MessageContent>
-                    {msg.role === "assistant" && idx === content.length - 1 && (
+                    {msg.role === "assistant" && (
                       <MessageActions>
-                        {/* <MessageAction
-                          onClick={() => regenerate()}
-                          label="Retry"
-                        >
-                          <RefreshCcwIcon className="size-3" />
-                        </MessageAction> */}
+                        {hasError === true ? (
+                          onRetry ? (
+                            <MessageAction label="Retry" onClick={onRetry}>
+                              <RefreshCcwIcon className="size-3" />
+                            </MessageAction>
+                          ) : null
+                        ) : null}
                         <MessageAction
                           label="Copy"
                           onClick={() =>
@@ -186,6 +200,7 @@ export function CommentContent({
                     )}
                   </Message>
                 )
+              }
               case "reasoning":
                 return (
                   <Reasoning

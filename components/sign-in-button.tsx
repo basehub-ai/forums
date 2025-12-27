@@ -10,8 +10,9 @@ export const SignInButton = () => {
       onClick={() =>
         authClient.signIn.social({ provider: "github", callbackURL: pathname })
       }
+      variant={"secondary"}
     >
-      Sign in with GitHub
+      Log In
     </Button>
   )
 }
