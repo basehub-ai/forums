@@ -105,12 +105,18 @@ export async function createMentions({
       .limit(1)
       .then((r) => r[0])
     if (targetPost) {
-      await Promise.all([
-        fetch(
-          `${getSiteOrigin()}/api/revalidate?tag=repo:${targetPost.owner}:${targetPost.repo}`
-        ),
-        fetch(`${getSiteOrigin()}/api/revalidate?tag=post:${targetPostId}`),
-      ])
+      await fetch(`${getSiteOrigin()}/api/revalidate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secret: process.env.REVALIDATE_SECRET,
+          paths: [],
+          tags: [
+            `repo:${targetPost.owner}:${targetPost.repo}`,
+            `post:${targetPostId}`,
+          ],
+        }),
+      })
     }
   }
 }

@@ -1,17 +1,25 @@
-import { revalidateTag } from "next/cache"
-import type { NextRequest } from "next/server"
+import { revalidatePath, revalidateTag } from "next/cache"
+import { z } from "zod"
 
-export function GET(request: NextRequest) {
-  const tag = request.nextUrl.searchParams.get("tag")
+export const POST = async (request: Request) => {
+  const { secret, paths, tags } = z
+    .object({
+      secret: z.string(),
+      paths: z.string().array(),
+      tags: z.string().array().optional(),
+    })
+    .parse(await request.json())
 
-  if (tag) {
-    revalidateTag(tag, "max")
-    return Response.json({ revalidated: true, now: Date.now() })
+  if (secret !== process.env.REVALIDATE_SECRET) {
+    return Response.json({ error: "Invalid secret" }, { status: 401 })
   }
 
-  return Response.json({
-    revalidated: false,
-    now: Date.now(),
-    message: "Missing tag to revalidate",
-  })
+  for (const path of paths) {
+    revalidatePath(path)
+  }
+  for (const tag of tags ?? []) {
+    revalidateTag(tag, "max")
+  }
+
+  return Response.json({ ok: true })
 }
