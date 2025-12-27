@@ -42,7 +42,6 @@ export const comments = p.pgTable(
     seekingAnswerFrom: p.varchar("seeking_answer_from", { length: 32 }),
 
     content: p.jsonb().$type<AgentUIMessage[]>().notNull(),
-    mentions: p.jsonb("mentions").$type<string[]>().default([]),
 
     runId: p.varchar("run_id", { length: 255 }),
     streamId: p.varchar("stream_id", { length: 32 }),
@@ -112,4 +111,27 @@ export const postCounters = p.pgTable(
     lastNumber: p.integer("last_number").notNull().default(0),
   },
   (table) => [p.primaryKey({ columns: [table.owner, table.repo] })]
+)
+
+export const mentions = p.pgTable(
+  "mentions",
+  {
+    id: p.varchar({ length: 32 }).primaryKey(),
+    targetPostId: p.varchar("target_post_id", { length: 32 }).notNull(),
+    sourcePostId: p.varchar("source_post_id", { length: 32 }).notNull(),
+    sourceCommentId: p.varchar("source_comment_id", { length: 32 }).notNull(),
+    sourcePostNumber: p.integer("source_post_number").notNull(),
+    sourcePostTitle: p.varchar("source_post_title", { length: 500 }),
+    sourcePostOwner: p.varchar("source_post_owner", { length: 255 }).notNull(),
+    sourcePostRepo: p.varchar("source_post_repo", { length: 255 }).notNull(),
+    authorId: p.varchar("author_id", { length: 255 }).notNull(),
+    authorUsername: p.varchar("author_username", { length: 255 }),
+    createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    p.index("idx_mentions_target").on(table.targetPostId, table.createdAt),
+    p
+      .uniqueIndex("idx_mentions_unique")
+      .on(table.targetPostId, table.sourceCommentId),
+  ]
 )

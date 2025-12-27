@@ -15,6 +15,27 @@
       "when": 1765764832000,
       "tag": "0001_nasty_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766773129330,
+      "tag": "0002_harsh_black_tom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766787644958,
+      "tag": "0003_melted_hellfire_club",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766790135987,
+      "tag": "0004_large_black_tarantula",
+      "breakpoints": true
     }
   ]
 }

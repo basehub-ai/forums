@@ -1,7 +1,7 @@
 import { stepCountIs, streamText, tool } from "ai"
 import { eq } from "drizzle-orm"
+import { updateTag } from "next/cache"
 import { z } from "zod"
-import { revalidateAfterStream } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
 import { categories, posts } from "@/lib/db/schema"
 import { updatePostIndex } from "@/lib/typesense-index"
@@ -117,5 +117,6 @@ You're working on your own. Meaning, the user won't be able to respond any quest
     ...(categoryId && { categoryId }),
   })
 
-  await revalidateAfterStream({ owner, repo, postId })
+  updateTag(`repo:${owner}:${repo}`)
+  updateTag(`post:${postId}`)
 }

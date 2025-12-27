@@ -6,8 +6,9 @@ import {
 } from "ai"
 import { asc, eq } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
-import { revalidateAfterStream } from "@/lib/actions/posts"
+import { createMentions } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
@@ -138,7 +139,18 @@ async function streamTextStep({
   const result = streamText({
     messages: convertToModelMessages(allMessages),
     tools: getTools({ workspace }),
-    system: `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).`,
+    system: `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).
+
+## Post References
+When a user mentions another post, you MUST use the ReadPost tool to fetch its content before responding. Post references can appear in these formats:
+- \`#42\` → post 42 in the current repo (use owner: "${owner}", repo: "${repo}")
+- \`owner/repo#42\` → post 42 in owner/repo
+- \`owner/repo/42\` → post 42 in owner/repo
+- \`/owner/repo/42\` → post 42 in owner/repo
+- \`forums.basehub.com/owner/repo/42\` → post 42 in owner/repo
+- The user can just tell you with natural language the owner, repo, and number of the post to read.
+
+If you see any of these patterns, call ReadPost immediately to get the full context of the referenced post before formulating your answer.`,
     model,
   })
 
@@ -191,5 +203,32 @@ async function closeStreamStep({
       .where(eq(comments.id, commentId)),
   ])
 
-  revalidateAfterStream({ owner, repo, postId })
+  // get the LLM response commment authorId and authorUsername
+  const comment = await db
+    .select({
+      authorId: comments.authorId,
+      authorUsername: comments.authorUsername,
+    })
+    .from(comments)
+    .where(eq(comments.id, commentId))
+    .limit(1)
+    .then((r) => r[0])
+
+  if (comment) {
+    // check each internal message for mentions
+    // if there are no mentions in the message the function does nothing
+    for (const message of content) {
+      createMentions({
+        sourcePostId: postId,
+        sourceCommentId: commentId,
+        authorId: comment.authorId,
+        authorUsername: comment.authorUsername,
+        content: message,
+        owner,
+        repo,
+      })
+    }
+  }
+  revalidateTag(`repo:${owner}:${repo}`, "max")
+  revalidateTag(`post:${postId}`, "max")
 }

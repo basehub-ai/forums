@@ -5,11 +5,13 @@ import { useEffect, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 import type {
   comments as commentsSchema,
+  mentions as mentionsSchema,
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
 import { CommentThread } from "./comment-thread"
 
 type Comment = InferSelectModel<typeof commentsSchema>
+type Mention = InferSelectModel<typeof mentionsSchema>
 type Reaction = InferSelectModel<typeof reactionsSchema>
 
 type AuthorInfo = {
@@ -30,6 +32,7 @@ export function CommentThreadClient({
   owner,
   repo,
   comments,
+  mentions,
   authorsById,
   reactions,
   rootCommentId,
@@ -39,6 +42,7 @@ export function CommentThreadClient({
   owner: string
   repo: string
   comments: Comment[]
+  mentions: Mention[]
   authorsById: Record<string, AuthorInfo>
   reactions: Reaction[]
   rootCommentId: string | null
@@ -64,6 +68,7 @@ export function CommentThreadClient({
       authorsById={authorsById}
       commentNumbers={commentNumbers}
       comments={comments}
+      mentions={mentions}
       onCancelReply={() => {
         if (isSignedIn) {
           setReplyingToId(null)
