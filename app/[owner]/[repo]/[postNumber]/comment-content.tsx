@@ -132,7 +132,9 @@ export function CommentContent({
   isStreaming = false,
   onRetry,
 }: CommentContentProps) {
-  console.log(content)
+  if (typeof window !== "undefined") {
+    console.log(content)
+  }
   return (
     <div>
       {content.map((msg) => (

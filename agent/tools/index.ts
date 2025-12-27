@@ -541,8 +541,10 @@ function createTools(context: ToolContext) {
       },
     }),
 
-    WebSearch: searchTool,
-    WebExtract: extractTool,
+    // biome-ignore lint/suspicious/noExplicitAny: .
+    WebSearch: searchTool as any,
+    // biome-ignore lint/suspicious/noExplicitAny: .
+    WebExtract: extractTool as any,
   } satisfies ToolSet
 }
 
