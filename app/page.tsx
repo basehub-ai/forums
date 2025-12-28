@@ -34,7 +34,7 @@ export default async function Home() {
             className="text-muted underline hover:text-bright"
             href="/lucky"
           >
-            I'm feeling lucky!
+            I'm feeling lucky
           </Link>
         </div>
       </form>
