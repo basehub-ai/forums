@@ -1,6 +1,8 @@
 import { extractTool, searchTool } from "@parallel-web/ai-sdk-tools"
 import { type ToolSet, tool } from "ai"
 import { and, asc, eq } from "drizzle-orm"
+import { OverlayFs } from "just-bash"
+import { createBashTool } from "just-bash/ai"
 import { join } from "path"
 import { z } from "zod"
 import { comments, posts } from "@/lib/db/schema"
@@ -12,10 +14,22 @@ export type ToolContext = {
 }
 
 export function getTools(context: ToolContext) {
-  return createTools(context)
-}
+  const overlayFs = new OverlayFs({
+    root: context.workspace.path,
+    mountPoint: context.workspace.path,
+    /**
+     * because the fs doesn't persist anyways. don't want to confuse the agent.
+     * our take on how to make this work could be to expose Write/Edit tools, and potentially only allow writing to /tmp, or /examples/<example>
+     */
+    readOnly: true,
+  })
 
-function createTools(context: ToolContext) {
+  const bashTool = createBashTool({
+    fs: overlayFs,
+    cwd: overlayFs.getMountPoint(),
+    network: { dangerouslyAllowFullInternetAccess: true },
+  })
+
   return {
     Read: tool({
       name: "Read",
@@ -72,16 +86,26 @@ function createTools(context: ToolContext) {
             FILE_SIZE=$(ls -lh "$FILE" | awk '{print $5}')
 
             # Determine range
+            PAGE_SIZE=100
             if [ -n "$START_LINE" ] && [ -n "$END_LINE" ]; then
-              # Explicit range provided
+              # Both provided - use exact range
               ACTUAL_START=$START_LINE
               ACTUAL_END=$END_LINE
-            elif [ "$TOTAL_LINES" -gt 200 ]; then
-              # Paginate
+            elif [ -n "$START_LINE" ]; then
+              # Only startLine - read PAGE_SIZE lines from there
+              ACTUAL_START=$START_LINE
+              ACTUAL_END=$((START_LINE + PAGE_SIZE - 1))
+              [ "$ACTUAL_END" -gt "$TOTAL_LINES" ] && ACTUAL_END=$TOTAL_LINES
+            elif [ -n "$END_LINE" ]; then
+              # Only endLine - read from beginning to endLine
               ACTUAL_START=1
-              ACTUAL_END=100
+              ACTUAL_END=$END_LINE
+            elif [ "$TOTAL_LINES" -gt 200 ]; then
+              # No range, large file - paginate
+              ACTUAL_START=1
+              ACTUAL_END=$PAGE_SIZE
             else
-              # Show full file
+              # No range, small file - show all
               ACTUAL_START=1
               ACTUAL_END=$TOTAL_LINES
             fi
@@ -545,8 +569,10 @@ function createTools(context: ToolContext) {
     WebSearch: searchTool as any,
     // biome-ignore lint/suspicious/noExplicitAny: .
     WebExtract: extractTool as any,
+
+    Bash: bashTool,
   } satisfies ToolSet
 }
 
-export type AgentTools = ReturnType<typeof createTools>
+export type AgentTools = ReturnType<typeof getTools>
 export type AgentToolName = keyof AgentTools

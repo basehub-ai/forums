@@ -130,6 +130,79 @@ describe("Read Tool", () => {
       expect(result.metadata.totalLines).toBe(0)
     }
   })
+
+  test("respects startLine without endLine (pagination continuation)", async () => {
+    const content = Array.from({ length: 368 }, (_, i) => `Line ${i + 1}`).join(
+      "\n"
+    )
+    writeFileSync(join(testDir, "large-file.txt"), content)
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+
+    // First call - should get lines 1-100
+    const result1 = await tools.Read.execute?.(
+      { path: "large-file.txt", startLine: 1 },
+      { messages: [], toolCallId: "" }
+    )
+
+    // Second call - should get lines 101-200
+    const result2 = await tools.Read.execute?.(
+      { path: "large-file.txt", startLine: 101 },
+      { messages: [], toolCallId: "" }
+    )
+
+    // Third call - should get lines 102-201
+    const result3 = await tools.Read.execute?.(
+      { path: "large-file.txt", startLine: 102 },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result1 && "metadata" in result1) {
+      expect(result1.metadata.startLine).toBe(1)
+      expect(result1.metadata.endLine).toBe(100)
+      expect(result1.content).toContain("Line 1")
+      expect(result1.content).toContain("Line 100")
+    }
+
+    if (result2 && "metadata" in result2) {
+      expect(result2.metadata.startLine).toBe(101)
+      expect(result2.metadata.endLine).toBe(200)
+      expect(result2.content).toContain("Line 101")
+      expect(result2.content).toContain("Line 200")
+      expect(result2.content).not.toContain("Line 1\n")
+    }
+
+    if (result3 && "metadata" in result3) {
+      expect(result3.metadata.startLine).toBe(102)
+      expect(result3.metadata.endLine).toBe(201)
+      expect(result3.content).toContain("Line 102")
+      expect(result3.content).toContain("Line 201")
+    }
+  })
+
+  test("respects endLine without startLine", async () => {
+    const content = Array.from({ length: 300 }, (_, i) => `Line ${i + 1}`).join(
+      "\n"
+    )
+    writeFileSync(join(testDir, "file.txt"), content)
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+    const result = await tools.Read.execute?.(
+      { path: "file.txt", endLine: 50 },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result && "metadata" in result) {
+      expect(result.metadata.startLine).toBe(1)
+      expect(result.metadata.endLine).toBe(50)
+      expect(result.metadata.linesShown).toBe(50)
+      expect(result.content).toContain("Line 1")
+      expect(result.content).toContain("Line 50")
+      expect(result.content).not.toContain("Line 51")
+    }
+  })
 })
 
 describe("Grep Tool", () => {
