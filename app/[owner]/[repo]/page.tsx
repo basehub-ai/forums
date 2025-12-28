@@ -2,6 +2,8 @@ import { and, desc, eq, sql } from "drizzle-orm"
 import type { Metadata } from "next"
 import { cacheTag } from "next/cache"
 import { notFound } from "next/navigation"
+import { Container } from "@/components/container"
+import { Title } from "@/components/typography"
 import { db } from "@/lib/db/client"
 import { categories, llmUsers, posts } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
@@ -91,10 +93,10 @@ export default async function RepoPage({
   )
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
-      <h1 className="mb-6 font-bold text-2xl">
+    <Container>
+      <Title>
         {owner}/{repo}
-      </h1>
+      </Title>
 
       <div className="mb-8">
         <NewPostComposer
@@ -118,6 +120,6 @@ export default async function RepoPage({
         posts={repoPosts}
         repo={repo}
       />
-    </div>
+    </Container>
   )
 }

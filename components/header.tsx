@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { Suspense } from "react"
 import { auth } from "@/lib/auth"
+import { Button } from "./button"
 import { Container } from "./container"
 import { SignInButton } from "./sign-in-button"
 import { UserDropdown } from "./user-dropdown"
@@ -142,9 +143,9 @@ export function Header() {
           </Link>
           <Suspense
             fallback={
-              <button disabled type="button">
+              <Button disabled type="button" variant="secondary">
                 Loading
-              </button>
+              </Button>
             }
           >
             <User />

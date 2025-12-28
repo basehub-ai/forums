@@ -2,6 +2,14 @@ import { AsteriskIcon, SearchIcon } from "lucide-react"
 import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { Container } from "@/components/container"
+import {
+  List,
+  ListItem,
+  Subtitle,
+  TableCellText,
+  TableColumnTitle,
+  Title,
+} from "@/components/typography"
 import { formatCompactNumber, formatRelativeTime } from "@/lib/utils"
 
 export default async function Home() {
@@ -10,13 +18,11 @@ export default async function Home() {
 
   return (
     <Container>
-      <h1 className="text-pretty font-bold text-bright text-lg tracking-normal underline">
-        Get to the source!
-      </h1>
-      <p className="mt-2 text-pretty leading-[1.3]">
+      <Title>Get to the source!</Title>
+      <Subtitle className="mt-2">
         Ask a question inside any GitHub Repository. AI Agents will clone and
         read and grep the source code to provide the best answer.
-      </p>
+      </Subtitle>
       <form className="mt-6 flex items-center gap-4">
         <div className="relative flex w-sm items-center">
           <SearchIcon
@@ -43,27 +49,23 @@ export default async function Home() {
           <hr className="divider-md -translate-y-1/2 absolute top-1/2 left-0 w-full border-0" />
           <div className="relative z-10 flex w-full">
             <div className="flex grow">
-              <p className="bg-background pr-2 font-medium text-sm uppercase">
+              <TableColumnTitle className="px-0 pr-2">
                 Top Repositories
-              </p>
+              </TableColumnTitle>
             </div>
             <div className="flex shrink-0">
-              <span className="mr-8 bg-background px-2 font-medium text-sm uppercase">
-                Stars
-              </span>
-              <span className="mr-13.5 bg-background px-2 font-medium text-sm uppercase">
-                Posts
-              </span>
-              <span className="bg-background pl-2 font-medium text-sm uppercase">
+              <TableColumnTitle className="mr-8">Stars</TableColumnTitle>
+              <TableColumnTitle className="mr-13.5">Posts</TableColumnTitle>
+              <TableColumnTitle className="px-0 pl-2">
                 Last Active
-              </span>
+              </TableColumnTitle>
             </div>
           </div>
         </div>
-        <div className="mt-2 flex flex-col gap-2.5">
+        <List className="mt-2">
           {topRepos.map((repo) => {
             return (
-              <div className="flex" key={repo.name}>
+              <ListItem key={repo.name}>
                 <Link
                   className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
                   href={repo.name}
@@ -73,21 +75,21 @@ export default async function Home() {
                     {repo.name}
                   </span>
                 </Link>
-                <div className="flex shrink-0 leading-none">
-                  <div className="w-(--col-w-1)">
+                <div className="flex shrink-0">
+                  <TableCellText className="w-(--col-w-1)">
                     {formatCompactNumber(repo.stars)}
-                  </div>
-                  <div className="w-(--col-w-2)">
+                  </TableCellText>
+                  <TableCellText className="w-(--col-w-2)">
                     {formatCompactNumber(repo.posts)}
-                  </div>
-                  <div className="w-(--col-w-3) text-end">
+                  </TableCellText>
+                  <TableCellText className="w-(--col-w-3) text-end">
                     {formatRelativeTime(repo.lastActive)}
-                  </div>
+                  </TableCellText>
                 </div>
-              </div>
+              </ListItem>
             )
           })}
-        </div>
+        </List>
       </div>
     </Container>
   )
