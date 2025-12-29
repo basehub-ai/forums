@@ -36,7 +36,9 @@ export async function runCategoryAgent({
   const stream = streamText({
     model: "anthropic/claude-haiku-4.5",
     system: `You are a forum assistant. Given a post's content, you must:
-1. Set a concise post title (10 words max) using setTitle. If it makes sense to frame it as a question, do so.
+1. Set a concise post title (10 words max) using setTitle.
+   - If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
+   - Only use statement-style titles for announcements, discussions, or purely informational posts
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
 
 Existing categories:
