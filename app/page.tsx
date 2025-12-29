@@ -47,7 +47,8 @@ export default async function Home() {
           </Link>
         </div>
       </form>
-      <div className="-mx-4 mt-10 overflow-x-auto px-4 sm:mx-0 sm:px-0 [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px]">
+      <div className="-mx-4 mt-10 overflow-x-auto sm:mx-0 [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px]">
+        <div className="min-w-fit px-4 sm:px-0">
         <div className="relative min-w-[480px]">
           <hr className="divider-md -translate-y-1/2 absolute top-1/2 left-0 w-full border-0" />
           <div className="relative z-10 flex w-full">
@@ -75,7 +76,7 @@ export default async function Home() {
                     href={repo.name}
                   >
                     <AsteriskIcon className="mt-0.5 text-faint" size={16} />
-                    <span className="leading-none group-hover:text-bright">
+                    <span className="whitespace-nowrap leading-none group-hover:text-bright">
                       {repo.name}
                     </span>
                   </Link>
@@ -99,6 +100,7 @@ export default async function Home() {
             No repositories yet. Search for a repo to get started!
           </p>
         )}
+        </div>
       </div>
     </Container>
   )
