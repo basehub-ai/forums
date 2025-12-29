@@ -62,11 +62,12 @@ export async function getTopRepositories(limit = 10): Promise<RepoStats[]> {
 
   const results: RepoStats[] = repoStats.map((r) => {
     const name = `${r.owner}/${r.repo}`
+    const lastActive = Number(r.lastActive) || Date.now()
     return {
       name,
       stars: starMap.get(name) ?? 0,
       posts: r.postCount,
-      lastActive: r.lastActive || Date.now(),
+      lastActive,
     }
   })
 
