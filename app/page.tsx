@@ -101,7 +101,7 @@ export default async function Home() {
         )}
       </div>
       <pre
-        className="mx-auto mt-10 overflow-x-auto text-xs leading-tight text-muted"
+        className="mx-auto mt-10 w-fit overflow-x-auto text-xs leading-tight text-muted"
         aria-hidden="true"
       >{`┌───────────────────┐
 │  Ask a question   │
