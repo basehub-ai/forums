@@ -24,7 +24,7 @@ export type Workspace = {
   sandbox: Sandbox
 }
 
-const cleanupRegex = /^\.\.\//
+const cleanupRegex = /^\.\./
 
 const sleep = (duration: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, duration))
@@ -220,8 +220,15 @@ export const getWorkspace = async ({
     ],
   })
 
-  const stdout = await result.stdout()
-  const stderr = await result.stderr()
+  let stdout = ""
+  let stderr = ""
+  for await (const log of result.logs()) {
+    if (log.stream === "stdout") {
+      stdout += log.data
+    } else {
+      stderr += log.data
+    }
+  }
 
   if (stderr) {
     console.error(`Git initialization stderr: ${stderr}`)

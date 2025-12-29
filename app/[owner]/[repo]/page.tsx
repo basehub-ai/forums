@@ -1,12 +1,14 @@
 import { and, desc, eq, sql } from "drizzle-orm"
+import { GithubIcon, LinkIcon, StarIcon } from "lucide-react"
 import type { Metadata } from "next"
 import { cacheTag } from "next/cache"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Container } from "@/components/container"
-import { Title } from "@/components/typography"
+import { Subtitle, Title } from "@/components/typography"
 import { db } from "@/lib/db/client"
-import { categories, llmUsers, posts } from "@/lib/db/schema"
-import { getSiteOrigin } from "@/lib/utils"
+import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
+import { formatCompactNumber, getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "./active-posts"
 import { NewPostComposer } from "./new-post-composer"
 
@@ -58,6 +60,7 @@ export default async function RepoPage({
         title: posts.title,
         categoryId: posts.categoryId,
         authorId: posts.authorId,
+        authorUsername: comments.authorUsername,
         rootCommentId: posts.rootCommentId,
         createdAt: posts.createdAt,
         commentCount: sql<number>`(
@@ -69,6 +72,7 @@ export default async function RepoPage({
         )`.as("reaction_count"),
       })
       .from(posts)
+      .leftJoin(comments, eq(posts.rootCommentId, comments.id))
       .where(and(eq(posts.owner, owner), eq(posts.repo, repo)))
       .orderBy(desc(posts.createdAt)),
     db
@@ -80,7 +84,11 @@ export default async function RepoPage({
       if (!res.ok || res.status === 404) {
         return null
       }
-      return res.json()
+      return res.json() as Promise<{
+        description: string | null
+        stargazers_count: number
+        homepage: string | null
+      }>
     }),
   ])
 
@@ -94,9 +102,38 @@ export default async function RepoPage({
 
   return (
     <Container>
-      <Title>
-        {owner}/{repo}
-      </Title>
+      <div className="mb-8">
+        <Title>
+          {owner}/{repo}
+        </Title>
+        {!!repoData.description && (
+          <Subtitle className="mt-2">{repoData.description}</Subtitle>
+        )}
+        <div className="mt-2 flex items-center gap-4 text-sm">
+          <Link
+            className="flex items-center gap-1 hover:underline"
+            href={`https://github.com/${owner}/${repo}`}
+            target="_blank"
+          >
+            <GithubIcon className="h-3.5 w-3.5" />
+            {owner}/{repo}
+          </Link>
+          <span className="flex items-center gap-1">
+            <StarIcon className="h-3.5 w-3.5" />
+            {formatCompactNumber(repoData.stargazers_count)}
+          </span>
+          {!!repoData.homepage && (
+            <Link
+              className="flex items-center gap-1 hover:underline"
+              href={repoData.homepage}
+              target="_blank"
+            >
+              <LinkIcon className="h-3.5 w-3.5" />
+              {new URL(repoData.homepage).host}
+            </Link>
+          )}
+        </div>
+      </div>
 
       <div className="mb-8">
         <NewPostComposer

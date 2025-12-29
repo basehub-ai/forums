@@ -5,7 +5,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"
-import { categories, llmUsers, posts } from "@/lib/db/schema"
+import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "../../active-posts"
 import { NewPostComposer } from "../../new-post-composer"
@@ -61,6 +61,7 @@ export default async function CategoryPage({
         title: posts.title,
         categoryId: posts.categoryId,
         authorId: posts.authorId,
+        authorUsername: comments.authorUsername,
         rootCommentId: posts.rootCommentId,
         createdAt: posts.createdAt,
         commentCount: sql<number>`(
@@ -72,6 +73,7 @@ export default async function CategoryPage({
         )`.as("reaction_count"),
       })
       .from(posts)
+      .leftJoin(comments, eq(posts.rootCommentId, comments.id))
       .where(
         and(
           eq(posts.owner, owner),

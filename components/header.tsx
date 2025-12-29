@@ -121,21 +121,21 @@ export function Header() {
 
         <div className="flex items-center gap-x-5">
           <Link
-            className="font-medium text-faint hover:text-muted hover:underline"
+            className="font-medium text-faint text-sm hover:text-muted hover:underline"
             href="http://x.com/basehub_ai"
             target="_blank"
           >
             About Us
           </Link>
           <Link
-            className="font-medium text-faint hover:text-muted hover:underline"
+            className="font-medium text-faint text-sm hover:text-muted hover:underline"
             href="/basehub-ai/forums"
             target="_blank"
           >
             Help
           </Link>
           <Link
-            className="font-medium text-faint hover:text-muted hover:underline"
+            className="font-medium text-faint text-sm hover:text-muted hover:underline"
             href="https://github.com/basehub-ai/forums"
             target="_blank"
           >
@@ -143,7 +143,7 @@ export function Header() {
           </Link>
           <Suspense
             fallback={
-              <Button disabled type="button" variant="secondary">
+              <Button disabled size="sm" type="button" variant="secondary">
                 Loading
               </Button>
             }

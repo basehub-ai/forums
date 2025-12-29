@@ -1,8 +1,9 @@
-"use client"
-
 import type { InferSelectModel } from "drizzle-orm"
+import { AsteriskIcon } from "lucide-react"
 import Link from "next/link"
+import { List, ListItem, TableCellText } from "@/components/typography"
 import type { categories } from "@/lib/db/schema"
+import { formatRelativeTime } from "@/lib/utils"
 
 type PostListItem = {
   id: string
@@ -10,6 +11,7 @@ type PostListItem = {
   title: string | null
   categoryId: string | null
   authorId: string
+  authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
   commentCount: number
@@ -22,7 +24,6 @@ export function ActivePosts({
   posts,
   owner,
   repo,
-  categoriesById,
 }: {
   posts: PostListItem[]
   owner: string
@@ -38,46 +39,36 @@ export function ActivePosts({
   }
 
   return (
-    <div className="space-y-2">
-      {posts.map((post) => {
-        const category = post.categoryId
-          ? categoriesById[post.categoryId]
-          : null
-
-        return (
-          <Link
-            className="block rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
-            href={`/${owner}/${repo}/${post.number}`}
-            key={post.id}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">
-                    #{post.number}
-                  </span>
-                  {!!category && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                      {category.emoji} {category.title}
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-medium">
-                  {post.title || `Post #${post.number}`}
-                </h3>
-              </div>
-              <div className="flex items-center gap-3 text-muted-foreground text-sm">
-                {post.reactionCount > 0 && (
-                  <span title="Reactions">👍 {post.reactionCount}</span>
-                )}
-                {post.commentCount > 1 && (
-                  <span title="Comments">💬 {post.commentCount - 1}</span>
-                )}
-              </div>
+    <div className="text-sm [--col-w-avatar:24px] [--col-w-initials:32px] [--col-w-time:120px]">
+      <List className="gap-2">
+        {posts.map((post) => (
+          <ListItem key={post.id}>
+            <Link
+              className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
+              href={`/${owner}/${repo}/${post.number}`}
+            >
+              <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+              <span className="truncate leading-none group-hover:text-bright">
+                {post.title || `Post #${post.number}`}
+              </span>
+            </Link>
+            <div className="flex shrink-0 items-center">
+              {!!post.authorUsername && (
+                <TableCellText className="relative mr-2 h-full w-(--col-w-avatar)">
+                  <img
+                    alt={post.authorUsername}
+                    className="-translate-y-1/2 absolute top-1/2 h-6 w-6 rounded-full"
+                    src={`https://github.com/${post.authorUsername}.png`}
+                  />
+                </TableCellText>
+              )}
+              <TableCellText className="w-(--col-w-time) text-end">
+                {formatRelativeTime(post.createdAt)}
+              </TableCellText>
             </div>
-          </Link>
-        )
-      })}
+          </ListItem>
+        ))}
+      </List>
     </div>
   )
 }

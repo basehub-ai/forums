@@ -6,12 +6,13 @@ import { cn } from "@/lib/utils"
 const buttonVariants = cva("flex items-center justify-center font-medium", {
   variants: {
     variant: {
-      primary: "bg-accent text-background",
+      primary: "bg-accent text-white",
       secondary:
         "no-focus -outline-offset-1 bg-accent/5 text-accent outline-dashed outline-2 outline-accent hover:bg-accent/10 focus:outline-solid",
     },
     size: {
-      default: "h-9 px-3 py-2 has-[>svg]:px-3",
+      default: "h-9 px-3",
+      sm: "h-8 px-2.5 text-sm",
     },
   },
   defaultVariants: {

@@ -1,7 +1,7 @@
 "use client"
 
 import { Tooltip } from "@base-ui/react/tooltip"
-import { CheckIcon, Link2Icon } from "@radix-ui/react-icons"
+import { CheckIcon, LinkIcon } from "lucide-react"
 import { useState } from "react"
 
 export function CopyLinkButton({
@@ -17,7 +17,7 @@ export function CopyLinkButton({
 }) {
   const [isCopied, setIsCopied] = useState(false)
 
-  const Icon = isCopied ? CheckIcon : Link2Icon
+  const Icon = isCopied ? CheckIcon : LinkIcon
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(

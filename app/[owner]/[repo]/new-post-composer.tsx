@@ -1,9 +1,9 @@
 "use client"
 
-import { ArrowUpIcon } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { AskingSelector } from "@/components/asking-selector"
+import { Button } from "@/components/button"
 import { createPost } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 
@@ -68,15 +68,15 @@ export function NewPostComposer({
 
   return (
     <form
-      className="rounded-lg border bg-card p-4"
+      className="relative border-2 border-dashed bg-muted/30 p-4"
       onSubmit={handleSubmit}
       ref={formRef}
     >
       <textarea
-        className="mb-3 min-h-[120px] w-full resize-none"
+        className="min-h-24 w-full resize-none bg-transparent"
         disabled={isPending}
         name="message"
-        placeholder="Start a discussion..."
+        placeholder="Ask or search"
       />
       <div className="flex items-center justify-between">
         <AskingSelector
@@ -85,10 +85,9 @@ export function NewPostComposer({
           options={askingOptions}
           value={seekingAnswerFrom}
         />
-        <button disabled={isPending} type="submit">
-          <ArrowUpIcon className="mr-1 h-4 w-4" />
-          {isPending ? "Creating..." : isSignedIn ? "Create post" : "Sign in"}
-        </button>
+        <Button disabled={isPending} type="submit">
+          {isPending ? "Posting..." : isSignedIn ? "Post" : "Sign in"}
+        </Button>
       </div>
     </form>
   )
