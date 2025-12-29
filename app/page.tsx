@@ -17,7 +17,7 @@ export default async function Home() {
   "use cache"
   cacheLife("minutes")
 
-  const topRepos = await getTopRepositories(10)
+  const topRepos = await getTopRepositories(30)
 
   return (
     <Container>
