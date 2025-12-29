@@ -11,9 +11,9 @@ import { UserDropdown } from "./user-dropdown"
 export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-linear-to-b from-50% from-background via-70% via-[rgba(var(--background-raw),0.70)] to-[rgba(var(--background-raw),0.00)] md:from-30% md:via-60%">
-      <Container className="flex min-h-header flex-col items-center justify-between gap-x-5 lg:flex-row lg:flex-nowrap">
-        {/* left/top side */}
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-2 pt-4 pb-4 lg:w-auto lg:justify-start">
+      <Container className="flex min-h-header flex-row items-center justify-between gap-x-5">
+        {/* left side */}
+        <div className="flex items-center gap-x-2 pt-4 pb-4">
           <Link className="group flex items-center gap-x-1 pr-1" href="/">
             <svg
               fill="none"
