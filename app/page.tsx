@@ -103,29 +103,25 @@ export default async function Home() {
       <pre
         className="mx-auto mt-10 overflow-x-auto text-xs leading-tight text-muted"
         aria-hidden="true"
-      >
-        {`
-          ┌───────────────────┐
-          │  Ask a question   │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │  Clone the repo   │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │  Explore the code │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ╔═══════════════════╗
-          ║  Source-backed    ║
-          ║      answer       ║
-          ╚═══════════════════╝
-        `.trim()}
-      </pre>
+      >{`┌───────────────────┐
+│  Ask a question   │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  Clone the repo   │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  Explore the code │
+└─────────┬─────────┘
+          │
+          ▼
+╔═══════════════════╗
+║  Source-backed    ║
+║      answer       ║
+╚═══════════════════╝`}</pre>
     </Container>
   )
 }
