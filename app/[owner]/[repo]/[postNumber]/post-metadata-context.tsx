@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react"
-import { getPostMetadata } from "@/lib/actions/posts"
+import { getPostMetadata, updatePost } from "@/lib/actions/posts"
 
 type Category = {
   id: string
@@ -16,22 +16,39 @@ type Category = {
 }
 
 type PostMetadata = {
+  postId: string
+  owner: string
+  repo: string
+  authorId: string
   title: string | null
   category: Category | null
+  categories: Category[]
   isPolling: boolean
+  updateMetadata: (data: {
+    title?: string
+    categoryId?: string | null
+  }) => Promise<void>
 }
 
 const PostMetadataContext = createContext<PostMetadata | null>(null)
 
 export function PostMetadataProvider({
   postId,
+  owner,
+  repo,
+  authorId,
   initialTitle,
   initialCategory,
+  categories,
   children,
 }: {
   postId: string
+  owner: string
+  repo: string
+  authorId: string
   initialTitle: string | null
   initialCategory: Category | null
+  categories: Category[]
   children: React.ReactNode
 }) {
   const [title, setTitle] = useState(initialTitle)
@@ -71,8 +88,36 @@ export function PostMetadataProvider({
     }
   }, [isPolling, poll])
 
+  const updateMetadata = useCallback(
+    async (data: { title?: string; categoryId?: string | null }) => {
+      await updatePost({ postId, ...data })
+      if (data.title !== undefined) {
+        setTitle(data.title)
+      }
+      if (data.categoryId !== undefined) {
+        const newCategory = data.categoryId
+          ? categories.find((c) => c.id === data.categoryId) ?? null
+          : null
+        setCategory(newCategory)
+      }
+    },
+    [postId, categories]
+  )
+
   return (
-    <PostMetadataContext.Provider value={{ title, category, isPolling }}>
+    <PostMetadataContext.Provider
+      value={{
+        postId,
+        owner,
+        repo,
+        authorId,
+        title,
+        category,
+        categories,
+        isPolling,
+        updateMetadata,
+      }}
+    >
       {children}
     </PostMetadataContext.Provider>
   )
