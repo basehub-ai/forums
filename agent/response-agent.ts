@@ -13,7 +13,7 @@ import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
 import { getTools } from "./tools"
-import type { AgentUIMessage } from "./types"
+import { sanitizeUIMessages, type AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
 
 export async function responseAgent({
@@ -134,10 +134,15 @@ async function streamTextStep({
     sandboxId,
     gitContext: { owner, repo },
   })
-  const allMessages = [...initialMessages, ...newMessages]
+  const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
+
+  // Sanitize messages to remove provider-specific fields (like providerOptions)
+  // that cause convertToModelMessages to fail. This handles both existing
+  // corrupted data in the database and prevents future issues.
+  const sanitizedMessages = sanitizeUIMessages(allMessages)
 
   const result = streamText({
-    messages: convertToModelMessages(allMessages),
+    messages: convertToModelMessages(sanitizedMessages),
     tools: getTools({ workspace }),
     system: `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).
 
@@ -195,11 +200,15 @@ async function closeStreamStep({
 }) {
   "use step"
 
+  // Sanitize content before storing to prevent provider-specific fields
+  // (like providerOptions) from being persisted in the database
+  const sanitizedContent = sanitizeUIMessages(content)
+
   await Promise.all([
     writable.close(),
     db
       .update(comments)
-      .set({ streamId: null, content })
+      .set({ streamId: null, content: sanitizedContent })
       .where(eq(comments.id, commentId)),
   ])
 
@@ -217,7 +226,7 @@ async function closeStreamStep({
   if (comment) {
     // check each internal message for mentions
     // if there are no mentions in the message the function does nothing
-    for (const message of content) {
+    for (const message of sanitizedContent) {
       createMentions({
         sourcePostId: postId,
         sourceCommentId: commentId,
