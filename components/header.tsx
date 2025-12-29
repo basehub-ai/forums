@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import { auth } from "@/lib/auth"
 import { Button } from "./button"
 import { Container } from "./container"
+import { MobileNav } from "./mobile-nav"
 import { SignInButton } from "./sign-in-button"
 import { UserDropdown } from "./user-dropdown"
 
@@ -120,27 +121,30 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-x-5">
-          <Link
-            className="font-medium text-faint text-sm hover:text-muted hover:underline"
-            href="http://x.com/basehub_ai"
-            target="_blank"
-          >
-            About Us
-          </Link>
-          <Link
-            className="font-medium text-faint text-sm hover:text-muted hover:underline"
-            href="/basehub-ai/forums"
-            target="_blank"
-          >
-            Help
-          </Link>
-          <Link
-            className="font-medium text-faint text-sm hover:text-muted hover:underline"
-            href="https://github.com/basehub-ai/forums"
-            target="_blank"
-          >
-            GitHub
-          </Link>
+          <nav className="hidden items-center gap-x-5 md:flex">
+            <Link
+              className="font-medium text-faint text-sm hover:text-muted hover:underline"
+              href="http://x.com/basehub_ai"
+              target="_blank"
+            >
+              About Us
+            </Link>
+            <Link
+              className="font-medium text-faint text-sm hover:text-muted hover:underline"
+              href="/basehub-ai/forums"
+              target="_blank"
+            >
+              Help
+            </Link>
+            <Link
+              className="font-medium text-faint text-sm hover:text-muted hover:underline"
+              href="https://github.com/basehub-ai/forums"
+              target="_blank"
+            >
+              GitHub
+            </Link>
+          </nav>
+          <MobileNav />
           <Suspense
             fallback={
               <Button disabled size="sm" type="button" variant="secondary">
