@@ -69,7 +69,7 @@ export function MobileNav() {
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 top-full z-50 mt-2 min-w-[160px] rounded-md border border-border bg-background py-1 shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-2 min-w-[160px] border border-faint/20 bg-background py-1 shadow-lg">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
