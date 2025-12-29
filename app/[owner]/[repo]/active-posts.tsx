@@ -4,6 +4,7 @@ import Link from "next/link"
 import { List, ListItem, TableCellText } from "@/components/typography"
 import type { categories } from "@/lib/db/schema"
 import { formatRelativeTime } from "@/lib/utils"
+import { AuthorAvatar } from "./author-avatar"
 
 type PostListItem = {
   id: string
@@ -55,11 +56,7 @@ export function ActivePosts({
             <div className="flex shrink-0 items-center">
               {!!post.authorUsername && (
                 <TableCellText className="relative mr-2 h-full w-(--col-w-avatar)">
-                  <img
-                    alt={post.authorUsername}
-                    className="-translate-y-1/2 absolute top-1/2 h-6 w-6 rounded-full"
-                    src={`https://github.com/${post.authorUsername}.png`}
-                  />
+                  <AuthorAvatar username={post.authorUsername} />
                 </TableCellText>
               )}
               <TableCellText className="w-(--col-w-time) text-end">
