@@ -26,7 +26,7 @@ async function fetchRepoStars(repos: string[]): Promise<Map<string, number>> {
           next: { revalidate: 3600 },
         })
         if (res.ok) {
-          const data = await res.json()
+          const data = (await res.json()) as { stargazers_count?: number }
           starMap.set(repo, data.stargazers_count ?? 0)
         }
       } catch {
