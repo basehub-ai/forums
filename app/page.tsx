@@ -10,11 +10,14 @@ import {
   TableColumnTitle,
   Title,
 } from "@/components/typography"
+import { getTopRepositories } from "@/lib/top-repos"
 import { formatCompactNumber, formatRelativeTime } from "@/lib/utils"
 
 export default async function Home() {
   "use cache"
   cacheLife("minutes")
+
+  const topRepos = await getTopRepositories(10)
 
   return (
     <Container>
@@ -62,62 +65,41 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <List className="mt-2 min-w-[480px] pb-2">
-          {topRepos.map((repo) => {
-            return (
-              <ListItem key={repo.name}>
-                <Link
-                  className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
-                  href={repo.name}
-                >
-                  <AsteriskIcon className="mt-0.5 text-faint" size={16} />
-                  <span className="leading-none group-hover:text-bright">
-                    {repo.name}
-                  </span>
-                </Link>
-                <div className="flex shrink-0">
-                  <TableCellText className="w-(--col-w-1)">
-                    {formatCompactNumber(repo.stars)}
-                  </TableCellText>
-                  <TableCellText className="w-(--col-w-2)">
-                    {formatCompactNumber(repo.posts)}
-                  </TableCellText>
-                  <TableCellText className="w-(--col-w-3) text-end">
-                    {formatRelativeTime(repo.lastActive)}
-                  </TableCellText>
-                </div>
-              </ListItem>
-            )
-          })}
-        </List>
+        {topRepos.length > 0 ? (
+          <List className="mt-2 min-w-[480px] pb-2">
+            {topRepos.map((repo) => {
+              return (
+                <ListItem key={repo.name}>
+                  <Link
+                    className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
+                    href={repo.name}
+                  >
+                    <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                    <span className="leading-none group-hover:text-bright">
+                      {repo.name}
+                    </span>
+                  </Link>
+                  <div className="flex shrink-0">
+                    <TableCellText className="w-(--col-w-1)">
+                      {formatCompactNumber(repo.stars)}
+                    </TableCellText>
+                    <TableCellText className="w-(--col-w-2)">
+                      {formatCompactNumber(repo.posts)}
+                    </TableCellText>
+                    <TableCellText className="w-(--col-w-3) text-end">
+                      {formatRelativeTime(repo.lastActive)}
+                    </TableCellText>
+                  </div>
+                </ListItem>
+              )
+            })}
+          </List>
+        ) : (
+          <p className="mt-4 text-muted">
+            No repositories yet. Search for a repo to get started!
+          </p>
+        )}
       </div>
     </Container>
   )
 }
-
-const topRepos = [
-  {
-    name: "vercel/next.js",
-    stars: 123_456,
-    posts: 7890,
-    lastActive: Date.now() - 2 * 60 * 1000,
-  },
-  {
-    name: "facebook/react",
-    stars: 98_765,
-    posts: 6543,
-    lastActive: Date.now() - 3 * 60 * 60 * 1000,
-  },
-  {
-    name: "torvalds/linux",
-    stars: 87_654,
-    posts: 3210,
-    lastActive: Date.now() - 2 * 60 * 60 * 1000 * 24,
-  },
-  {
-    name: "microsoft/vscode",
-    stars: 76_543,
-    posts: 2109,
-    lastActive: Date.now() - 5 * 60 * 60 * 1000 * 24,
-  },
-]
