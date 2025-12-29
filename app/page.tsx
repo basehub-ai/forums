@@ -27,7 +27,7 @@ export default async function Home() {
         read and grep the source code to provide the best answer.
       </Subtitle>
       <pre
-        className="mx-auto mt-8 hidden text-xs leading-tight text-muted sm:block"
+        className="mx-auto mt-8 overflow-x-auto text-xs leading-tight text-muted"
         aria-hidden="true"
       >
         {`
