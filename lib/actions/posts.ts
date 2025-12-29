@@ -539,3 +539,95 @@ export async function getPostMetadata(postId: string) {
       : null,
   }
 }
+
+export async function getCategories(owner: string, repo: string) {
+  return await db
+    .select({
+      id: categories.id,
+      title: categories.title,
+      emoji: categories.emoji,
+    })
+    .from(categories)
+    .where(and(eq(categories.owner, owner), eq(categories.repo, repo)))
+}
+
+export async function updatePost(data: {
+  postId: string
+  title?: string
+  categoryId?: string | null
+}) {
+  const session = await getSessionOrThrow()
+
+  const [post] = await db
+    .select({
+      id: posts.id,
+      owner: posts.owner,
+      repo: posts.repo,
+      authorId: posts.authorId,
+      categoryId: posts.categoryId,
+    })
+    .from(posts)
+    .where(eq(posts.id, data.postId))
+    .limit(1)
+
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  if (post.authorId !== session.user.id) {
+    throw new Error("Unauthorized: only the post author can edit this post")
+  }
+
+  const updates: { title?: string; categoryId?: string | null; updatedAt: number } = {
+    updatedAt: Date.now(),
+  }
+
+  if (data.title !== undefined) {
+    updates.title = data.title
+  }
+
+  if (data.categoryId !== undefined) {
+    if (data.categoryId !== null) {
+      const [category] = await db
+        .select({ id: categories.id })
+        .from(categories)
+        .where(
+          and(
+            eq(categories.id, data.categoryId),
+            eq(categories.owner, post.owner),
+            eq(categories.repo, post.repo)
+          )
+        )
+        .limit(1)
+
+      if (!category) {
+        throw new Error("Category not found")
+      }
+    }
+    updates.categoryId = data.categoryId
+  }
+
+  await db.update(posts).set(updates).where(eq(posts.id, data.postId))
+
+  const indexUpdates: { title?: string; categoryId?: string } = {}
+  if (data.title !== undefined) {
+    indexUpdates.title = data.title
+  }
+  if (data.categoryId !== undefined) {
+    indexUpdates.categoryId = data.categoryId ?? ""
+  }
+  if (Object.keys(indexUpdates).length > 0) {
+    await updatePostIndex(data.postId, indexUpdates)
+  }
+
+  updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${data.postId}`)
+  if (post.categoryId) {
+    updateTag(`category:${post.categoryId}`)
+  }
+  if (data.categoryId && data.categoryId !== post.categoryId) {
+    updateTag(`category:${data.categoryId}`)
+  }
+
+  return { success: true }
+}

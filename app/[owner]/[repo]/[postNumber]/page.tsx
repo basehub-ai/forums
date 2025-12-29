@@ -63,7 +63,7 @@ export default async function PostPage({
     notFound()
   }
 
-  const [postWithCategory, allLlmUsers, postComments, postReactions, postMentions] =
+  const [postWithCategory, allLlmUsers, postComments, postReactions, postMentions, repoCategories] =
     await Promise.all([
       db
         .select({
@@ -134,6 +134,14 @@ export default async function PostPage({
         )
         .orderBy(asc(mentions.createdAt))
         .then((r) => r.map((row) => row.mentions)),
+      db
+        .select({
+          id: categories.id,
+          title: categories.title,
+          emoji: categories.emoji,
+        })
+        .from(categories)
+        .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
     ])
 
   if (!postWithCategory) {
@@ -227,9 +235,13 @@ export default async function PostPage({
 
   return (
     <PostMetadataProvider
+      authorId={post.authorId}
+      categories={repoCategories}
       initialCategory={category?.id ? category : null}
       initialTitle={post.title}
+      owner={owner}
       postId={post.id}
+      repo={repo}
     >
       <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-8">
         <div className="min-w-0 flex-1">
