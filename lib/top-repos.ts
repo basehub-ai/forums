@@ -47,42 +47,26 @@ export async function getTopRepositories(limit = 10): Promise<RepoStats[]> {
       owner: posts.owner,
       repo: posts.repo,
       postCount: sql<number>`count(distinct ${posts.id})::int`,
-      lastPostUpdate: sql<number>`max(${posts.updatedAt})`,
+      lastActive: sql<number>`greatest(max(${posts.updatedAt}), coalesce(max(${comments.updatedAt}), 0))`,
     })
     .from(posts)
+    .leftJoin(comments, sql`${comments.postId} = ${posts.id}`)
     .groupBy(posts.owner, posts.repo)
 
   if (repoStats.length === 0) {
     return []
   }
 
-  const repoLastComment = await db
-    .select({
-      owner: posts.owner,
-      repo: posts.repo,
-      lastCommentUpdate: sql<number>`max(${comments.updatedAt})`,
-    })
-    .from(comments)
-    .innerJoin(posts, sql`${comments.postId} = ${posts.id}`)
-    .groupBy(posts.owner, posts.repo)
-
-  const commentMap = new Map(
-    repoLastComment.map((r) => [`${r.owner}/${r.repo}`, r.lastCommentUpdate])
-  )
-
   const repoNames = repoStats.map((r) => `${r.owner}/${r.repo}`)
   const starMap = await fetchRepoStars(repoNames)
 
   const results: RepoStats[] = repoStats.map((r) => {
     const name = `${r.owner}/${r.repo}`
-    const lastCommentTime = commentMap.get(name) ?? 0
-    const lastActive = Math.max(r.lastPostUpdate ?? 0, lastCommentTime)
-
     return {
       name,
       stars: starMap.get(name) ?? 0,
       posts: r.postCount,
-      lastActive,
+      lastActive: r.lastActive ?? 0,
     }
   })
 
