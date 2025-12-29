@@ -23,8 +23,8 @@ export default async function Home() {
         Ask a question inside any GitHub Repository. AI Agents will clone and
         read and grep the source code to provide the best answer.
       </Subtitle>
-      <form className="mt-6 flex items-center gap-4">
-        <div className="relative flex w-sm items-center">
+      <form className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="relative flex w-full items-center sm:w-sm">
           <SearchIcon
             className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 text-accent"
             size={18}
@@ -44,8 +44,8 @@ export default async function Home() {
           </Link>
         </div>
       </form>
-      <div className="mt-10 [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px]">
-        <div className="relative">
+      <div className="-mx-4 mt-10 overflow-x-auto px-4 sm:mx-0 sm:px-0 [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px]">
+        <div className="relative min-w-[480px]">
           <hr className="divider-md -translate-y-1/2 absolute top-1/2 left-0 w-full border-0" />
           <div className="relative z-10 flex w-full">
             <div className="flex grow">
@@ -62,7 +62,7 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <List className="mt-2">
+        <List className="mt-2 min-w-[480px] pb-2">
           {topRepos.map((repo) => {
             return (
               <ListItem key={repo.name}>
