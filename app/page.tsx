@@ -102,6 +102,28 @@ export default async function Home() {
         )}
         </div>
       </div>
+      <pre
+        className="mx-auto mt-10 w-fit overflow-x-auto text-xs leading-tight text-muted"
+        aria-hidden="true"
+      >{`┌───────────────────┐
+│  Ask a question   │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  Clone the repo   │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  Explore the code │
+└─────────┬─────────┘
+          │
+          ▼
+╔═══════════════════╗
+║  Source-backed    ║
+║      answer       ║
+╚═══════════════════╝`}</pre>
     </Container>
   )
 }
