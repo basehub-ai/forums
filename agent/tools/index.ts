@@ -1,8 +1,6 @@
 import { extractTool, searchTool } from "@parallel-web/ai-sdk-tools"
 import { type ToolSet, tool } from "ai"
 import { and, asc, eq } from "drizzle-orm"
-import { OverlayFs } from "just-bash"
-import { createBashTool } from "just-bash/ai"
 import { join } from "path"
 import { z } from "zod"
 import { comments, posts } from "@/lib/db/schema"
@@ -14,22 +12,6 @@ export type ToolContext = {
 }
 
 export function getTools(context: ToolContext) {
-  const overlayFs = new OverlayFs({
-    root: context.workspace.path,
-    mountPoint: context.workspace.path,
-    /**
-     * because the fs doesn't persist anyways. don't want to confuse the agent.
-     * our take on how to make this work could be to expose Write/Edit tools, and potentially only allow writing to /tmp, or /examples/<example>
-     */
-    readOnly: true,
-  })
-
-  const bashTool = createBashTool({
-    fs: overlayFs,
-    cwd: overlayFs.getMountPoint(),
-    network: { dangerouslyAllowFullInternetAccess: true },
-  })
-
   return {
     Read: tool({
       name: "Read",
@@ -569,8 +551,6 @@ export function getTools(context: ToolContext) {
     WebSearch: searchTool as any,
     // biome-ignore lint/suspicious/noExplicitAny: .
     WebExtract: extractTool as any,
-
-    Bash: bashTool,
   } satisfies ToolSet
 }
 
