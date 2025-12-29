@@ -66,7 +66,7 @@ export async function getTopRepositories(limit = 10): Promise<RepoStats[]> {
       name,
       stars: starMap.get(name) ?? 0,
       posts: r.postCount,
-      lastActive: r.lastActive ?? 0,
+      lastActive: r.lastActive || Date.now(),
     }
   })
 
