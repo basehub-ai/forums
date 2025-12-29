@@ -26,7 +26,33 @@ export default async function Home() {
         Ask a question inside any GitHub Repository. AI Agents will clone and
         read and grep the source code to provide the best answer.
       </Subtitle>
-      <form className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <pre
+        className="mx-auto mt-8 hidden text-xs leading-tight text-muted sm:block"
+        aria-hidden="true"
+      >
+        {`
+          ┌───────────────────┐
+          │  Ask a question   │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │  Clone the repo   │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │  Explore the code │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ╔═══════════════════╗
+          ║  Source-backed    ║
+          ║      answer       ║
+          ╚═══════════════════╝
+        `.trim()}
+      </pre>
+      <form className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 sm:mt-8">
         <div className="relative flex w-full items-center sm:w-sm">
           <SearchIcon
             className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 text-accent"
