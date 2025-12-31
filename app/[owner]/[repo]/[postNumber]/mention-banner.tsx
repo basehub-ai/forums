@@ -3,8 +3,8 @@
 import type { InferSelectModel } from "drizzle-orm"
 import { MessageCircleIcon } from "lucide-react"
 import Link from "next/link"
+import { RelativeTime } from "@/components/relative-time"
 import type { mentions as mentionsSchema } from "@/lib/db/schema"
-import { formatRelativeTime } from "@/lib/utils"
 
 type Mention = InferSelectModel<typeof mentionsSchema>
 
@@ -38,9 +38,10 @@ export function MentionBanner({
           {author?.name ?? mention.authorUsername ?? "Someone"}
         </span>{" "}
         mentioned this post{" "}
-        <span className="underline decoration-dotted underline-offset-2">
-          {formatRelativeTime(mention.createdAt)}
-        </span>
+        <RelativeTime
+          className="underline decoration-dotted underline-offset-2"
+          timestamp={mention.createdAt}
+        />
       </span>
       <Link
         className="ml-auto flex items-center gap-1.5 hover:underline"

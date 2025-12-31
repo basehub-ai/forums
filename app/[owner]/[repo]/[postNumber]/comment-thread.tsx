@@ -4,12 +4,12 @@ import { useParams } from "next/navigation"
 import { Suspense } from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import { CopyLinkButton } from "@/components/copy-link-button"
+import { RelativeTime } from "@/components/relative-time"
 import type {
   comments as commentsSchema,
   mentions as mentionsSchema,
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
-import { formatRelativeTime } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
 import { MentionBanner } from "./mention-banner"
 import { PostComposer } from "./post-composer"
@@ -96,9 +96,12 @@ function CommentItem({
 
           <span className="text-muted-foreground text-sm">
             {actionLabel}{" "}
-            <span className="underline decoration-dotted underline-offset-2">
-              {formatRelativeTime(comment.createdAt)}
-            </span>
+            <Suspense>
+              <RelativeTime
+                className="underline decoration-dotted underline-offset-2"
+                timestamp={comment.createdAt}
+              />
+            </Suspense>
           </span>
 
           <Suspense>
