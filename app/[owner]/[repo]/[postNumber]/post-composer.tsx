@@ -1,6 +1,5 @@
 "use client"
 
-import { ArrowUpIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import { AskingSelector } from "@/components/asking-selector"
@@ -20,7 +19,6 @@ export function PostComposer({
   threadCommentId,
   autoFocus,
   onCancel,
-  connected,
   storageKey,
 }: {
   postId: string
@@ -28,11 +26,11 @@ export function PostComposer({
   threadCommentId?: string
   autoFocus?: boolean
   onCancel?: () => void
-  connected?: boolean
   storageKey?: string
 }) {
   const { data: auth } = authClient.useSession()
   const isSignedIn = !!auth?.session
+  const userImage = auth?.user?.image
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
@@ -108,25 +106,38 @@ export function PostComposer({
     })
   }
 
+  const label = threadCommentId ? "Write a reply" : "Add a comment"
+  const placeholder = "Write your comment here"
+
   return (
     <form
-      className={
-        connected
-          ? "-mt-px rounded-b-lg border border-t-0 bg-card p-4"
-          : "rounded-lg border bg-card p-4"
-      }
+      className="rounded-lg border bg-card p-4"
       onBlur={handleBlur}
       onSubmit={handleSubmit}
       ref={formRef}
     >
+      <div className="mb-3 flex items-center gap-2">
+        {userImage ? (
+          <img
+            alt="Your avatar"
+            className="size-6 rounded-full"
+            src={userImage}
+          />
+        ) : (
+          <div className="size-6 rounded-full bg-muted" />
+        )}
+        <span className="font-medium text-bright text-sm">{label}</span>
+      </div>
+
       <textarea
         autoFocus={autoFocus}
-        className="mb-3 min-h-25 w-full resize-none"
+        className="dashed mb-3 min-h-20 w-full resize-none bg-transparent p-3 text-sm placeholder:text-muted-foreground"
         disabled={isPending}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder={threadCommentId ? "Write a reply..." : "Add a comment..."}
+        placeholder={placeholder}
         value={message}
       />
+
       <div className="flex items-center justify-between">
         <AskingSelector
           disabled={isPending}
@@ -134,9 +145,12 @@ export function PostComposer({
           options={askingOptions}
           value={seekingAnswerFrom}
         />
-        <button disabled={isPending} type="submit">
-          <ArrowUpIcon className="mr-1 h-4 w-4" />
-          {isPending ? "Sending..." : isSignedIn ? "Send" : "Sign in to send"}
+        <button
+          className="rounded bg-accent px-3 py-1.5 font-medium text-label text-sm disabled:opacity-50"
+          disabled={isPending}
+          type="submit"
+        >
+          {isPending ? "Posting..." : isSignedIn ? "Post" : "Sign in to post"}
         </button>
       </div>
     </form>

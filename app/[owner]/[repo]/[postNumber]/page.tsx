@@ -1,8 +1,6 @@
 import { and, asc, eq } from "drizzle-orm"
-import { ArrowLeftIcon } from "lucide-react"
 import { cacheTag } from "next/cache"
 import type { Metadata } from "next"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
@@ -18,9 +16,8 @@ import { getSiteOrigin } from "@/lib/utils"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
 import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
+import { PostHeader } from "./post-header"
 import { PostMetadataProvider } from "./post-metadata-context"
-import { PostSidebar } from "./post-sidebar"
-import { PostTitle } from "./post-title"
 
 export async function generateMetadata({
   params,
@@ -215,12 +212,6 @@ export default async function PostPage({
     }
   }
 
-  const participants = Object.values(authorsById).map((a) => ({
-    id: a.username,
-    name: a.name,
-    image: a.image,
-  }))
-
   const commentNumbers = computeCommentNumbers(postComments)
 
   const askingOptions = [
@@ -243,42 +234,34 @@ export default async function PostPage({
       postId={post.id}
       repo={repo}
     >
-      <div className="mx-auto flex w-full max-w-5xl gap-8 px-4 py-8">
-        <div className="min-w-0 flex-1">
-          <div className="mb-4 flex flex-col gap-2">
-            <Link
-              className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"
-              href={`/${owner}/${repo}`}
-            >
-              <ArrowLeftIcon size={14} /> Back to {owner}/{repo}
-            </Link>
-            <PostTitle />
-          </div>
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+        <PostHeader owner={owner} repo={repo} />
 
-          <div className="space-y-6">
-            <CommentThreadClient
-              askingOptions={askingOptions}
-              authorsById={authorsById}
-              commentNumbers={commentNumbers}
-              comments={postComments}
-              mentions={postMentions}
-              owner={owner}
-              reactions={postReactions}
-              repo={repo}
-              rootCommentId={post.rootCommentId}
-            />
-          </div>
-
-          <div className="mt-8">
-            <PostComposer
-              askingOptions={askingOptions}
-              postId={post.id}
-              storageKey={`composer:${post.id}`}
-            />
-          </div>
+        <div className="mt-8 space-y-4">
+          <CommentThreadClient
+            askingOptions={askingOptions}
+            authorsById={authorsById}
+            commentNumbers={commentNumbers}
+            comments={postComments}
+            mentions={postMentions}
+            owner={owner}
+            reactions={postReactions}
+            repo={repo}
+            rootCommentId={post.rootCommentId}
+          />
         </div>
 
-        <PostSidebar participants={participants} />
+        <div className="my-8 flex items-center gap-4 text-faint text-xs">
+          <hr className="divider flex-1" />
+          <span>END OF POST</span>
+          <hr className="divider flex-1" />
+        </div>
+
+        <PostComposer
+          askingOptions={askingOptions}
+          postId={post.id}
+          storageKey={`composer:${post.id}`}
+        />
       </div>
     </PostMetadataProvider>
   )

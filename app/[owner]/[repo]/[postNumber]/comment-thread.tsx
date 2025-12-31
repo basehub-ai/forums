@@ -4,12 +4,12 @@ import { useParams } from "next/navigation"
 import { Suspense } from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import { CopyLinkButton } from "@/components/copy-link-button"
+import { RelativeTime } from "@/components/relative-time"
 import type {
   comments as commentsSchema,
   mentions as mentionsSchema,
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
-import { cn } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
 import { MentionBanner } from "./mention-banner"
 import { PostComposer } from "./post-composer"
@@ -38,12 +38,12 @@ function CommentItem({
   repo,
   comment,
   commentId,
-  // reactions,
   isRootComment,
   author,
   commentNumber,
   depth = 0,
   children,
+  hasReplies,
   onReply,
   onCancelReply,
   isReplying,
@@ -59,6 +59,7 @@ function CommentItem({
   commentNumber: string
   depth?: number
   children?: React.ReactNode
+  hasReplies?: boolean
   onReply?: (commentId: string) => void
   onCancelReply?: () => void
   isReplying?: boolean
@@ -72,38 +73,35 @@ function CommentItem({
 
   const { postNumber } = useParams<{ postNumber: string }>()
 
+  const actionLabel = isRootComment ? "posted" : "commented"
+
   return (
-    <div
-      className={cn("relative", {
-        "ml-6 border-muted border-l-2 pl-4": depth > 0,
-      })}
-      id={commentNumber}
-    >
-      <div
-        className={cn("group border bg-card p-2.5 text-card-foreground", {
-          "rounded-lg": !canReply,
-          "rounded-t-lg": canReply,
-        })}
-      >
-        <div className="mb-2 flex items-center gap-2">
+    <div id={commentNumber}>
+      <div className="group">
+        <div className="flex items-center gap-2">
           <Link href={profileUrl}>
             <img
               alt={`Avatar of ${author.name}`}
-              className="h-6 w-6 rounded-full"
+              className="size-6 rounded-full"
               src={author.image}
             />
           </Link>
 
           <Link
-            className="font-semibold text-sm hover:underline"
+            className="font-semibold text-bright text-sm hover:underline"
             href={profileUrl}
           >
             {author.name}
           </Link>
 
-          {/* Comment timestamp */}
-          <span className="text-muted-foreground text-xs">
-            {new Date(comment.createdAt).toLocaleString()}
+          <span className="text-muted-foreground text-sm">
+            {actionLabel}{" "}
+            <Suspense>
+              <RelativeTime
+                className="underline decoration-dotted underline-offset-2"
+                timestamp={comment.createdAt}
+              />
+            </Suspense>
           </span>
 
           <Suspense>
@@ -116,136 +114,52 @@ function CommentItem({
           </Suspense>
         </div>
 
-        {comment.streamId ? (
-          <StreamingContent commentId={comment.id} />
-        ) : (
-          <CommentContent content={comment.content as AgentUIMessage[]} />
-        )}
-
-        {/* <div className="mt-3">
-          <ReactionButtons
-            commentId={comment.id}
-            owner={owner}
-            postId={comment.postId}
-            reactions={reactions}
-            repo={repo}
-          />
-        </div> */}
+        <div className="mt-3">
+          {comment.streamId ? (
+            <StreamingContent commentId={comment.id} />
+          ) : (
+            <CommentContent content={comment.content as AgentUIMessage[]} />
+          )}
+        </div>
       </div>
 
-      {children}
+      {hasReplies && (
+        <div className="my-4 flex items-center gap-3 text-faint text-xs">
+          <hr className="divider w-6" />
+          <span>REPLY IN THREAD</span>
+          <hr className="divider flex-1" />
+        </div>
+      )}
+
+      {children && <div className="border-muted border-l-2 pl-4">{children}</div>}
 
       {canReply ? (
         isReplying ? (
           askingOptions ? (
-            <PostComposer
-              askingOptions={askingOptions}
-              autoFocus
-              connected
-              onCancel={onCancelReply}
-              postId={comment.postId}
-              storageKey={`reply:${comment.id}`}
-              threadCommentId={comment.id}
-            />
+            <div className="mt-4 border-muted border-l-2 pl-4">
+              <PostComposer
+                askingOptions={askingOptions}
+                autoFocus
+                onCancel={onCancelReply}
+                postId={comment.postId}
+                storageKey={`reply:${comment.id}`}
+                threadCommentId={comment.id}
+              />
+            </div>
           ) : null
         ) : (
-          <button
-            className="-mt-px w-full rounded-b-lg border border-t-0 bg-card px-4 py-3 text-left text-muted-foreground text-sm hover:bg-muted/50"
-            onClick={() => onReply(commentId)}
-            type="button"
-          >
-            Write a reply...
-          </button>
+          <div className="mt-4 border-muted border-l-2 pl-4">
+            <button
+              className="text-muted-foreground text-sm hover:underline"
+              onClick={() => onReply(commentId)}
+              type="button"
+            >
+              Reply in thread
+            </button>
+          </div>
         )
       ) : null}
     </div>
-  )
-}
-
-function buildCommentTree(
-  comments: Comment[],
-  threadCommentId: string | null
-): Comment[] {
-  return comments.filter((c) => c.threadCommentId === threadCommentId)
-}
-
-function CommentTreeRecursive({
-  owner,
-  repo,
-  comments,
-  threadCommentId,
-  reactionsByComment,
-  authorsById,
-  rootCommentId,
-  commentNumbers,
-  depth,
-  replyingToId,
-  onReply,
-  onCancelReply,
-  askingOptions,
-}: {
-  owner: string
-  repo: string
-  comments: Comment[]
-  threadCommentId: string | null
-  reactionsByComment: Record<string, Reaction[]>
-  authorsById: Record<string, AuthorInfo>
-  rootCommentId: string | null
-  commentNumbers: Map<string, string>
-  depth: number
-  replyingToId?: string | null
-  onReply?: (commentId: string) => void
-  onCancelReply?: () => void
-  askingOptions?: AskingOption[]
-}) {
-  const children = buildCommentTree(comments, threadCommentId)
-
-  return (
-    <>
-      {children.map((comment) => {
-        const author = authorsById[comment.authorId]
-        if (!author) {
-          return null
-        }
-        const commentNumber = commentNumbers.get(comment.id) ?? "?"
-        return (
-          <CommentItem
-            askingOptions={askingOptions}
-            author={author}
-            comment={comment}
-            commentId={comment.id}
-            commentNumber={commentNumber}
-            depth={depth}
-            isReplying={replyingToId === comment.id}
-            isRootComment={comment.id === rootCommentId}
-            key={comment.id}
-            onCancelReply={onCancelReply}
-            onReply={onReply}
-            owner={owner}
-            reactions={reactionsByComment[comment.id] ?? []}
-            repo={repo}
-          >
-            {depth === 0 ? (
-              <CommentTreeRecursive
-                askingOptions={askingOptions}
-                authorsById={authorsById}
-                commentNumbers={commentNumbers}
-                comments={comments}
-                depth={1}
-                onCancelReply={onCancelReply}
-                onReply={onReply}
-                owner={owner}
-                reactionsByComment={reactionsByComment}
-                replyingToId={replyingToId}
-                repo={repo}
-                rootCommentId={rootCommentId}
-                threadCommentId={comment.id}
-              />
-            ) : null}
-          </CommentItem>
-        )
-      })}
-    </>
   )
 }
 
@@ -299,18 +213,23 @@ export function CommentThread({
     ),
   ].sort((a, b) => a.createdAt - b.createdAt)
 
+  const repliesByThread = new Map<string, Comment[]>()
+  for (const c of comments) {
+    if (c.threadCommentId) {
+      const existing = repliesByThread.get(c.threadCommentId) ?? []
+      existing.push(c)
+      repliesByThread.set(c.threadCommentId, existing)
+    }
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {timeline.map((item) => {
         if (item.type === "mention") {
           const author = authorsById[item.data.authorId]
           return (
-            <Suspense>
-              <MentionBanner
-                author={author}
-                key={`mention-${item.data.id}`}
-                mention={item.data}
-              />
+            <Suspense key={`mention-${item.data.id}`}>
+              <MentionBanner author={author} mention={item.data} />
             </Suspense>
           )
         }
@@ -322,6 +241,8 @@ export function CommentThread({
         }
         const commentNumber = commentNumbers.get(comment.id) ?? "?"
         const isRootComment = comment.id === rootCommentId
+        const replies = repliesByThread.get(comment.id) ?? []
+        const hasReplies = replies.length > 0
 
         return (
           <CommentItem
@@ -331,6 +252,7 @@ export function CommentThread({
             commentId={comment.id}
             commentNumber={commentNumber}
             depth={0}
+            hasReplies={hasReplies}
             isReplying={replyingToId === comment.id}
             isRootComment={isRootComment}
             key={comment.id}
@@ -340,21 +262,30 @@ export function CommentThread({
             reactions={reactionsByComment[comment.id] ?? []}
             repo={repo}
           >
-            <CommentTreeRecursive
-              askingOptions={askingOptions}
-              authorsById={authorsById}
-              commentNumbers={commentNumbers}
-              comments={comments}
-              depth={1}
-              onCancelReply={onCancelReply}
-              onReply={onReply}
-              owner={owner}
-              reactionsByComment={reactionsByComment}
-              replyingToId={replyingToId}
-              repo={repo}
-              rootCommentId={rootCommentId}
-              threadCommentId={comment.id}
-            />
+            {hasReplies && (
+              <div className="space-y-4">
+                {replies.map((reply) => {
+                  const replyAuthor = authorsById[reply.authorId]
+                  if (!replyAuthor) return null
+                  const replyNumber = commentNumbers.get(reply.id) ?? "?"
+                  return (
+                    <CommentItem
+                      askingOptions={askingOptions}
+                      author={replyAuthor}
+                      comment={reply}
+                      commentId={reply.id}
+                      commentNumber={replyNumber}
+                      depth={1}
+                      isRootComment={false}
+                      key={reply.id}
+                      owner={owner}
+                      reactions={reactionsByComment[reply.id] ?? []}
+                      repo={repo}
+                    />
+                  )
+                })}
+              </div>
+            )}
           </CommentItem>
         )
       })}
