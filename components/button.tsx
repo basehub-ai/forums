@@ -8,7 +8,7 @@ const buttonVariants = cva("flex items-center justify-center font-medium", {
     variant: {
       primary: "bg-accent text-white",
       secondary:
-        "no-focus -outline-offset-1 bg-accent/5 text-accent outline-dashed outline-2 outline-accent hover:bg-accent/10 focus:outline-solid",
+        "bg-accent/5 text-accent border-2 border-accent hover:bg-accent/10",
     },
     size: {
       default: "h-9 px-3",
