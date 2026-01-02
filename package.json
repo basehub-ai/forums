@@ -22,7 +22,7 @@
     "@workflow/ai": "^4.0.1-beta.29",
     "ai": "^5.0.114",
     "babel-plugin-react-compiler": "^1.0.0",
-    "better-auth": "^1.4.5",
+    "better-auth": "^1.4.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
