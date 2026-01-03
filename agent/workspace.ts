@@ -204,8 +204,12 @@ export const getWorkspace = async ({
           fi
         fi
 
-        # Create worktree path with URL-encoded ref
-        WORKTREE_NAME=$(node -p 'encodeURIComponent(process.argv[1])' "$REF")
+        # Create worktree path - use short SHA (7 chars) for full SHAs, URL-encode otherwise
+        if [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
+          WORKTREE_NAME="${REF:0:7}"
+        else
+          WORKTREE_NAME=$(node -p 'encodeURIComponent(process.argv[1])' "$REF")
+        fi
         WORKTREE_PATH="../$WORKTREES_BASE/$WORKTREE_NAME"
 
         # Clean up stale worktree entry if directory doesn't exist
