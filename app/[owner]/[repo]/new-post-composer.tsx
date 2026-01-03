@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { useRef, useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { AskingSelector } from "@/components/asking-selector"
 import { Button } from "@/components/button"
 import { createPost } from "@/lib/actions/posts"
@@ -28,10 +28,26 @@ export function NewPostComposer({
   const router = useRouter()
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
-  const formRef = useRef<HTMLFormElement>(null)
   const [seekingAnswerFrom, setSeekingAnswerFrom] = useState<string | null>(
     null
   )
+  const [message, setMessage] = useState("")
+  const storageKey = `new-post-composer:${owner}:${repo}`
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(storageKey)
+    if (saved) {
+      setMessage(saved)
+    }
+  }, [storageKey])
+
+  useEffect(() => {
+    if (message) {
+      sessionStorage.setItem(storageKey, message)
+    } else {
+      sessionStorage.removeItem(storageKey)
+    }
+  }, [storageKey, message])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -40,9 +56,6 @@ export function NewPostComposer({
       authClient.signIn.social({ provider: "github", callbackURL: pathname })
       return
     }
-
-    const formData = new FormData(e.currentTarget)
-    const message = formData.get("message")?.toString() || ""
 
     if (!message.trim()) {
       return
@@ -60,7 +73,8 @@ export function NewPostComposer({
         seekingAnswerFrom,
       })
 
-      formRef.current?.reset()
+      setMessage("")
+      sessionStorage.removeItem(storageKey)
       router.push(`/${owner}/${repo}/${result.postNumber}`)
       router.refresh()
     })
@@ -70,13 +84,13 @@ export function NewPostComposer({
     <form
       className="relative border-2 border-dashed bg-muted/30 p-4"
       onSubmit={handleSubmit}
-      ref={formRef}
     >
       <textarea
         className="min-h-24 w-full resize-none bg-transparent"
         disabled={isPending}
-        name="message"
+        onChange={(e) => setMessage(e.target.value)}
         placeholder="Ask or search"
+        value={message}
       />
       <div className="flex items-center justify-between">
         <AskingSelector
@@ -86,7 +100,7 @@ export function NewPostComposer({
           value={seekingAnswerFrom}
         />
         <Button disabled={isPending} type="submit">
-          {isPending ? "Posting..." : isSignedIn ? "Post" : "Sign in"}
+          {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In"}
         </Button>
       </div>
     </form>

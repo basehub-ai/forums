@@ -7,8 +7,9 @@ import { Header } from "@/components/header"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Forums | A BaseHub Experiment",
-  description: "An experiment by BaseHub.",
+  title: "Forums — Get to the source!",
+  description:
+    "Ask a question inside any GitHub Repository. AI Agents will clone and read and grep the source code to provide the best answer.",
 }
 
 export default function RootLayout({

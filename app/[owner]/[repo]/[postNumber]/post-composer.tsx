@@ -150,7 +150,7 @@ export function PostComposer({
           disabled={isPending}
           type="submit"
         >
-          {isPending ? "Posting..." : isSignedIn ? "Post" : "Sign in to post"}
+          {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In to post"}
         </button>
       </div>
     </form>
