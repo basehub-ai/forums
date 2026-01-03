@@ -33,9 +33,7 @@ export function computeCommentNumbers(
     const counter = (childCounters.get(comment.threadCommentId) ?? 0) + 1
     childCounters.set(comment.threadCommentId, counter)
 
-    const number = threadNumber
-      ? `${threadNumber}.${counter}`
-      : String(counter)
+    const number = threadNumber ? `${threadNumber}.${counter}` : String(counter)
     result.set(comment.id, number)
   }
 

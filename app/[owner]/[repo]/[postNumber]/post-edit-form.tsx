@@ -17,7 +17,8 @@ export function PostEditForm({ onClose }: { onClose: () => void }) {
     ? categories.find((c) => c.id === newCategoryId)
     : null
 
-  const hasChanges = newTitle !== title || newCategoryId !== (category?.id ?? null)
+  const hasChanges =
+    newTitle !== title || newCategoryId !== (category?.id ?? null)
 
   const handleSave = () => {
     if (!hasChanges) {
@@ -42,7 +43,7 @@ export function PostEditForm({ onClose }: { onClose: () => void }) {
     <div className="flex flex-col gap-3">
       <input
         autoFocus
-        className="w-full border border-border-solid bg-transparent px-2 py-1.5 font-medium text-xl text-bright outline-none focus:border-accent"
+        className="w-full border border-border-solid bg-transparent px-2 py-1.5 font-medium text-bright text-xl outline-none focus:border-accent"
         disabled={isPending}
         onChange={(e) => setNewTitle(e.target.value)}
         onKeyDown={(e) => {

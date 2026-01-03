@@ -14,7 +14,6 @@ export type ToolContext = {
 export function getTools(context: ToolContext) {
   return {
     Read: tool({
-      name: "Read",
       description:
         "Reads a file and returns its contents with metadata. For files over 200 lines, automatically shows first 100 lines unless a specific line range is provided. Use startLine and endLine parameters to read specific portions of large files.",
       inputSchema: z.object({
@@ -155,7 +154,6 @@ export function getTools(context: ToolContext) {
     }),
 
     Grep: tool({
-      name: "Grep",
       description:
         "Search for patterns in files using ripgrep. Supports regex patterns, file type filtering, and context lines. Returns matching lines with file paths and line numbers. Use this to find code patterns, function definitions, imports, etc.",
       inputSchema: z.object({
@@ -301,7 +299,6 @@ export function getTools(context: ToolContext) {
     }),
 
     List: tool({
-      name: "List",
       description:
         "Recursively list directory contents. Use this to understand the codebase structure, find files, or explore directories. Control depth to balance detail vs. overview. Depth 1 shows immediate children, depth 2 includes subdirectories, etc.",
       inputSchema: z.object({
@@ -436,7 +433,6 @@ export function getTools(context: ToolContext) {
       },
     }),
     ReadPost: tool({
-      name: "ReadPost",
       description:
         "Reads a forum post and returns its content, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42).",
       inputSchema: z.object({

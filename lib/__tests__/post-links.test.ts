@@ -113,9 +113,7 @@ describe("extractPostLinks", () => {
     })
 
     test("matches path at end of sentence", () => {
-      const links = extractPostLinks(
-        makeMessage("Check /owner/repo/123.")
-      )
+      const links = extractPostLinks(makeMessage("Check /owner/repo/123."))
       expect(links).toHaveLength(1)
       expect(links[0].number).toBe(123)
     })

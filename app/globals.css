@@ -14,6 +14,7 @@
   --color-bright: var(--bright);
   --color-accent: var(--accent);
   --color-border-solid: var(--border-solid);
+  --color-shade: var(--shade);
   --color-shade-hover: var(--shade-hover);
   --color-label: var(--label);
   --color-highlight-blue: var(--highlight-blue);
@@ -49,6 +50,7 @@
   --border-solid: #d9d9d9;
 
   /* action */
+  --shade: #f0f0f0;
   --shade-hover: #e3e3e3;
 
   --header-height: 120px;
@@ -81,6 +83,7 @@
     --border-solid: #252525;
 
     /* action */
+    --shade: #161616;
     --shade-hover: #1b1b1b;
   }
 
@@ -103,17 +106,12 @@ body {
   letter-spacing: -0.02em;
   --dash-size: 1px;
 
-  a:focus:not(.no-focus),
-  input:focus:not(.no-focus),
-  button:focus:not(.no-focus) {
+  a:focus-visible:not(.no-focus),
+  button:focus-visible:not(.no-focus) {
     outline-style: dashed;
     outline-color: var(--accent);
     outline-offset: 2px;
     outline-width: 2px;
-  }
-
-  input:focus:not(.no-focus) {
-    outline: none;
   }
 
   input,

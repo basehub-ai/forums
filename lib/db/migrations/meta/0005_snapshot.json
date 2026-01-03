@@ -1,6 +1,6 @@
 {
-  "id": "d0086606-d764-41f0-99d5-6be55888bee1",
-  "prevId": "591d204e-d139-4c0c-9ed7-edb92c377a1d",
+  "id": "c81ebdff-ce7f-4023-9cf6-bedebb6fd0e5",
+  "prevId": "2ebe7226-e63b-4375-bce5-642cc990ef8d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -127,13 +127,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "mentions": {
-          "name": "mentions",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'[]'::jsonb"
-        },
         "run_id": {
           "name": "run_id",
           "type": "varchar(255)",
@@ -142,18 +135,6 @@
         },
         "stream_id": {
           "name": "stream_id",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mention_source_post_id": {
-          "name": "mention_source_post_id",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mention_source_comment_id": {
-          "name": "mention_source_comment_id",
           "type": "varchar(32)",
           "primaryKey": false,
           "notNull": false
@@ -228,21 +209,6 @@
           "columns": [
             {
               "expression": "stream_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_comments_mention_source": {
-          "name": "idx_comments_mention_source",
-          "columns": [
-            {
-              "expression": "mention_source_post_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -328,6 +294,128 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.mentions": {
+      "name": "mentions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(32)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "target_post_id": {
+          "name": "target_post_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_post_id": {
+          "name": "source_post_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_comment_id": {
+          "name": "source_comment_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_post_number": {
+          "name": "source_post_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_post_title": {
+          "name": "source_post_title",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_post_owner": {
+          "name": "source_post_owner",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_post_repo": {
+          "name": "source_post_repo",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_username": {
+          "name": "author_username",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_mentions_target": {
+          "name": "idx_mentions_target",
+          "columns": [
+            {
+              "expression": "target_post_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_mentions_unique": {
+          "name": "idx_mentions_unique",
+          "columns": [
+            {
+              "expression": "target_post_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_comment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.post_counters": {
       "name": "post_counters",
       "schema": "",
@@ -392,6 +480,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "git_context": {
+          "name": "git_context",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "title": {
           "name": "title",

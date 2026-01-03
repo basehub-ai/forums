@@ -36,6 +36,13 @@
       "when": 1766790135987,
       "tag": "0004_large_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1767410754159,
+      "tag": "0005_smooth_omega_flight",
+      "breakpoints": true
     }
   ]
 }

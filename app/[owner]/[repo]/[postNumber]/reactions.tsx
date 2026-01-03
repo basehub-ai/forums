@@ -192,7 +192,8 @@ export function ReactionButtons({
                       <Menu.Item
                         className={cn(
                           "flex cursor-pointer items-center justify-center rounded p-2 text-base",
-                          userReactions.has(r.type) && "bg-blue-50 dark:bg-blue-900"
+                          userReactions.has(r.type) &&
+                            "bg-blue-50 dark:bg-blue-900"
                         )}
                         key={r.type}
                         onClick={() => handleReaction(r.type)}

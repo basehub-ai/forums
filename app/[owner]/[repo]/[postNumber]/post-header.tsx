@@ -1,62 +1,107 @@
 "use client"
 
-import { GitCommitHorizontalIcon, TagIcon } from "lucide-react"
+import { Tooltip } from "@base-ui/react/tooltip"
+import { TagIcon } from "lucide-react"
 import Link from "next/link"
+import type { ReactNode } from "react"
+import { Subtitle, Title } from "@/components/typography"
 import { usePostMetadata } from "./post-metadata-context"
 
-export function PostHeader({ owner, repo }: { owner: string; repo: string }) {
-  const { title, category } = usePostMetadata()
+export function PostHeader({
+  owner,
+  repo,
+  postNumber,
+}: {
+  owner: string
+  repo: string
+  postNumber: number
+}) {
+  const { title, category, gitContext } = usePostMetadata()
 
   return (
     <header>
       <div className="flex items-center gap-1 text-muted-foreground text-sm">
         <Link className="hover:underline" href={`/${owner}/${repo}`}>
-          {owner}/{repo}
+          <Subtitle>
+            {owner}/{repo}
+          </Subtitle>
         </Link>
         {category && (
           <>
-            <span>&gt;</span>
+            <Subtitle className="select-none">&gt;</Subtitle>
             <Link
               className="hover:underline"
               href={`/${owner}/${repo}/category/${category.id}`}
             >
-              {category.title}
+              <Subtitle>{category.title}</Subtitle>
             </Link>
           </>
         )}
       </div>
 
-      {title ? (
-        <h1 className="mt-1 font-medium text-2xl text-bright underline decoration-1 underline-offset-4">
-          {title}
-        </h1>
+      {typeof title === "string" ? (
+        <Title className="mt-1">{title || `Post #${postNumber}`}</Title>
       ) : (
         <h1 className="relative mt-1 overflow-hidden font-medium text-2xl text-muted-foreground">
           <span>Generating title...</span>
-          <span className="-translate-x-full absolute inset-0 animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent" />
+          <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent" />
         </h1>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
-        <span className="rounded bg-accent px-1.5 py-0.5 font-medium text-label">
-          canary
-        </span>
-        <span className="flex items-center gap-1">
-          <TagIcon className="size-3" />
-          15.6.1
-        </span>
-        <Link
-          className="flex items-center gap-1 hover:underline"
-          href="#"
-          title="View commit"
-        >
-          <GitCommitHorizontalIcon className="size-3" />
-          <span className="underline">c68d18c</span>
-          <span className="max-w-xs truncate">
-            fix(examples): resolve hydration mismatch in blog-starter (#87703)
-          </span>
-        </Link>
-      </div>
+      {gitContext ? (
+        <div className="mt-2 flex items-center gap-4 text-sm">
+          <Link
+            className="flex items-center gap-1 bg-highlight-blue px-1.5 py-0.5 font-medium text-white"
+            href={`https://github.com/${owner}/${repo}/tree/${gitContext.branch}`}
+            target="_blank"
+          >
+            {gitContext.branch}
+          </Link>
+          {gitContext.tags.length > 0 && (
+            <Link
+              className="flex items-center gap-1"
+              href={`https://github.com/${owner}/${repo}/releases/tag/${gitContext.tags[0]}`}
+              target="_blank"
+            >
+              <TagIcon className="h-3.5 w-3.5" />
+              {gitContext.tags[0]}
+            </Link>
+          )}
+          <div className="flex items-center gap-1">
+            <Tooltip.Provider>
+              <Tooltip.Root>
+                <Tooltip.Trigger
+                  render={
+                    <Link
+                      className="underline decoration-dotted underline-offset-2"
+                      href={`https://github.com/${owner}/${repo}/commit/${gitContext.sha}`}
+                      target="_blank"
+                    >
+                      {gitContext.sha.slice(0, 7)}
+                    </Link>
+                  }
+                />
+                <Tooltip.Portal>
+                  <Tooltip.Positioner>
+                    <Tooltip.Popup>
+                      Exploring code at this commit.
+                    </Tooltip.Popup>
+                  </Tooltip.Positioner>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+            <span className="truncate">
+              <CommitMessage
+                message={gitContext.message}
+                owner={owner}
+                repo={repo}
+              />
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 h-6 text-muted-foreground text-sm">Loading...</div>
+      )}
 
       <StaleBanner />
     </header>
@@ -64,25 +109,73 @@ export function PostHeader({ owner, repo }: { owner: string; repo: string }) {
 }
 
 function StaleBanner() {
+  const { staleInfo, gitContext, owner, repo } = usePostMetadata()
+
+  if (!(staleInfo && gitContext)) {
+    return null
+  }
+
   return (
-    <div className="mt-4 border-l-2 border-accent bg-accent/5 px-3 py-2 text-muted-foreground text-sm">
-      This post might have stale content, as the canary branch is{" "}
-      <span className="underline">1 major version</span> and{" "}
-      <span className="underline">4 commits</span> ahead.
-      <span className="ml-2 inline-flex gap-2">
-        <button
-          className="rounded border border-border-solid bg-background px-2 py-0.5 text-xs hover:bg-shade-hover"
-          type="button"
-        >
-          Re-run
-        </button>
-        <button
-          className="rounded border border-border-solid bg-background px-2 py-0.5 text-xs hover:bg-shade-hover"
-          type="button"
-        >
-          Auto re-run
-        </button>
-      </span>
+    <div className="mt-4 border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
+      This post might have stale content, as{" "}
+      <Link
+        className="underline hover:text-muted"
+        href={`https://github.com/${owner}/${repo}/tree/${gitContext.branch}`}
+        target="_blank"
+      >
+        {gitContext.branch}
+      </Link>{" "}
+      is{" "}
+      <Link
+        className="underline hover:text-muted"
+        href={`https://github.com/${owner}/${repo}/compare/${gitContext.sha}...${gitContext.branch}`}
+        target="_blank"
+      >
+        {staleInfo.commitsAhead} commit{staleInfo.commitsAhead !== 1 ? "s" : ""}{" "}
+        ahead
+      </Link>
+      .
     </div>
   )
+}
+
+function CommitMessage({
+  message,
+  owner,
+  repo,
+}: {
+  message: string
+  owner: string
+  repo: string
+}) {
+  const parts: ReactNode[] = []
+  const regex = /#(\d+)/g
+  let lastIndex = 0
+  const matches = [...message.matchAll(regex)]
+
+  for (const match of matches) {
+    if (match.index > lastIndex) {
+      parts.push(message.slice(lastIndex, match.index))
+    }
+    const prNumber = match[1]
+    parts.push(
+      <a
+        className="text-highlight-blue hover:underline"
+        href={`https://github.com/${owner}/${repo}/pull/${prNumber}`}
+        key={match.index}
+        onClick={(e) => e.stopPropagation()}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        #{prNumber}
+      </a>
+    )
+    lastIndex = match.index + match[0].length
+  }
+
+  if (lastIndex < message.length) {
+    parts.push(message.slice(lastIndex))
+  }
+
+  return <>{parts}</>
 }

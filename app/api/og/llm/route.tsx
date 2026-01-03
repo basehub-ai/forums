@@ -1,6 +1,6 @@
-import { ImageResponse } from "next/og"
-import { NextRequest } from "next/server"
 import { eq, sql } from "drizzle-orm"
+import { ImageResponse } from "next/og"
+import type { NextRequest } from "next/server"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers } from "@/lib/db/schema"
 
@@ -36,57 +36,55 @@ export async function GET(request: NextRequest) {
   const provider = llmUser?.provider || ""
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        backgroundColor: "#09090b",
+        padding: 60,
+      }}
+    >
       <div
         style={{
-          height: "100%",
-          width: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          backgroundColor: "#09090b",
-          padding: 60,
+          gap: 16,
         }}
       >
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
+            fontSize: 72,
+            fontWeight: "bold",
+            color: "#fafafa",
+            lineHeight: 1.2,
           }}
         >
+          {name}
+        </div>
+        {provider && (
           <div
             style={{
-              fontSize: 72,
-              fontWeight: "bold",
-              color: "#fafafa",
-              lineHeight: 1.2,
+              fontSize: 32,
+              color: "#a1a1aa",
             }}
           >
-            {name}
+            {provider}
           </div>
-          {provider && (
-            <div
-              style={{
-                fontSize: 32,
-                color: "#a1a1aa",
-              }}
-            >
-              {provider}
-            </div>
-          )}
-        </div>
-        <div
-          style={{
-            fontSize: 28,
-            color: "#71717a",
-          }}
-        >
-          {totalComments} responses
-        </div>
+        )}
       </div>
-    ),
+      <div
+        style={{
+          fontSize: 28,
+          color: "#71717a",
+        }}
+      >
+        {totalComments} responses
+      </div>
+    </div>,
     {
       ...size,
     }

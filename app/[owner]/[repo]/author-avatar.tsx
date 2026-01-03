@@ -9,12 +9,11 @@ export function AuthorAvatar({ username }: { username: string }) {
       <Tooltip.Root>
         <Tooltip.Trigger
           render={
-            <Link href={`/user/${username}`}>
-              <img
-                alt={username}
-                className="-translate-y-1/2 absolute top-1/2 h-6 w-6 rounded-full"
-                src={`https://github.com/${username}.png`}
-              />
+            <Link
+              className="absolute top-1/2 flex h-5 w-5 -translate-y-1/2 overflow-clip rounded-full"
+              href={`/user/${username}`}
+            >
+              <img alt={username} src={`https://github.com/${username}.png`} />
             </Link>
           }
         />

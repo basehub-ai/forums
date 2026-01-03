@@ -51,5 +51,12 @@ export function createTestWorkspace(path: string): Workspace {
   return {
     path,
     sandbox: createRealSandbox(),
+    gitContextData: {
+      sha: "abc123def456",
+      branch: "main",
+      tags: [],
+      message: "Test commit",
+      date: "2024-01-01 00:00:00 +0000",
+    },
   }
 }

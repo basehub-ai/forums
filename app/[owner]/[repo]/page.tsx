@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { cacheTag } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { z } from "zod"
 import { Container } from "@/components/container"
 import { Subtitle, Title } from "@/components/typography"
 import { db } from "@/lib/db/client"
@@ -11,6 +12,12 @@ import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
 import { formatCompactNumber, getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "./active-posts"
 import { NewPostComposer } from "./new-post-composer"
+
+const githubRepoSchema = z.object({
+  description: z.string().nullable(),
+  stargazers_count: z.number(),
+  homepage: z.string().nullable(),
+})
 
 export async function generateMetadata({
   params,
@@ -84,11 +91,7 @@ export default async function RepoPage({
       if (!res.ok || res.status === 404) {
         return null
       }
-      return res.json() as Promise<{
-        description: string | null
-        stargazers_count: number
-        homepage: string | null
-      }>
+      return githubRepoSchema.parse(await res.json())
     }),
   ])
 

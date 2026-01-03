@@ -1,7 +1,9 @@
 import { and, asc, eq } from "drizzle-orm"
-import { cacheTag } from "next/cache"
 import type { Metadata } from "next"
+import { cacheLife, cacheTag } from "next/cache"
 import { notFound } from "next/navigation"
+import { z } from "zod"
+import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import {
@@ -18,6 +20,49 @@ import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
 import { PostHeader } from "./post-header"
 import { PostMetadataProvider } from "./post-metadata-context"
+
+const githubCompareSchema = z.object({
+  ahead_by: z.number(),
+  behind_by: z.number(),
+  status: z.enum(["ahead", "behind", "identical", "diverged"]),
+})
+
+async function getStaleInfo(
+  owner: string,
+  repo: string,
+  baseSha: string,
+  branch: string
+) {
+  "use cache"
+  cacheLife("minutes")
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/compare/${baseSha}...${branch}`,
+      {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          ...(process.env.GITHUB_TOKEN && {
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          }),
+        },
+      }
+    )
+
+    if (!res.ok) {
+      return null
+    }
+
+    const data = githubCompareSchema.parse(await res.json())
+    if (data.ahead_by === 0) {
+      return null
+    }
+
+    return { commitsAhead: data.ahead_by }
+  } catch {
+    return null
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -60,94 +105,105 @@ export default async function PostPage({
     notFound()
   }
 
-  const [postWithCategory, allLlmUsers, postComments, postReactions, postMentions, repoCategories] =
-    await Promise.all([
-      db
-        .select({
-          id: posts.id,
-          number: posts.number,
-          owner: posts.owner,
-          repo: posts.repo,
-          title: posts.title,
-          categoryId: posts.categoryId,
-          rootCommentId: posts.rootCommentId,
-          authorId: posts.authorId,
-          createdAt: posts.createdAt,
-          updatedAt: posts.updatedAt,
-          category: {
-            id: categories.id,
-            title: categories.title,
-            emoji: categories.emoji,
-          },
-        })
-        .from(posts)
-        .leftJoin(categories, eq(posts.categoryId, categories.id))
-        .where(
-          and(
-            eq(posts.owner, owner),
-            eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
-        )
-        .limit(1)
-        .then((r) => r[0]),
-      db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
-      db
-        .select()
-        .from(comments)
-        .innerJoin(posts, eq(comments.postId, posts.id))
-        .where(
-          and(
-            eq(posts.owner, owner),
-            eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
-        )
-        .orderBy(asc(comments.createdAt))
-        .then((r) => r.map((row) => row.comments)),
-      db
-        .select()
-        .from(reactions)
-        .innerJoin(comments, eq(reactions.commentId, comments.id))
-        .innerJoin(posts, eq(comments.postId, posts.id))
-        .where(
-          and(
-            eq(posts.owner, owner),
-            eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
-        )
-        .then((r) => r.map((row) => row.reactions)),
-      db
-        .select()
-        .from(mentions)
-        .innerJoin(posts, eq(mentions.targetPostId, posts.id))
-        .where(
-          and(
-            eq(posts.owner, owner),
-            eq(posts.repo, repo),
-            eq(posts.number, postNumber)
-          )
-        )
-        .orderBy(asc(mentions.createdAt))
-        .then((r) => r.map((row) => row.mentions)),
-      db
-        .select({
+  const [
+    postWithCategory,
+    allLlmUsers,
+    postComments,
+    postReactions,
+    postMentions,
+    repoCategories,
+  ] = await Promise.all([
+    db
+      .select({
+        id: posts.id,
+        number: posts.number,
+        owner: posts.owner,
+        repo: posts.repo,
+        title: posts.title,
+        categoryId: posts.categoryId,
+        rootCommentId: posts.rootCommentId,
+        authorId: posts.authorId,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
+        gitContext: posts.gitContext,
+        category: {
           id: categories.id,
           title: categories.title,
           emoji: categories.emoji,
-        })
-        .from(categories)
-        .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
-    ])
+        },
+      })
+      .from(posts)
+      .leftJoin(categories, eq(posts.categoryId, categories.id))
+      .where(
+        and(
+          eq(posts.owner, owner),
+          eq(posts.repo, repo),
+          eq(posts.number, postNumber)
+        )
+      )
+      .limit(1)
+      .then((r) => r[0]),
+    db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
+    db
+      .select()
+      .from(comments)
+      .innerJoin(posts, eq(comments.postId, posts.id))
+      .where(
+        and(
+          eq(posts.owner, owner),
+          eq(posts.repo, repo),
+          eq(posts.number, postNumber)
+        )
+      )
+      .orderBy(asc(comments.createdAt))
+      .then((r) => r.map((row) => row.comments)),
+    db
+      .select()
+      .from(reactions)
+      .innerJoin(comments, eq(reactions.commentId, comments.id))
+      .innerJoin(posts, eq(comments.postId, posts.id))
+      .where(
+        and(
+          eq(posts.owner, owner),
+          eq(posts.repo, repo),
+          eq(posts.number, postNumber)
+        )
+      )
+      .then((r) => r.map((row) => row.reactions)),
+    db
+      .select()
+      .from(mentions)
+      .innerJoin(posts, eq(mentions.targetPostId, posts.id))
+      .where(
+        and(
+          eq(posts.owner, owner),
+          eq(posts.repo, repo),
+          eq(posts.number, postNumber)
+        )
+      )
+      .orderBy(asc(mentions.createdAt))
+      .then((r) => r.map((row) => row.mentions)),
+    db
+      .select({
+        id: categories.id,
+        title: categories.title,
+        emoji: categories.emoji,
+      })
+      .from(categories)
+      .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
+  ])
 
   if (!postWithCategory) {
     notFound()
   }
 
-  const { category, ...post } = postWithCategory
+  const { category, gitContext, ...post } = postWithCategory
 
   cacheTag(`post:${post.id}`)
+
+  const staleInfo = gitContext
+    ? await getStaleInfo(owner, repo, gitContext.sha, gitContext.branch)
+    : null
 
   const llmUsersById = Object.fromEntries(allLlmUsers.map((u) => [u.id, u]))
 
@@ -229,13 +285,15 @@ export default async function PostPage({
       authorId={post.authorId}
       categories={repoCategories}
       initialCategory={category?.id ? category : null}
+      initialGitContext={gitContext}
       initialTitle={post.title}
       owner={owner}
       postId={post.id}
       repo={repo}
+      staleInfo={staleInfo}
     >
-      <div className="mx-auto w-full max-w-3xl px-4 py-8">
-        <PostHeader owner={owner} repo={repo} />
+      <Container>
+        <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
 
         <div className="mt-8 space-y-4">
           <CommentThreadClient
@@ -251,18 +309,17 @@ export default async function PostPage({
           />
         </div>
 
-        <div className="my-8 flex items-center gap-4 text-faint text-xs">
-          <hr className="divider flex-1" />
-          <span>END OF POST</span>
-          <hr className="divider flex-1" />
-        </div>
+        <hr className="divider-md my-14 h-px border-0" />
+        <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-4">
+          END OF POST
+        </p>
 
         <PostComposer
           askingOptions={askingOptions}
           postId={post.id}
           storageKey={`composer:${post.id}`}
         />
-      </div>
+      </Container>
     </PostMetadataProvider>
   )
 }

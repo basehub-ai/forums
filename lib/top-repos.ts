@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm"
 import { cacheLife } from "next/cache"
 import { db } from "@/lib/db/client"
-import { posts, comments } from "@/lib/db/schema"
+import { comments, posts } from "@/lib/db/schema"
 
 type RepoStats = {
   name: string
@@ -78,8 +78,10 @@ export async function getTopRepositories(limit = 10): Promise<RepoStats[]> {
     const recencyA = Math.max(0, 1 - (now - a.lastActive) / (30 * dayMs))
     const recencyB = Math.max(0, 1 - (now - b.lastActive) / (30 * dayMs))
 
-    const scoreA = a.posts * 0.4 + recencyA * 0.3 + Math.log10(a.stars + 1) * 0.3
-    const scoreB = b.posts * 0.4 + recencyB * 0.3 + Math.log10(b.stars + 1) * 0.3
+    const scoreA =
+      a.posts * 0.4 + recencyA * 0.3 + Math.log10(a.stars + 1) * 0.3
+    const scoreB =
+      b.posts * 0.4 + recencyB * 0.3 + Math.log10(b.stars + 1) * 0.3
 
     return scoreB - scoreA
   })

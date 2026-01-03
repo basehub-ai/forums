@@ -31,7 +31,7 @@ export function CopyLinkButton({
     <Tooltip.Provider>
       <Tooltip.Root>
         <Tooltip.Trigger
-          className="text-muted-foreground text-xs opacity-0 transition-instant-hover group-hover:opacity-100"
+          className="text-muted-foreground text-xs"
           onClick={copyToClipboard}
         >
           <Icon className="size-4" />

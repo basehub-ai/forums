@@ -1,6 +1,6 @@
 import { desc, eq, sql } from "drizzle-orm"
-import { cacheLife } from "next/cache"
 import type { Metadata } from "next"
+import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"

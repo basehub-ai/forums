@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm"
 import { ArrowLeftIcon } from "lucide-react"
-import { cacheTag } from "next/cache"
 import type { Metadata } from "next"
+import { cacheTag } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/client"

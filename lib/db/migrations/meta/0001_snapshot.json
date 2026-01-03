@@ -330,10 +330,7 @@
       "compositePrimaryKeys": {
         "post_counters_owner_repo_pk": {
           "name": "post_counters_owner_repo_pk",
-          "columns": [
-            "owner",
-            "repo"
-          ]
+          "columns": ["owner", "repo"]
         }
       },
       "uniqueConstraints": {},

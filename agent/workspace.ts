@@ -1,6 +1,7 @@
 import { Sandbox } from "@vercel/sandbox"
 import ms from "ms"
 import { ResultAsync } from "neverthrow"
+import type { GitContextData } from "@/agent/types"
 import {
   extendSandboxTTL,
   getOrLockSandbox,
@@ -22,6 +23,7 @@ const BASE_RETRY_DELAY = 100
 export type Workspace = {
   path: string
   sandbox: Sandbox
+  gitContextData: GitContextData
 }
 
 const cleanupRegex = /^\.\./
@@ -60,13 +62,18 @@ async function extendSandboxTimeout(
   sandbox: Sandbox,
   gitContext: GitContext
 ): Promise<void> {
-  await ResultAsync.fromPromise(
+  const result = await ResultAsync.fromPromise(
     sandbox.extendTimeout(timeout),
     (e) => e
-  ).mapErr((err) => {
-    console.error(`Failed to extend timeout for ${sandbox.sandboxId}:`, err)
-    return err
-  })
+  )
+
+  if (result.isErr()) {
+    console.error(
+      `Failed to extend timeout for ${sandbox.sandboxId}:`,
+      result.error
+    )
+    return
+  }
 
   await extendSandboxTTL(gitContext.owner, gitContext.repo, timeout)
 }
@@ -210,7 +217,24 @@ export const getWorkspace = async ({
           git reset --hard "origin/$REF" >/dev/null 2>&1 || git reset --hard "$REF" >/dev/null 2>&1
         fi
 
+        # Output worktree path on first line
         echo "$WORKTREE_PATH"
+
+        # Gather git context and output as JSON on second line
+        cd "$WORKTREE_PATH"
+        SHA=$(git rev-parse HEAD)
+        BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        TAGS=$(git tag --points-at HEAD 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+        MESSAGE=$(git log -1 --format="%s")
+        DATE=$(git log -1 --format="%ci")
+
+        node -p "JSON.stringify({
+          sha: process.argv[1],
+          branch: process.argv[2],
+          tags: process.argv[3] ? process.argv[3].split(',') : [],
+          message: process.argv[4],
+          date: process.argv[5]
+        })" "$SHA" "$BRANCH" "$TAGS" "$MESSAGE" "$DATE"
       `,
       "--",
       repoDir,
@@ -234,14 +258,18 @@ export const getWorkspace = async ({
     console.error(`Git initialization stderr: ${stderr}`)
   }
 
-  const worktreePath = stdout.trim().replace(cleanupRegex, "")
+  const lines = stdout.trim().split("\n")
+  const worktreePath = lines[0]?.replace(cleanupRegex, "")
+  const gitContextJson = lines[1]?.trim()
 
-  if (!worktreePath) {
+  if (!(worktreePath && gitContextJson)) {
     console.error(
-      `Empty worktree path! stdout: "${stdout}", stderr: "${stderr}"`
+      `Invalid workspace output! stdout: "${stdout}", stderr: "${stderr}"`
     )
     throw new Error("Failed to initialize git worktree")
   }
 
-  return { path: worktreePath, sandbox }
+  const gitContextData = JSON.parse(gitContextJson) as GitContextData
+
+  return { path: worktreePath, sandbox, gitContextData }
 }

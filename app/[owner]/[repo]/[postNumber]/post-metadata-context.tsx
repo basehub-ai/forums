@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react"
+import type { GitContextData } from "@/agent/types"
 import { getPostMetadata, updatePost } from "@/lib/actions/posts"
 
 type Category = {
@@ -14,6 +15,10 @@ type Category = {
   title: string
   emoji: string | null
 }
+
+type StaleInfo = {
+  commitsAhead: number
+} | null
 
 type PostMetadata = {
   postId: string
@@ -23,6 +28,8 @@ type PostMetadata = {
   title: string | null
   category: Category | null
   categories: Category[]
+  gitContext: GitContextData | null
+  staleInfo: StaleInfo
   isPolling: boolean
   updateMetadata: (data: {
     title?: string
@@ -39,6 +46,8 @@ export function PostMetadataProvider({
   authorId,
   initialTitle,
   initialCategory,
+  initialGitContext,
+  staleInfo,
   categories,
   children,
 }: {
@@ -48,18 +57,26 @@ export function PostMetadataProvider({
   authorId: string
   initialTitle: string | null
   initialCategory: Category | null
+  initialGitContext: GitContextData | null
+  staleInfo: StaleInfo
   categories: Category[]
   children: React.ReactNode
 }) {
   const [title, setTitle] = useState(initialTitle)
   const [category, setCategory] = useState<Category | null>(initialCategory)
-  const [isPolling, setIsPolling] = useState(!(initialTitle && initialCategory))
+  const [gitContext, setGitContext] = useState<GitContextData | null>(
+    initialGitContext
+  )
+  const [isPolling, setIsPolling] = useState(
+    !(initialTitle && initialCategory && initialGitContext)
+  )
 
   const poll = useCallback(async () => {
     const result = await getPostMetadata(postId)
     if (result) {
       setTitle(result.title)
       setCategory(result.category)
+      setGitContext(result.gitContext)
       setIsPolling(false)
       return true
     }
@@ -96,7 +113,7 @@ export function PostMetadataProvider({
       }
       if (data.categoryId !== undefined) {
         const newCategory = data.categoryId
-          ? categories.find((c) => c.id === data.categoryId) ?? null
+          ? (categories.find((c) => c.id === data.categoryId) ?? null)
           : null
         setCategory(newCategory)
       }
@@ -114,6 +131,8 @@ export function PostMetadataProvider({
         title,
         category,
         categories,
+        gitContext,
+        staleInfo,
         isPolling,
         updateMetadata,
       }}

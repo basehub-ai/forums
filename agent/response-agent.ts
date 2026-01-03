@@ -10,10 +10,10 @@ import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
 import { createMentions } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
-import { comments } from "@/lib/db/schema"
+import { comments, posts } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
 import { getTools } from "./tools"
-import { sanitizeUIMessages, type AgentUIMessage } from "./types"
+import type { AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
 
 export async function responseAgent({
@@ -35,7 +35,7 @@ export async function responseAgent({
 
   const writable = getWritable({ namespace: streamId })
 
-  const { initialMessages, sandboxId } = await setupStep({
+  const { initialMessages, sandboxId, gitRef } = await setupStep({
     postId,
     owner,
     repo,
@@ -49,6 +49,7 @@ export async function responseAgent({
       const result = await streamTextStep({
         owner,
         repo,
+        gitRef,
         model,
         writable,
         sandboxId,
@@ -93,27 +94,52 @@ async function setupStep({
   postId: string
   owner: string
   repo: string
-}): Promise<{ initialMessages: AgentUIMessage[]; sandboxId: string }> {
+}): Promise<{
+  initialMessages: AgentUIMessage[]
+  sandboxId: string
+  gitRef: string
+}> {
   "use step"
 
-  const [allComments, workspace] = await Promise.all([
+  const [allComments, post] = await Promise.all([
     db
       .select()
       .from(comments)
       .where(eq(comments.postId, postId))
       .orderBy(asc(comments.createdAt)),
-    getWorkspace({ sandboxId: null, gitContext: { owner, repo } }),
+    db
+      .select({ gitContext: posts.gitContext })
+      .from(posts)
+      .where(eq(posts.id, postId))
+      .limit(1)
+      .then((r) => r[0]),
   ])
+
+  const existingGitContext = post?.gitContext
+
+  const workspace = await getWorkspace({
+    sandboxId: null,
+    gitContext: { owner, repo, ref: existingGitContext?.sha },
+  })
+
+  if (!existingGitContext) {
+    await db
+      .update(posts)
+      .set({ gitContext: workspace.gitContextData })
+      .where(eq(posts.id, postId))
+  }
 
   return {
     initialMessages: allComments.flatMap((c) => c.content),
     sandboxId: workspace.sandbox.sandboxId,
+    gitRef: existingGitContext?.sha ?? workspace.gitContextData.sha,
   }
 }
 
 async function streamTextStep({
   owner,
   repo,
+  gitRef,
   model,
   writable,
   sandboxId,
@@ -122,6 +148,7 @@ async function streamTextStep({
 }: {
   owner: string
   repo: string
+  gitRef: string
   model: string
   writable: WritableStream
   sandboxId: string
@@ -132,17 +159,12 @@ async function streamTextStep({
 
   const workspace = await getWorkspace({
     sandboxId,
-    gitContext: { owner, repo },
+    gitContext: { owner, repo, ref: gitRef },
   })
   const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
 
-  // Sanitize messages to remove provider-specific fields (like providerOptions)
-  // that cause convertToModelMessages to fail. This handles both existing
-  // corrupted data in the database and prevents future issues.
-  const sanitizedMessages = sanitizeUIMessages(allMessages)
-
   const result = streamText({
-    messages: convertToModelMessages(sanitizedMessages),
+    messages: await convertToModelMessages(allMessages),
     tools: getTools({ workspace }),
     system: `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).
 
@@ -200,15 +222,11 @@ async function closeStreamStep({
 }) {
   "use step"
 
-  // Sanitize content before storing to prevent provider-specific fields
-  // (like providerOptions) from being persisted in the database
-  const sanitizedContent = sanitizeUIMessages(content)
-
   await Promise.all([
     writable.close(),
     db
       .update(comments)
-      .set({ streamId: null, content: sanitizedContent })
+      .set({ streamId: null, content })
       .where(eq(comments.id, commentId)),
   ])
 
@@ -226,7 +244,7 @@ async function closeStreamStep({
   if (comment) {
     // check each internal message for mentions
     // if there are no mentions in the message the function does nothing
-    for (const message of sanitizedContent) {
+    for (const message of content) {
       createMentions({
         sourcePostId: postId,
         sourceCommentId: commentId,

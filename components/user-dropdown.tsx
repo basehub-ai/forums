@@ -13,9 +13,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
 
   return (
     <Menu.Root>
-      <Menu.Trigger
-        className="group flex cursor-pointer items-center gap-1 px-1"
-      >
+      <Menu.Trigger className="group flex cursor-pointer items-center gap-1 px-1">
         <img
           alt={user.name}
           className="size-5 rounded-full"
@@ -36,7 +34,9 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
               />
               <div className="flex flex-col">
                 <span className="font-medium text-sm">{user.name}</span>
-                <span className="text-muted-foreground text-xs">{user.email}</span>
+                <span className="text-muted-foreground text-xs">
+                  {user.email}
+                </span>
               </div>
             </div>
             <Menu.Separator />

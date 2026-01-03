@@ -1,5 +1,5 @@
 import * as p from "drizzle-orm/pg-core"
-import type { AgentUIMessage } from "@/agent/types"
+import type { AgentUIMessage, GitContextData } from "@/agent/types"
 
 export const posts = p.pgTable(
   "posts",
@@ -8,6 +8,7 @@ export const posts = p.pgTable(
     number: p.integer().notNull(),
     owner: p.varchar({ length: 255 }).notNull(),
     repo: p.varchar({ length: 255 }).notNull(),
+    gitContext: p.jsonb("git_context").$type<GitContextData>(),
 
     title: p.varchar({ length: 500 }),
     categoryId: p.varchar("category_id", { length: 32 }),

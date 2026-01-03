@@ -9,7 +9,6 @@ let queryCount = 0
 mock.module("@/lib/db/client", () => ({
   db: {
     select: () => {
-      // biome-ignore lint/nursery/noIncrementDecrement: mock db
       const currentQuery = queryCount++
       return {
         from: () => ({
@@ -348,10 +347,7 @@ describe("ReadPost Tool", () => {
     const tools = getTools({ workspace })
 
     expect(
-      tools.ReadPost.execute?.(
-        {},
-        { messages: [], toolCallId: "" }
-      )
+      tools.ReadPost.execute?.({}, { messages: [], toolCallId: "" })
     ).rejects.toThrow("Post number, owner, and repository are required")
   })
 

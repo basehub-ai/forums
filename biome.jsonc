@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["ultracite/core", "ultracite/next"],
+  "extends": ["ultracite/core", "ultracite/next", "ultracite/biome/core"],
   "javascript": {
     "formatter": {
       "semicolons": "asNeeded"
@@ -8,6 +8,9 @@
   },
   "linter": {
     "rules": {
+      "a11y": {
+        "noNoninteractiveElementInteractions": "off"
+      },
       "performance": {
         "noNamespaceImport": "off",
         "noImgElement": "off"
@@ -18,7 +21,8 @@
       "style": {
         "useNodejsImportProtocol": "off",
         "useConsistentArrayType": "off",
-        "noNestedTernary": "off"
+        "noNestedTernary": "off",
+        "useConsistentTypeDefinitions": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off"

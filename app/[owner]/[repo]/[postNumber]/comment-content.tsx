@@ -2,8 +2,8 @@
 
 import { Collapsible } from "@base-ui/react/collapsible"
 import type { ToolUIPart } from "ai"
-import { CopyIcon, RefreshCcwIcon } from "lucide-react"
-import { Fragment, type ReactNode } from "react"
+import { Fragment, type ReactNode, useEffect, useState } from "react"
+import { Streamdown } from "streamdown"
 import type { AgentToolName, AgentTools } from "@/agent/tools"
 import type { AgentUIMessage } from "@/agent/types"
 import { ERROR_CODES } from "@/lib/errors"
@@ -16,107 +16,56 @@ type InferToolResult<T> = T extends {
   : never
 type ToolResult<N extends AgentToolName> = InferToolResult<AgentTools[N]>
 
-const toolRenderers: Partial<
-  Record<AgentToolName, (toolPart: ToolUIPart) => ReactNode>
-> = {
-  Read: (toolPart) => {
-    const output = toolPart.output as ToolResult<"Read"> | undefined
-    if (!output) {
-      return null
-    }
-    return (
-      <div>
-        <div>
-          <span>{output.metadata.path}</span>
-          <span> - </span>
-          <span>{output.metadata.fileSize}</span>
-          {output.metadata.isPaginated ? (
-            <>
-              <span> - </span>
-              <span>
-                Lines {output.metadata.startLine}-{output.metadata.endLine} of{" "}
-                {output.metadata.totalLines}
-              </span>
-            </>
-          ) : null}
-        </div>
-      </div>
-    )
-  },
-  Grep: (toolPart) => {
-    const output = toolPart.output as ToolResult<"Grep"> | undefined
-    return (
-      <div data-state={toolPart.state} data-tool="Grep">
-        <div>Grep</div>
-        <div>
-          {output ? (
-            <div>
-              <div>
-                <span>Pattern: {output.summary.pattern}</span>
-                <span> - </span>
-                <span>
-                  {output.summary.matchCount} matches in{" "}
-                  {output.summary.fileCount} files
-                </span>
-              </div>
-              <pre>
-                <code>{output.matches}</code>
-              </pre>
-            </div>
-          ) : (
-            <pre>{JSON.stringify(toolPart.input, null, 2)}</pre>
-          )}
-        </div>
-      </div>
-    )
-  },
-  List: (toolPart) => {
-    const output = toolPart.output as ToolResult<"List"> | undefined
-    return (
-      <div data-state={toolPart.state} data-tool="List">
-        <div>List</div>
-        <div>
-          {output ? (
-            <div>
-              <div>
-                <span>{output.summary.totalFiles} files</span>
-                <span> - </span>
-                <span>{output.summary.totalDirs} directories</span>
-                {output.summary.depth !== undefined ? (
-                  <>
-                    <span> - </span>
-                    <span>Depth: {output.summary.depth}</span>
-                  </>
-                ) : null}
-              </div>
-              <pre>
-                <code>{output.listing}</code>
-              </pre>
-            </div>
-          ) : (
-            <pre>{JSON.stringify(toolPart.input, null, 2)}</pre>
-          )}
-        </div>
-      </div>
-    )
-  },
-}
+function Tool({
+  id,
+  name,
+  summary,
+  detail,
+}: {
+  id: string
+  name: string
+  summary: ReactNode
+  detail: ReactNode
+}) {
+  const storageKey = `tool-expanded-${id}`
+  const [expanded, setExpanded] = useState(false)
 
-function renderTool(toolName: string, toolPart: ToolUIPart) {
-  const renderer = toolRenderers[toolName as AgentToolName]
-  if (renderer) {
-    return renderer(toolPart)
+  useEffect(() => {
+    const stored = localStorage.getItem(storageKey)
+    if (stored === "true") {
+      setExpanded(true)
+    }
+  }, [storageKey])
+
+  function toggle() {
+    const next = !expanded
+    setExpanded(next)
+    localStorage.setItem(storageKey, String(next))
   }
+
   return (
-    <div data-state={toolPart.state} data-tool={toolName}>
-      <div>{toolName}</div>
-      <div>
-        <pre>{JSON.stringify(toolPart.input, null, 2)}</pre>
-        {!!toolPart.output && (
-          <pre>{JSON.stringify(toolPart.output, null, 2)}</pre>
-        )}
-        {!!toolPart.errorText && <div data-error>{toolPart.errorText}</div>}
-      </div>
+    <div className="my-2">
+      <button
+        className="flex items-center gap-2 text-left"
+        onClick={toggle}
+        type="button"
+      >
+        <span
+          className={`border px-1.5 py-0.5 font-medium text-xs uppercase ${
+            expanded
+              ? "border-highlight-blue bg-highlight-blue text-white"
+              : "border-highlight-blue/30 bg-highlight-blue/10 text-highlight-blue"
+          }`}
+        >
+          {name}
+        </span>
+        <span className="font-mono text-muted text-sm">{summary}</span>
+      </button>
+      {expanded && (
+        <div className="mt-2 ml-0 border-highlight-blue/20 border-l-2 pl-3">
+          {detail}
+        </div>
+      )}
     </div>
   )
 }
@@ -132,9 +81,6 @@ export function CommentContent({
   isStreaming = false,
   onRetry,
 }: CommentContentProps) {
-  if (typeof window !== "undefined") {
-    console.log(content)
-  }
   return (
     <div>
       {content.map((msg) => (
@@ -147,29 +93,21 @@ export function CommentContent({
                 return (
                   <div data-from={msg.role} key={`${msg.id}-${idx}`}>
                     <div data-error={hasError || undefined}>
-                      <div>{part.text}</div>
+                      <div>
+                        <Streamdown mode={isStreaming ? "streaming" : "static"}>
+                          {part.text}
+                        </Streamdown>
+                      </div>
                     </div>
-                    {msg.role === "assistant" && (
+                    {msg.role === "assistant" && hasError && onRetry && (
                       <div data-actions>
-                        {hasError === true ? (
-                          onRetry ? (
-                            <button
-                              aria-label="Retry"
-                              onClick={onRetry}
-                              type="button"
-                            >
-                              <RefreshCcwIcon className="size-3" />
-                            </button>
-                          ) : null
-                        ) : null}
                         <button
-                          aria-label="Copy"
-                          onClick={() =>
-                            navigator.clipboard.writeText(part.text)
-                          }
+                          aria-label="Retry"
+                          className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm"
+                          onClick={onRetry}
                           type="button"
                         >
-                          <CopyIcon className="size-3" />
+                          Retry
                         </button>
                       </div>
                     )}
@@ -181,7 +119,6 @@ export function CommentContent({
                   <Collapsible.Root
                     key={`${msg.id}-${idx}`}
                     open={Boolean(
-                      // biome-ignore lint/nursery/noLeakedRender: wtf
                       isStreaming &&
                         idx === msg.parts.length - 1 &&
                         msg.id === content.at(-1)?.id
@@ -193,17 +130,169 @@ export function CommentContent({
                     <Collapsible.Panel>{part.text}</Collapsible.Panel>
                   </Collapsible.Root>
                 )
-              default:
+              case "tool-Read": {
+                const toolPart = part as ToolUIPart
+                const output = toolPart.output as ToolResult<"Read"> | undefined
+                const input = toolPart.input as { path?: string }
+                return (
+                  <Tool
+                    detail={
+                      output ? (
+                        <pre className="overflow-x-auto text-xs">
+                          <code>{output.content}</code>
+                        </pre>
+                      ) : undefined
+                    }
+                    id={toolPart.toolCallId}
+                    key={`${msg.id}-${idx}`}
+                    name="Read"
+                    summary={input.path ?? "file"}
+                  />
+                )
+              }
+              case "tool-Grep": {
+                const toolPart = part as ToolUIPart
+                const output = toolPart.output as ToolResult<"Grep"> | undefined
+                const input = toolPart.input as { pattern?: string }
+                return (
+                  <Tool
+                    detail={
+                      output ? (
+                        <pre className="overflow-x-auto text-xs">
+                          <code>{output.matches}</code>
+                        </pre>
+                      ) : undefined
+                    }
+                    id={toolPart.toolCallId}
+                    key={`${msg.id}-${idx}`}
+                    name="Grep"
+                    summary={input.pattern ?? "pattern"}
+                  />
+                )
+              }
+              case "tool-List": {
+                const toolPart = part as ToolUIPart
+                const output = toolPart.output as ToolResult<"List"> | undefined
+                const input = toolPart.input as { path?: string }
+                return (
+                  <Tool
+                    detail={
+                      output ? (
+                        <pre className="overflow-x-auto text-xs">
+                          <code>{output.listing || "(no files)"}</code>
+                        </pre>
+                      ) : undefined
+                    }
+                    id={toolPart.toolCallId}
+                    key={`${msg.id}-${idx}`}
+                    name="List"
+                    summary={input.path ?? "."}
+                  />
+                )
+              }
+              case "tool-ReadPost": {
+                const toolPart = part as ToolUIPart
+                const output = toolPart.output as
+                  | ToolResult<"ReadPost">
+                  | undefined
+                const input = toolPart.input as {
+                  postNumber?: number
+                  postOwner?: string
+                  postRepo?: string
+                }
+                const ref = input.postOwner
+                  ? `${input.postOwner}/${input.postRepo}#${input.postNumber}`
+                  : `#${input.postNumber}`
+                return (
+                  <Tool
+                    detail={
+                      output ? (
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {output.post.title ?? "Untitled"}
+                          </div>
+                          <div className="mt-1 text-muted">
+                            {output.rootComment.content.slice(0, 200)}
+                            {output.rootComment.content.length > 200
+                              ? "..."
+                              : ""}
+                          </div>
+                        </div>
+                      ) : undefined
+                    }
+                    id={toolPart.toolCallId}
+                    key={`${msg.id}-${idx}`}
+                    name="Read Post"
+                    summary={ref}
+                  />
+                )
+              }
+              case "tool-WebSearch": {
+                const toolPart = part as ToolUIPart
+                const input = toolPart.input as { query?: string }
+                return (
+                  <Tool
+                    detail={
+                      toolPart.output ? (
+                        <pre className="overflow-x-auto text-xs">
+                          <code>
+                            {JSON.stringify(toolPart.output, null, 2)}
+                          </code>
+                        </pre>
+                      ) : undefined
+                    }
+                    id={toolPart.toolCallId}
+                    key={`${msg.id}-${idx}`}
+                    name="Web Search"
+                    summary={input.query ?? "search"}
+                  />
+                )
+              }
+              case "tool-WebExtract": {
+                const toolPart = part as ToolUIPart
+                const input = toolPart.input as { url?: string }
+                return (
+                  <Tool
+                    detail={
+                      toolPart.output ? (
+                        <pre className="overflow-x-auto text-xs">
+                          <code>
+                            {JSON.stringify(toolPart.output, null, 2)}
+                          </code>
+                        </pre>
+                      ) : undefined
+                    }
+                    id={toolPart.toolCallId}
+                    key={`${msg.id}-${idx}`}
+                    name="Extract"
+                    summary={input.url ?? "url"}
+                  />
+                )
+              }
+              default: {
                 if (part.type.startsWith("tool-") && "state" in part) {
                   const toolPart = part as ToolUIPart
                   const toolName = toolPart.type.slice(5)
                   return (
-                    <Fragment key={`${msg.id}-${idx}`}>
-                      {renderTool(toolName, toolPart)}
-                    </Fragment>
+                    <Tool
+                      detail={
+                        toolPart.output ? (
+                          <pre className="overflow-x-auto text-xs">
+                            <code>
+                              {JSON.stringify(toolPart.output, null, 2)}
+                            </code>
+                          </pre>
+                        ) : undefined
+                      }
+                      id={toolPart.toolCallId}
+                      key={`${msg.id}-${idx}`}
+                      name={toolName}
+                      summary={JSON.stringify(toolPart.input)}
+                    />
                   )
                 }
                 return null
+              }
             }
           })}
         </Fragment>

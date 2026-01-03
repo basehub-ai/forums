@@ -1,5 +1,4 @@
 "use server"
-
 import { waitUntil } from "@vercel/functions"
 import { and, eq, sql } from "drizzle-orm"
 import { updateTag } from "next/cache"
@@ -505,6 +504,7 @@ export async function getPostMetadata(postId: string) {
     .select({
       title: posts.title,
       categoryId: posts.categoryId,
+      gitContext: posts.gitContext,
       owner: posts.owner,
       repo: posts.repo,
     })
@@ -516,7 +516,7 @@ export async function getPostMetadata(postId: string) {
     throw new Error("Post not found")
   }
 
-  if (typeof post.title !== "string") {
+  if (typeof post.title !== "string" || !post.gitContext) {
     return null
   }
 
@@ -525,6 +525,7 @@ export async function getPostMetadata(postId: string) {
 
   return {
     title: post.title,
+    gitContext: post.gitContext,
     category: post.categoryId
       ? await db
           .select({
@@ -578,7 +579,11 @@ export async function updatePost(data: {
     throw new Error("Unauthorized: only the post author can edit this post")
   }
 
-  const updates: { title?: string; categoryId?: string | null; updatedAt: number } = {
+  const updates: {
+    title?: string
+    categoryId?: string | null
+    updatedAt: number
+  } = {
     updatedAt: Date.now(),
   }
 

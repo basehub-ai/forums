@@ -10,6 +10,7 @@ import type {
   mentions as mentionsSchema,
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
+import { cn } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
 import { MentionBanner } from "./mention-banner"
 import { PostComposer } from "./post-composer"
@@ -32,6 +33,8 @@ type AskingOption = {
   image?: string | null
   isDefault?: boolean
 }
+
+const REPLIES_ENABLED = false
 
 function CommentItem({
   owner,
@@ -69,7 +72,7 @@ function CommentItem({
     ? `/llm/${author.username}`
     : `/user/${author.username}`
 
-  const canReply = depth === 0 && !isRootComment && onReply
+  const canReply = REPLIES_ENABLED && depth === 0 && !isRootComment && onReply
 
   const { postNumber } = useParams<{ postNumber: string }>()
 
@@ -78,40 +81,42 @@ function CommentItem({
   return (
     <div id={commentNumber}>
       <div className="group">
-        <div className="flex items-center gap-2">
-          <Link href={profileUrl}>
-            <img
-              alt={`Avatar of ${author.name}`}
-              className="size-6 rounded-full"
-              src={author.image}
-            />
-          </Link>
-
-          <Link
-            className="font-semibold text-bright text-sm hover:underline"
-            href={profileUrl}
-          >
-            {author.name}
-          </Link>
-
-          <span className="text-muted-foreground text-sm">
-            {actionLabel}{" "}
-            <Suspense>
-              <RelativeTime
-                className="underline decoration-dotted underline-offset-2"
-                timestamp={comment.createdAt}
+        <div
+          className={cn(
+            "z-10 flex items-center justify-between bg-shade px-2 py-1",
+            depth === 0 ? "sticky top-0" : "sticky top-8"
+          )}
+        >
+          <div className="flex items-center">
+            <Link
+              className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline"
+              href={profileUrl}
+            >
+              <img
+                alt={`Avatar of ${author.name}`}
+                className="size-6 rounded-full"
+                src={author.image}
               />
-            </Suspense>
-          </span>
 
-          <Suspense>
-            <CopyLinkButton
-              commentNumber={commentNumber}
-              owner={owner}
-              postNumber={postNumber}
-              repo={repo}
-            />
-          </Suspense>
+              {author.name}
+            </Link>
+            &nbsp;
+            <span className="text-muted-foreground text-sm">
+              {actionLabel}{" "}
+              <Suspense>
+                <RelativeTime
+                  className="underline decoration-dotted underline-offset-2"
+                  timestamp={comment.createdAt}
+                />
+              </Suspense>
+            </span>
+          </div>
+          <CopyLinkButton
+            commentNumber={commentNumber}
+            owner={owner}
+            postNumber={postNumber}
+            repo={repo}
+          />
         </div>
 
         <div className="mt-3">
@@ -131,7 +136,9 @@ function CommentItem({
         </div>
       )}
 
-      {children && <div className="border-muted border-l-2 pl-4">{children}</div>}
+      {children && (
+        <div className="border-muted border-l-2 pl-4">{children}</div>
+      )}
 
       {canReply ? (
         isReplying ? (
@@ -266,7 +273,9 @@ export function CommentThread({
               <div className="space-y-4">
                 {replies.map((reply) => {
                   const replyAuthor = authorsById[reply.authorId]
-                  if (!replyAuthor) return null
+                  if (!replyAuthor) {
+                    return null
+                  }
                   const replyNumber = commentNumbers.get(reply.id) ?? "?"
                   return (
                     <CommentItem

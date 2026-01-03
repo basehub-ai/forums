@@ -1,6 +1,6 @@
-import { ImageResponse } from "next/og"
-import { NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
+import { ImageResponse } from "next/og"
+import type { NextRequest } from "next/server"
 import { db } from "@/lib/db/client"
 import { categories } from "@/lib/db/schema"
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const repo = searchParams.get("repo")
   const categoryId = searchParams.get("categoryId")
 
-  if (!owner || !repo || !categoryId) {
+  if (!(owner && repo && categoryId)) {
     return new Response("Missing parameters", { status: 400 })
   }
 
@@ -26,60 +26,56 @@ export async function GET(request: NextRequest) {
     .limit(1)
     .then((r) => r[0])
 
-  const title = category
-    ? `${category.emoji} ${category.title}`
-    : "Category"
+  const title = category ? `${category.emoji} ${category.title}` : "Category"
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        backgroundColor: "#09090b",
+        padding: 60,
+      }}
+    >
       <div
         style={{
-          height: "100%",
-          width: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          backgroundColor: "#09090b",
-          padding: 60,
+          gap: 16,
         }}
       >
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
+            fontSize: 28,
+            color: "#71717a",
           }}
         >
-          <div
-            style={{
-              fontSize: 28,
-              color: "#71717a",
-            }}
-          >
-            {owner}/{repo}
-          </div>
-          <div
-            style={{
-              fontSize: 72,
-              fontWeight: "bold",
-              color: "#fafafa",
-              lineHeight: 1.2,
-            }}
-          >
-            {title}
-          </div>
+          {owner}/{repo}
         </div>
         <div
           style={{
-            fontSize: 28,
-            color: "#a1a1aa",
+            fontSize: 72,
+            fontWeight: "bold",
+            color: "#fafafa",
+            lineHeight: 1.2,
           }}
         >
-          Category
+          {title}
         </div>
       </div>
-    ),
+      <div
+        style={{
+          fontSize: 28,
+          color: "#a1a1aa",
+        }}
+      >
+        Category
+      </div>
+    </div>,
     {
       ...size,
     }

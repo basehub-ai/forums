@@ -40,31 +40,33 @@ export function ActivePosts({
   }
 
   return (
-    <div className="text-sm [--col-w-avatar:24px] [--col-w-initials:32px] [--col-w-time:120px]">
-      <List className="gap-2">
-        {posts.map((post) => (
-          <ListItem key={post.id}>
-            <Link
-              className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
-              href={`/${owner}/${repo}/${post.number}`}
-            >
-              <AsteriskIcon className="mt-0.5 text-faint" size={16} />
-              <span className="truncate leading-none group-hover:text-bright">
-                {post.title || `Post #${post.number}`}
-              </span>
-            </Link>
-            <div className="flex shrink-0 items-center">
-              {!!post.authorUsername && (
-                <TableCellText className="relative mr-2 h-full w-(--col-w-avatar)">
-                  <AuthorAvatar username={post.authorUsername} />
+    <div>
+      <List className="mt-2 min-w-120 pb-2">
+        {posts.map((post) => {
+          return (
+            <ListItem key={post.id}>
+              <Link
+                className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
+                href={`/${owner}/${repo}/${post.number}`}
+              >
+                <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                <span className="truncate leading-none group-hover:text-bright">
+                  {post.title || `Post #${post.number}`}
+                </span>
+              </Link>
+              <div className="flex shrink-0 items-center">
+                {!!post.authorUsername && (
+                  <TableCellText className="relative mr-2 h-full w-5">
+                    <AuthorAvatar username={post.authorUsername} />
+                  </TableCellText>
+                )}
+                <TableCellText className="text-end text-sm">
+                  {formatRelativeTime(post.createdAt)}
                 </TableCellText>
-              )}
-              <TableCellText className="w-(--col-w-time) text-end">
-                {formatRelativeTime(post.createdAt)}
-              </TableCellText>
-            </div>
-          </ListItem>
-        ))}
+              </div>
+            </ListItem>
+          )
+        })}
       </List>
     </div>
   )

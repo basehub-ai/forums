@@ -47,10 +47,7 @@ export function AskingSelector({
           <Menu.Positioner align="start">
             <Menu.Popup>
               {options.map((option) => (
-                <Menu.Item
-                  key={option.id}
-                  onClick={() => onChange(option.id)}
-                >
+                <Menu.Item key={option.id} onClick={() => onChange(option.id)}>
                   {option.image ? (
                     <img
                       alt=""
@@ -62,7 +59,9 @@ export function AskingSelector({
                   ) : null}
                   {option.name}
                   {option.isDefault ? (
-                    <span className="text-muted-foreground text-xs">(default)</span>
+                    <span className="text-muted-foreground text-xs">
+                      (default)
+                    </span>
                   ) : null}
                 </Menu.Item>
               ))}

@@ -98,10 +98,7 @@ export async function updatePostIndex(
     doc.commentCount = updates.commentCount
   }
 
-  await typesense
-    .collections(POSTS_COLLECTION)
-    .documents(postId)
-    .update(doc)
+  await typesense.collections(POSTS_COLLECTION).documents(postId).update(doc)
 }
 
 function extractText(comment: Comment): string {
