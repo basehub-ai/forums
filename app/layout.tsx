@@ -27,7 +27,7 @@ export default function RootLayout({
             enableSystem
           >
             <Header />
-            <main className="pt-4">{children}</main>
+            <main className="py-4">{children}</main>
           </ThemeProvider>
           <Analytics />
         </div>

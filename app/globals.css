@@ -53,11 +53,7 @@
   --shade: #f0f0f0;
   --shade-hover: #e3e3e3;
 
-  --header-height: 120px;
-
-  @media (min-width: 1024px) {
-    --header-height: 64px;
-  }
+  --header-height: 64px;
 
   ::selection {
     background-color: var(--accent-transparent);
