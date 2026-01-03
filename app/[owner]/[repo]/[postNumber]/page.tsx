@@ -317,7 +317,7 @@ export default async function PostPage({
         <PostComposer
           askingOptions={askingOptions}
           postId={post.id}
-          storageKey={`composer:${post.id}`}
+          storageKey={`post-composer:${owner}:${repo}:${post.number}`}
         />
       </Container>
     </PostMetadataProvider>
