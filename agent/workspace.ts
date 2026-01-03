@@ -206,14 +206,15 @@ export const getWorkspace = async ({
 
         # Create worktree path - use short SHA (7 chars) for full SHAs, URL-encode otherwise
         if [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
-          WORKTREE_NAME="${REF:0:7}"
+          WORKTREE_NAME=$(echo "$REF" | cut -c1-7)
         else
           WORKTREE_NAME=$(node -p 'encodeURIComponent(process.argv[1])' "$REF")
         fi
         WORKTREE_PATH="../$WORKTREES_BASE/$WORKTREE_NAME"
+        ABS_WORKTREE_PATH=$(cd .. && pwd)/"$WORKTREES_BASE/$WORKTREE_NAME"
 
         # Clean up stale worktree entry if directory doesn't exist
-        if git worktree list | grep -q "$WORKTREE_PATH" && [ ! -d "$WORKTREE_PATH" ]; then
+        if git worktree list | grep -qF "$ABS_WORKTREE_PATH" && [ ! -d "$WORKTREE_PATH" ]; then
           git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || git worktree prune
         fi
 
