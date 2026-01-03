@@ -3,6 +3,7 @@ import { waitUntil } from "@vercel/functions"
 import { and, eq, sql } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { headers } from "next/headers"
+import slugify from "slugify"
 import { start } from "workflow/api"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
@@ -23,6 +24,10 @@ import { extractPostLinks } from "@/lib/post-links-parser"
 import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
+
+function categorySlugify(title: string) {
+  return slugify(title, { lower: true, strict: true })
+}
 
 export async function createMentions({
   sourcePostId,
@@ -627,11 +632,22 @@ export async function updatePost(data: {
 
   updateTag(`repo:${post.owner}:${post.repo}`)
   updateTag(`post:${data.postId}`)
+
+  const categoryIdsToInvalidate = new Set<string>()
   if (post.categoryId) {
-    updateTag(`category:${post.categoryId}`)
+    categoryIdsToInvalidate.add(post.categoryId)
   }
   if (data.categoryId && data.categoryId !== post.categoryId) {
-    updateTag(`category:${data.categoryId}`)
+    categoryIdsToInvalidate.add(data.categoryId)
+  }
+  if (categoryIdsToInvalidate.size > 0) {
+    const categoriesToInvalidate = await db
+      .select({ id: categories.id, title: categories.title })
+      .from(categories)
+      .where(sql`${categories.id} IN ${[...categoryIdsToInvalidate]}`)
+    for (const cat of categoriesToInvalidate) {
+      updateTag(`category:${categorySlugify(cat.title)}`)
+    }
   }
 
   return { success: true }

@@ -4,8 +4,13 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { TagIcon } from "lucide-react"
 import Link from "next/link"
 import type { ReactNode } from "react"
+import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
 import { usePostMetadata } from "./post-metadata-context"
+
+function categorySlugify(title: string) {
+  return slugify(title, { lower: true, strict: true })
+}
 
 export function PostHeader({
   owner,
@@ -31,7 +36,7 @@ export function PostHeader({
             <Subtitle className="select-none">&gt;</Subtitle>
             <Link
               className="hover:underline"
-              href={`/${owner}/${repo}/category/${category.id}`}
+              href={`/${owner}/${repo}/category/${categorySlugify(category.title)}`}
             >
               <Subtitle>{category.title}</Subtitle>
             </Link>

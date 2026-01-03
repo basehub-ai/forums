@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
+import slugify from "slugify"
 import { db } from "@/lib/db/client"
 import { categories } from "@/lib/db/schema"
 
@@ -9,22 +10,30 @@ const size = {
   height: 630,
 }
 
+function categorySlugify(title: string) {
+  return slugify(title, { lower: true, strict: true })
+}
+
+async function getCategoryBySlug(owner: string, repo: string, slug: string) {
+  const repoCategories = await db
+    .select()
+    .from(categories)
+    .where(and(eq(categories.owner, owner), eq(categories.repo, repo)))
+
+  return repoCategories.find((c) => categorySlugify(c.title) === slug)
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const owner = searchParams.get("owner")
   const repo = searchParams.get("repo")
-  const categoryId = searchParams.get("categoryId")
+  const categorySlug = searchParams.get("categorySlug")
 
-  if (!(owner && repo && categoryId)) {
+  if (!(owner && repo && categorySlug)) {
     return new Response("Missing parameters", { status: 400 })
   }
 
-  const category = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, categoryId))
-    .limit(1)
-    .then((r) => r[0])
+  const category = await getCategoryBySlug(owner, repo, categorySlug)
 
   const title = category ? `${category.emoji} ${category.title}` : "Category"
 

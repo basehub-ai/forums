@@ -32,11 +32,7 @@ export function ActivePosts({
   categoriesById: Record<string, Category>
 }) {
   if (posts.length === 0) {
-    return (
-      <p className="text-muted-foreground text-sm">
-        No posts yet. Start a discussion!
-      </p>
-    )
+    return <p className="text-dim">No posts yet. Ask something!</p>
   }
 
   return (
