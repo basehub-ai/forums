@@ -7,6 +7,42 @@ import type { Workspace } from "../workspace"
 
 export type ToolContext = {
   workspace: Workspace
+  sessionId: string
+}
+
+type RunInAgentfsParams = {
+  sessionId: string
+  workspacePath: string
+  sandbox: Workspace["sandbox"]
+} & (
+  | { script: string; args?: string[]; command?: never }
+  | { command: string[]; script?: never; args?: never }
+)
+
+function runInAgentfs(params: RunInAgentfsParams) {
+  const { sessionId, workspacePath, sandbox } = params
+
+  let innerCmd: string
+  if (params.command) {
+    innerCmd = params.command
+      .map((a) => `"${a.replace(/"/g, '\\"')}"`)
+      .join(" ")
+  } else {
+    const escapedArgs = (params.args ?? [])
+      .map((a) => `"${a.replace(/"/g, '\\"')}"`)
+      .join(" ")
+    innerCmd = `bash -c '${params.script.replace(/'/g, "'\\''")}' -- ${escapedArgs}`
+  }
+
+  return sandbox.runCommand("bash", [
+    "-c",
+    `
+      export PATH="$HOME/.local/bin:$PATH"
+      export AGENTFS_BASE="${workspacePath}"
+      cd "${workspacePath}"
+      agentfs run --session "${sessionId}" -- ${innerCmd}
+    `,
+  ])
 }
 
 export function getTools(context: ToolContext) {
@@ -52,59 +88,55 @@ export function getTools(context: ToolContext) {
       execute: async ({ path, startLine, endLine }) => {
         const fullPath = join(context.workspace.path, path)
 
-        const result = await context.workspace.sandbox.runCommand("bash", [
-          "-c",
-          `
-            set -e
-            FILE="$1"
-            START_LINE="$2"
-            END_LINE="$3"
+        const innerScript = `
+          set -e
+          FILE="$1"
+          START_LINE="$2"
+          END_LINE="$3"
 
-            # Get metadata (count actual lines, not just newlines)
-            TOTAL_LINES=$(awk 'END{print NR}' "$FILE")
-            FILE_SIZE=$(ls -lh "$FILE" | awk '{print $5}')
+          TOTAL_LINES=$(awk 'END{print NR}' "$FILE")
+          FILE_SIZE=$(ls -lh "$FILE" | awk '{print $5}')
 
-            # Determine range
-            PAGE_SIZE=100
-            if [ -n "$START_LINE" ] && [ -n "$END_LINE" ]; then
-              # Both provided - use exact range
-              ACTUAL_START=$START_LINE
-              ACTUAL_END=$END_LINE
-            elif [ -n "$START_LINE" ]; then
-              # Only startLine - read PAGE_SIZE lines from there
-              ACTUAL_START=$START_LINE
-              ACTUAL_END=$((START_LINE + PAGE_SIZE - 1))
-              [ "$ACTUAL_END" -gt "$TOTAL_LINES" ] && ACTUAL_END=$TOTAL_LINES
-            elif [ -n "$END_LINE" ]; then
-              # Only endLine - read from beginning to endLine
-              ACTUAL_START=1
-              ACTUAL_END=$END_LINE
-            elif [ "$TOTAL_LINES" -gt 200 ]; then
-              # No range, large file - paginate
-              ACTUAL_START=1
-              ACTUAL_END=$PAGE_SIZE
-            else
-              # No range, small file - show all
-              ACTUAL_START=1
-              ACTUAL_END=$TOTAL_LINES
-            fi
+          PAGE_SIZE=100
+          if [ -n "$START_LINE" ] && [ -n "$END_LINE" ]; then
+            ACTUAL_START=$START_LINE
+            ACTUAL_END=$END_LINE
+          elif [ -n "$START_LINE" ]; then
+            ACTUAL_START=$START_LINE
+            ACTUAL_END=$((START_LINE + PAGE_SIZE - 1))
+            [ "$ACTUAL_END" -gt "$TOTAL_LINES" ] && ACTUAL_END=$TOTAL_LINES
+          elif [ -n "$END_LINE" ]; then
+            ACTUAL_START=1
+            ACTUAL_END=$END_LINE
+          elif [ "$TOTAL_LINES" -gt 200 ]; then
+            ACTUAL_START=1
+            ACTUAL_END=$PAGE_SIZE
+          else
+            ACTUAL_START=1
+            ACTUAL_END=$TOTAL_LINES
+          fi
 
-            # Output metadata first (separated by ||| for parsing)
-            echo "$TOTAL_LINES|$FILE_SIZE|$ACTUAL_START|$ACTUAL_END"
-            echo "|||CONTENT|||"
+          echo "$TOTAL_LINES|$FILE_SIZE|$ACTUAL_START|$ACTUAL_END"
+          echo "|||CONTENT|||"
 
-            # Read content
-            if [ "$ACTUAL_START" -eq 1 ] && [ "$ACTUAL_END" -eq "$TOTAL_LINES" ]; then
-              cat "$FILE"
-            else
-              sed -n "\${ACTUAL_START},\${ACTUAL_END}p" "$FILE"
-            fi
-          `,
-          "--",
-          fullPath,
-          startLine?.toString() || "",
-          endLine?.toString() || "",
-        ])
+          if [ "$ACTUAL_START" -eq 1 ] && [ "$ACTUAL_END" -eq "$TOTAL_LINES" ]; then
+            cat "$FILE"
+          else
+            sed -n "\${ACTUAL_START},\${ACTUAL_END}p" "$FILE"
+          fi
+        `
+
+        const result = await runInAgentfs({
+          sessionId: context.sessionId,
+          workspacePath: context.workspace.path,
+          sandbox: context.workspace.sandbox,
+          script: innerScript,
+          args: [
+            fullPath,
+            startLine?.toString() || "",
+            endLine?.toString() || "",
+          ],
+        })
 
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
@@ -248,39 +280,41 @@ export function getTools(context: ToolContext) {
           ? join(context.workspace.path, path)
           : context.workspace.path
 
-        const args: string[] = []
-
-        args.push("--line-number")
-        args.push("--heading")
-        args.push("--color", "never")
+        const rgArgs: string[] = [
+          "rg",
+          "--line-number",
+          "--heading",
+          "--color",
+          "never",
+        ]
 
         if (!caseSensitive) {
-          args.push("-i")
+          rgArgs.push("-i")
         }
-
         if (fileType) {
-          args.push("--type", fileType)
+          rgArgs.push("--type", fileType)
         }
-
         if (glob) {
-          args.push("--glob", glob)
+          rgArgs.push("--glob", glob)
         }
-
         if (contextLines !== undefined) {
-          args.push("-C", String(contextLines))
+          rgArgs.push("-C", String(contextLines))
         }
-
         if (maxCount !== undefined) {
-          args.push("--max-count", String(maxCount))
+          rgArgs.push("--max-count", String(maxCount))
         }
-
         if (filesWithMatches) {
-          args.push("--files-with-matches")
+          rgArgs.push("--files-with-matches")
         }
 
-        args.push("--", pattern, searchPath)
+        rgArgs.push("--", pattern, searchPath)
 
-        const result = await context.workspace.sandbox.runCommand("rg", args)
+        const result = await runInAgentfs({
+          sessionId: context.sessionId,
+          workspacePath: context.workspace.path,
+          sandbox: context.workspace.sandbox,
+          command: rgArgs,
+        })
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
           result.stderr(),
@@ -369,46 +403,47 @@ export function getTools(context: ToolContext) {
           ? join(context.workspace.path, path)
           : context.workspace.path
 
-        const result = await context.workspace.sandbox.runCommand("bash", [
-          "-c",
-          `
-            set -e
-            SEARCH_PATH="$1"
-            DEPTH="$2"
-            INCLUDE_HIDDEN="$3"
-            FILES_ONLY="$4"
-            PATTERN="$5"
+        const innerScript = `
+          set -e
+          SEARCH_PATH="$1"
+          DEPTH="$2"
+          INCLUDE_HIDDEN="$3"
+          FILES_ONLY="$4"
+          PATTERN="$5"
 
-            # Build find command arguments
-            FIND_ARGS=""
-            [ -n "$DEPTH" ] && FIND_ARGS="$FIND_ARGS -maxdepth $DEPTH"
-            [ "$INCLUDE_HIDDEN" != "true" ] && FIND_ARGS="$FIND_ARGS ! -path '*/.*'"
-            [ "$FILES_ONLY" = "true" ] && FIND_ARGS="$FIND_ARGS -type f"
-            [ -n "$PATTERN" ] && FIND_ARGS="$FIND_ARGS -name '$PATTERN'"
+          FIND_ARGS=""
+          [ -n "$DEPTH" ] && FIND_ARGS="$FIND_ARGS -maxdepth $DEPTH"
+          [ "$INCLUDE_HIDDEN" != "true" ] && FIND_ARGS="$FIND_ARGS ! -path '*/.*'"
+          [ "$FILES_ONLY" = "true" ] && FIND_ARGS="$FIND_ARGS -type f"
+          [ -n "$PATTERN" ] && FIND_ARGS="$FIND_ARGS -name '$PATTERN'"
 
-            # Get listing
-            LISTING=$(eval "find '$SEARCH_PATH' $FIND_ARGS" 2>/dev/null | sort)
+          LISTING=$(eval "find '$SEARCH_PATH' $FIND_ARGS" 2>/dev/null | sort)
 
-            # Get counts
-            COUNT_ARGS=""
-            [ -n "$DEPTH" ] && COUNT_ARGS="$COUNT_ARGS -maxdepth $DEPTH"
-            [ "$INCLUDE_HIDDEN" != "true" ] && COUNT_ARGS="$COUNT_ARGS ! -path '*/.*'"
+          COUNT_ARGS=""
+          [ -n "$DEPTH" ] && COUNT_ARGS="$COUNT_ARGS -maxdepth $DEPTH"
+          [ "$INCLUDE_HIDDEN" != "true" ] && COUNT_ARGS="$COUNT_ARGS ! -path '*/.*'"
 
-            FILE_COUNT=$(eval "find '$SEARCH_PATH' $COUNT_ARGS -type f" 2>/dev/null | wc -l)
-            DIR_COUNT=$(eval "find '$SEARCH_PATH' $COUNT_ARGS -type d" 2>/dev/null | wc -l)
+          FILE_COUNT=$(eval "find '$SEARCH_PATH' $COUNT_ARGS -type f" 2>/dev/null | wc -l)
+          DIR_COUNT=$(eval "find '$SEARCH_PATH' $COUNT_ARGS -type d" 2>/dev/null | wc -l)
 
-            # Output: counts first, then listing
-            echo "$FILE_COUNT|$DIR_COUNT"
-            echo "|||LISTING|||"
-            echo "$LISTING" | sed "s|^$SEARCH_PATH|.|"
-          `,
-          "--",
-          searchPath,
-          depth?.toString() || "",
-          includeHidden ? "true" : "false",
-          filesOnly ? "true" : "false",
-          pattern || "",
-        ])
+          echo "$FILE_COUNT|$DIR_COUNT"
+          echo "|||LISTING|||"
+          echo "$LISTING" | sed "s|^$SEARCH_PATH|.|"
+        `
+
+        const result = await runInAgentfs({
+          sessionId: context.sessionId,
+          workspacePath: context.workspace.path,
+          sandbox: context.workspace.sandbox,
+          script: innerScript,
+          args: [
+            searchPath,
+            depth?.toString() || "",
+            includeHidden ? "true" : "false",
+            filesOnly ? "true" : "false",
+            pattern || "",
+          ],
+        })
 
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
@@ -472,6 +507,48 @@ export function getTools(context: ToolContext) {
         }
         const content = await response.text()
         return { content }
+      },
+    }),
+
+    Bash: tool({
+      description:
+        "Execute bash commands. Use for running builds, tests, installing dependencies, or making code changes.",
+      inputSchema: z.object({
+        command: z.string().describe("The bash command to execute"),
+        timeout: z
+          .number()
+          .optional()
+          .default(60_000)
+          .describe("Command timeout in milliseconds (default: 60s, max: 5m)"),
+      }),
+      outputSchema: z.object({
+        stdout: z.string().describe("Standard output from the command"),
+        stderr: z.string().describe("Standard error from the command"),
+        exitCode: z.number().describe("Exit code (0 = success)"),
+      }),
+      execute: async ({ command, timeout }) => {
+        const maxTimeout = 5 * 60 * 1000
+        const timeoutSecs = Math.floor(
+          Math.min(timeout ?? 60_000, maxTimeout) / 1000
+        )
+
+        const result = await runInAgentfs({
+          sessionId: context.sessionId,
+          workspacePath: context.workspace.path,
+          sandbox: context.workspace.sandbox,
+          command: ["timeout", `${timeoutSecs}s`, "bash", "-c", command],
+        })
+
+        const [stdout, stderr] = await Promise.all([
+          result.stdout(),
+          result.stderr(),
+        ])
+
+        return {
+          stdout,
+          stderr,
+          exitCode: result.exitCode ?? 0,
+        }
       },
     }),
 

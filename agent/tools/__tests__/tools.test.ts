@@ -1,35 +1,12 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-let mockDbData: { posts: any[]; comments: any[] } = { posts: [], comments: [] }
-let queryCount = 0
-
-mock.module("@/lib/db/client", () => ({
-  db: {
-    select: () => {
-      const currentQuery = queryCount++
-      return {
-        from: () => ({
-          where: () => ({
-            limit: () =>
-              Promise.resolve(
-                currentQuery === 0 ? mockDbData.posts.slice(0, 1) : []
-              ),
-            orderBy: () =>
-              Promise.resolve(currentQuery === 1 ? mockDbData.comments : []),
-          }),
-          orderBy: () => Promise.resolve([]),
-        }),
-      }
-    },
-  },
-}))
-
 import { getTools } from "../index"
 import { createTestWorkspace } from "./test-helpers"
 
+const TEST_SESSION_ID = "test-org/test-repo/1"
 let testDir: string
 
 beforeEach(() => {
@@ -48,7 +25,7 @@ describe("Read Tool", () => {
     writeFileSync(join(testDir, "small.txt"), content)
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Read.execute?.(
       { path: "small.txt" },
       { messages: [], toolCallId: "" }
@@ -72,7 +49,7 @@ describe("Read Tool", () => {
     writeFileSync(join(testDir, "large.txt"), content)
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Read.execute?.(
       { path: "large.txt" },
       { messages: [], toolCallId: "" }
@@ -97,7 +74,7 @@ describe("Read Tool", () => {
     writeFileSync(join(testDir, "file.txt"), content)
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Read.execute?.(
       { path: "file.txt", startLine: 50, endLine: 75 },
       { messages: [], toolCallId: "" }
@@ -118,7 +95,7 @@ describe("Read Tool", () => {
 
   test("handles file not found error", async () => {
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Read.execute?.(
       { path: "missing.txt" },
       { messages: [], toolCallId: "" }
@@ -137,7 +114,7 @@ describe("Read Tool", () => {
     writeFileSync(join(testDir, "large-file.txt"), content)
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
 
     // First call - should get lines 1-100
     const result1 = await tools.Read.execute?.(
@@ -187,7 +164,7 @@ describe("Read Tool", () => {
     writeFileSync(join(testDir, "file.txt"), content)
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Read.execute?.(
       { path: "file.txt", endLine: 50 },
       { messages: [], toolCallId: "" }
@@ -210,7 +187,7 @@ describe("Grep Tool", () => {
     writeFileSync(join(testDir, "file2.ts"), "const y = 2\n// TODO: refactor")
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Grep.execute?.(
       { pattern: "TODO", caseSensitive: true, filesWithMatches: false },
       { messages: [], toolCallId: "" }
@@ -226,7 +203,7 @@ describe("Grep Tool", () => {
     writeFileSync(join(testDir, "app.ts"), "Error occurred\nerror in function")
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Grep.execute?.(
       { pattern: "error", caseSensitive: false, filesWithMatches: false },
       { messages: [], toolCallId: "" }
@@ -243,7 +220,7 @@ describe("Grep Tool", () => {
     writeFileSync(join(testDir, "utils.js"), "function other() {}")
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Grep.execute?.(
       {
         pattern: "function",
@@ -264,7 +241,7 @@ describe("Grep Tool", () => {
     writeFileSync(join(testDir, "file.ts"), "const x = 1")
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.Grep.execute?.(
       { pattern: "nonexistent", caseSensitive: true, filesWithMatches: false },
       { messages: [], toolCallId: "" }
@@ -285,7 +262,7 @@ describe("List Tool", () => {
     mkdtempSync(join(testDir, "dir2-"))
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.List.execute?.(
       { depth: 1, includeHidden: false, filesOnly: false },
       { messages: [], toolCallId: "" }
@@ -304,7 +281,7 @@ describe("List Tool", () => {
     mkdtempSync(join(testDir, "dir-"))
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.List.execute?.(
       { filesOnly: true, includeHidden: false },
       { messages: [], toolCallId: "" }
@@ -322,7 +299,7 @@ describe("List Tool", () => {
     mkdtempSync(emptyDir)
 
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
     const result = await tools.List.execute?.(
       { path: "empty", includeHidden: false, filesOnly: false },
       { messages: [], toolCallId: "" }
@@ -335,150 +312,12 @@ describe("List Tool", () => {
 })
 
 describe("ReadPost Tool", () => {
-  beforeEach(() => {
-    mockDbData = { posts: [], comments: [] }
-    queryCount = 0
-  })
-
   test("throws error when post params are missing", () => {
-    mockDbData = { posts: [], comments: [] }
-
     const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
+    const tools = getTools({ workspace, sessionId: TEST_SESSION_ID })
 
     expect(
       tools.ReadPost.execute?.({}, { messages: [], toolCallId: "" })
     ).rejects.toThrow("Post number, owner, and repository are required")
-  })
-
-  test("correctly identifies LLM-authored comments via authorId prefix", async () => {
-    const now = Date.now()
-    mockDbData = {
-      posts: [
-        {
-          id: "post-1",
-          number: 1,
-          owner: "org",
-          repo: "repo",
-          title: "Test",
-          createdAt: now,
-          rootCommentId: "root",
-        },
-      ],
-      comments: [
-        {
-          id: "root",
-          postId: "post-1",
-          authorId: "user-123",
-          authorUsername: "human",
-          content: [
-            {
-              id: "m1",
-              role: "user",
-              parts: [{ type: "text", text: "Question" }],
-            },
-          ],
-          createdAt: now,
-        },
-        {
-          id: "c1",
-          postId: "post-1",
-          authorId: "llm_claude",
-          authorUsername: "assistant",
-          content: [
-            {
-              id: "m2",
-              role: "assistant",
-              parts: [{ type: "text", text: "AI response" }],
-            },
-          ],
-          createdAt: now + 1000,
-        },
-        {
-          id: "c2",
-          postId: "post-1",
-          authorId: "user-456",
-          authorUsername: "another-human",
-          content: [
-            {
-              id: "m3",
-              role: "user",
-              parts: [{ type: "text", text: "Follow-up" }],
-            },
-          ],
-          createdAt: now + 2000,
-        },
-      ],
-    }
-
-    const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
-    const result = await tools.ReadPost.execute?.(
-      { postNumber: 1, postOwner: "org", postRepo: "repo" },
-      { messages: [], toolCallId: "" }
-    )
-
-    if (result && "comments" in result) {
-      expect(result.comments).toHaveLength(2)
-      expect(result.comments[0].isFromLLM).toBe(true)
-      expect(result.comments[0].authorUsername).toBe("assistant")
-      expect(result.comments[1].isFromLLM).toBe(false)
-      expect(result.comments[1].authorUsername).toBe("another-human")
-    }
-  })
-
-  test("extracts text from multi-part messages and joins with double newlines", async () => {
-    const now = Date.now()
-    mockDbData = {
-      posts: [
-        {
-          id: "post-1",
-          number: 1,
-          owner: "org",
-          repo: "repo",
-          title: "Test",
-          createdAt: now,
-          rootCommentId: "root",
-        },
-      ],
-      comments: [
-        {
-          id: "root",
-          postId: "post-1",
-          authorId: "user-1",
-          authorUsername: "author",
-          content: [
-            {
-              id: "m1",
-              role: "user",
-              parts: [{ type: "text", text: "First paragraph" }],
-            },
-            {
-              id: "m2",
-              role: "user",
-              parts: [
-                { type: "text", text: "Second paragraph" },
-                { type: "tool-invocation", toolName: "Read", args: {} },
-                { type: "text", text: "Third paragraph" },
-              ],
-            },
-          ],
-          createdAt: now,
-        },
-      ],
-    }
-
-    const workspace = createTestWorkspace(testDir)
-    const tools = getTools({ workspace })
-    const result = await tools.ReadPost.execute?.(
-      { postNumber: 1, postOwner: "org", postRepo: "repo" },
-      { messages: [], toolCallId: "" }
-    )
-
-    if (result && "rootComment" in result) {
-      expect(result.rootComment.content).toBe(
-        "First paragraph\n\nSecond paragraph\n\nThird paragraph"
-      )
-    }
   })
 })

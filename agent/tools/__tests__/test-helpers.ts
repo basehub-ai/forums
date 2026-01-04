@@ -1,11 +1,34 @@
 import type { Sandbox } from "@vercel/sandbox"
 import { spawn } from "bun"
+import { mkdirSync, writeFileSync, chmodSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import type { Workspace } from "../../workspace"
 
 type CommandResult = {
   stdout: () => Promise<string>
   stderr: () => Promise<string>
+  exitCode?: number
 }
+
+const mockBinDir = join(tmpdir(), "agentfs-mock-bin")
+
+function ensureMockAgentfs() {
+  mkdirSync(mockBinDir, { recursive: true })
+  const mockScript = `#!/bin/bash
+# Mock agentfs that skips "run --session <id> --" and executes the rest
+shift # run
+shift # --session
+shift # <session-id>
+shift # --
+exec "$@"
+`
+  const scriptPath = join(mockBinDir, "agentfs")
+  writeFileSync(scriptPath, mockScript)
+  chmodSync(scriptPath, 0o755)
+}
+
+ensureMockAgentfs()
 
 export function createRealSandbox(): Sandbox {
   return {
@@ -26,10 +49,10 @@ export function createRealSandbox(): Sandbox {
 
       const fullArgs = cmdArgs || []
 
-      // Use Bun.spawn for precise argument control
       const proc = spawn([cmd, ...fullArgs], {
         stdout: "pipe",
         stderr: "pipe",
+        env: { ...process.env, PATH: `${mockBinDir}:${process.env.PATH}` },
       })
 
       const [stdout, stderr] = await Promise.all([
@@ -37,11 +60,12 @@ export function createRealSandbox(): Sandbox {
         new Response(proc.stderr).text(),
       ])
 
-      await proc.exited
+      const exitCode = await proc.exited
 
       return {
         stdout: async () => stdout,
         stderr: async () => stderr,
+        exitCode,
       }
     },
   } as unknown as Sandbox

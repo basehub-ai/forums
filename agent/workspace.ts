@@ -165,18 +165,30 @@ export const getWorkspace = async ({
         WORKTREES_BASE="$3"
         PROVIDED_REF="$4"
 
-        # Install ripgrep in background if not present
-        if ! which rg >/dev/null 2>&1; then
+        export PATH="$HOME/.local/bin:$PATH"
+
+        # Install ripgrep and agentfs in background if not present
+        INSTALL_PID=""
+        if ! which rg >/dev/null 2>&1 || ! which agentfs >/dev/null 2>&1; then
           (
-            mkdir -p ~/.local/bin &&
-            cd /tmp &&
-            curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-            tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-            cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
-            rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
+            mkdir -p ~/.local/bin
+            cd /tmp
+
+            if ! which rg >/dev/null 2>&1; then
+              curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+              tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+              cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
+              rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
+            fi
+
+            if ! which agentfs >/dev/null 2>&1; then
+              curl -sLO https://github.com/anthropics/agentfs/releases/latest/download/agentfs-linux-x86_64.tar.gz &&
+              tar xzf agentfs-linux-x86_64.tar.gz &&
+              cp -f agentfs ~/.local/bin/ &&
+              rm -rf agentfs-linux-x86_64.tar.gz agentfs
+            fi
           ) &
-          RG_PID=$!
-          export PATH="$HOME/.local/bin:$PATH"
+          INSTALL_PID=$!
         fi
 
         # Clone as bare repo if needed
@@ -187,9 +199,9 @@ export const getWorkspace = async ({
         cd "$REPO_DIR"
         git fetch origin --quiet
 
-        # Wait for ripgrep installation to complete if it was started
-        if [ -n "$RG_PID" ]; then
-          wait $RG_PID || true
+        # Wait for tool installation to complete if it was started
+        if [ -n "$INSTALL_PID" ]; then
+          wait $INSTALL_PID || true
         fi
 
         # Determine ref: use provided or detect default branch

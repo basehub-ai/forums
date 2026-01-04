@@ -35,7 +35,7 @@ export async function responseAgent({
 
   const writable = getWritable({ namespace: streamId })
 
-  const { initialMessages, sandboxId, gitRef } = await setupStep({
+  const { initialMessages, sandboxId, gitRef, postNumber } = await setupStep({
     postId,
     commentId,
     owner,
@@ -54,6 +54,7 @@ export async function responseAgent({
         model,
         writable,
         sandboxId,
+        postNumber,
         initialMessages,
         newMessages,
       })
@@ -102,10 +103,10 @@ async function setupStep({
   initialMessages: AgentUIMessage[]
   sandboxId: string
   gitRef: string
+  postNumber: number
 }> {
   "use step"
 
-  // Get the current comment's createdAt to filter context
   const currentComment = await db
     .select({ createdAt: comments.createdAt })
     .from(comments)
@@ -124,13 +125,12 @@ async function setupStep({
       .where(
         and(
           eq(comments.postId, postId),
-          // Only include comments created BEFORE the current comment
           lt(comments.createdAt, currentComment.createdAt)
         )
       )
       .orderBy(asc(comments.createdAt)),
     db
-      .select({ gitContexts: posts.gitContexts })
+      .select({ gitContexts: posts.gitContexts, number: posts.number })
       .from(posts)
       .where(eq(posts.id, postId))
       .limit(1)
@@ -151,10 +151,15 @@ async function setupStep({
       .where(eq(posts.id, postId))
   }
 
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
   return {
     initialMessages: allComments.flatMap((c) => c.content),
     sandboxId: workspace.sandbox.sandboxId,
     gitRef: existingGitContext?.sha ?? workspace.gitContextData.sha,
+    postNumber: post.number,
   }
 }
 
@@ -165,6 +170,7 @@ async function streamTextStep({
   model,
   writable,
   sandboxId,
+  postNumber,
   initialMessages,
   newMessages,
 }: {
@@ -174,6 +180,7 @@ async function streamTextStep({
   model: string
   writable: WritableStream
   sandboxId: string
+  postNumber: number
   initialMessages: AgentUIMessage[]
   newMessages: UIMessage[]
 }): Promise<{ finishReason: FinishReason; newMessages: AgentUIMessage[] }> {
@@ -183,12 +190,22 @@ async function streamTextStep({
     sandboxId,
     gitContext: { owner, repo, ref: gitRef },
   })
+  const sessionId = `${owner}/${repo}/${postNumber}`
   const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
 
   const result = streamText({
     messages: await convertToModelMessages(allMessages),
-    tools: getTools({ workspace }),
+    tools: getTools({ workspace, sessionId }),
     system: `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).
+
+## Sandbox Environment
+You have access to a Bash tool that lets you execute any shell command in a sandboxed environment. All file modifications you make are isolated to this post's session and won't affect the base repository or other posts. You can:
+- Install dependencies (npm install, pip install, etc.)
+- Run builds and tests
+- Create, edit, or delete files
+- Run any development commands
+
+The sandbox preserves your changes across the conversation, so you can build upon previous modifications.
 
 ## Post References
 When a user mentions another post, you MUST use the ReadPost tool to fetch its content before responding. Post references can appear in these formats:
