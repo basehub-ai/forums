@@ -86,25 +86,25 @@ export default async function Home() {
       <pre
         aria-hidden="true"
         className="mx-auto mt-10 w-fit overflow-x-auto text-muted text-xs leading-tight"
-      >{`┌───────────────────┐
-│  Ask a question   │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│  Clone the repo   │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│  Explore the code │
-└─────────┬─────────┘
-          │
-          ▼
-╔═══════════════════╗
-║  Source-backed    ║
-║      answer       ║
-╚═══════════════════╝`}</pre>
+      >{`    ┌───────────────────┐
+    │  Ask a question   │
+    └─────────┬─────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│  Repo cloned in sandbox   │
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│  Agent explores codebase  │
+└─────────────┬─────────────┘
+              │
+              ▼
+    ╔═══════════════════╗
+    ║  Source-backed    ║
+    ║      answer       ║
+    ╚═══════════════════╝`}</pre>
     </Container>
   )
 }
