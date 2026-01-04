@@ -361,34 +361,23 @@ export function getTools(context: ToolContext) {
             FILES_ONLY="$4"
             PATTERN="$5"
 
-            # Build find command
-            FIND_CMD="find \\"$SEARCH_PATH\\""
-
-            [ -n "$DEPTH" ] && FIND_CMD="$FIND_CMD -maxdepth $DEPTH"
-
-            if [ "$INCLUDE_HIDDEN" != "true" ]; then
-              FIND_CMD="$FIND_CMD \\( -path '*/.*' -prune \\) -o \\("
-            fi
-
-            [ "$FILES_ONLY" = "true" ] && FIND_CMD="$FIND_CMD -type f"
-            [ -n "$PATTERN" ] && FIND_CMD="$FIND_CMD -name \\"$PATTERN\\""
-
-            FIND_CMD="$FIND_CMD -print"
-
-            if [ "$INCLUDE_HIDDEN" != "true" ]; then
-              FIND_CMD="$FIND_CMD \\)"
-            fi
+            # Build find command arguments
+            FIND_ARGS=""
+            [ -n "$DEPTH" ] && FIND_ARGS="$FIND_ARGS -maxdepth $DEPTH"
+            [ "$INCLUDE_HIDDEN" != "true" ] && FIND_ARGS="$FIND_ARGS ! -path '*/.*'"
+            [ "$FILES_ONLY" = "true" ] && FIND_ARGS="$FIND_ARGS -type f"
+            [ -n "$PATTERN" ] && FIND_ARGS="$FIND_ARGS -name '$PATTERN'"
 
             # Get listing
-            LISTING=$(eval $FIND_CMD 2>/dev/null | sort)
+            LISTING=$(eval "find '$SEARCH_PATH' $FIND_ARGS" 2>/dev/null | sort)
 
             # Get counts
-            COUNT_BASE="find \\"$SEARCH_PATH\\""
-            [ -n "$DEPTH" ] && COUNT_BASE="$COUNT_BASE -maxdepth $DEPTH"
-            [ "$INCLUDE_HIDDEN" != "true" ] && COUNT_BASE="$COUNT_BASE ! -path '*/.*'"
+            COUNT_ARGS=""
+            [ -n "$DEPTH" ] && COUNT_ARGS="$COUNT_ARGS -maxdepth $DEPTH"
+            [ "$INCLUDE_HIDDEN" != "true" ] && COUNT_ARGS="$COUNT_ARGS ! -path '*/.*'"
 
-            FILE_COUNT=$(eval "$COUNT_BASE -type f 2>/dev/null | wc -l" || echo 0)
-            DIR_COUNT=$(eval "$COUNT_BASE -type d 2>/dev/null | wc -l" || echo 0)
+            FILE_COUNT=$(eval "find '$SEARCH_PATH' $COUNT_ARGS -type f" 2>/dev/null | wc -l)
+            DIR_COUNT=$(eval "find '$SEARCH_PATH' $COUNT_ARGS -type d" 2>/dev/null | wc -l)
 
             # Output: counts first, then listing
             echo "$FILE_COUNT|$DIR_COUNT"

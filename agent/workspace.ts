@@ -238,8 +238,8 @@ export const getWorkspace = async ({
           exit 1
         fi
 
-        # Output worktree path on first line
-        echo "$WORKTREE_PATH"
+        # Output worktree path on first line (absolute path)
+        echo "$ABS_WORKTREE_PATH"
 
         # Gather git context and output as JSON on second line
         cd "$WORKTREE_PATH"

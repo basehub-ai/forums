@@ -284,6 +284,11 @@ export default async function PostPage({
     { id: "human", name: "Human only" },
   ]
 
+  // Find the last LLM that commented on this post
+  const lastLlmAuthorId = [...postComments]
+    .reverse()
+    .find((c) => c.authorId.startsWith("llm_"))?.authorId
+
   return (
     <PostMetadataProvider
       archivedRefs={archivedRefs}
@@ -324,6 +329,7 @@ export default async function PostPage({
         <PostComposer
           askingOptions={askingOptions}
           author={authorsById[post.authorId]}
+          defaultLlmId={lastLlmAuthorId}
           postId={post.id}
         />
       </Container>

@@ -1,7 +1,7 @@
 "use client"
 import { Combobox } from "@base-ui-components/react/combobox"
 import { usePathname } from "next/navigation"
-import { useEffect, useRef, useState, useTransition } from "react"
+import { Suspense, useEffect, useRef, useState, useTransition } from "react"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "./button"
 
@@ -23,6 +23,8 @@ export type ComposerProps = {
     }
   }) => Promise<void>
   autoFocus?: boolean
+  defaultAskingId?: string
+  onAskingChange?: (asking: ComposerProps["options"]["asking"][number]) => void
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -33,15 +35,34 @@ export const Composer = ({
   storageKey,
   options,
   autoFocus,
+  defaultAskingId,
+  onAskingChange,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth } = authClient.useSession()
   const isSignedIn = !!auth?.session
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
-  const [selectedAsking, setSelectedAsking] = useState<AskingOption>(
-    () => options.asking.find((a) => a.isDefault) ?? options.asking[0]
-  )
+  const [selectedAsking, setSelectedAsking] = useState<AskingOption>(() => {
+    if (defaultAskingId) {
+      const found = options.asking.find((a) => a.id === defaultAskingId)
+      if (found) {
+        return found
+      }
+    }
+    return options.asking.find((a) => a.isDefault) ?? options.asking[0]
+  })
+  const [defaultAskingIdSet, setDefaultAskingIdSet] = useState(false)
+
+  useEffect(() => {
+    if (defaultAskingId && !defaultAskingIdSet) {
+      const found = options.asking.find((a) => a.id === defaultAskingId)
+      if (found) {
+        setSelectedAsking(found)
+        setDefaultAskingIdSet(true)
+      }
+    }
+  }, [defaultAskingId, defaultAskingIdSet, options.asking])
 
   useEffect(() => {
     const saved = sessionStorage.getItem(storageKey)
@@ -67,6 +88,7 @@ export const Composer = ({
             await onSubmit({ value, options: { asking: selectedAsking } })
               .then(() => {
                 form.reset()
+                sessionStorage.removeItem(storageKey)
               })
               .catch((e) => {
                 console.error(e)
@@ -94,40 +116,53 @@ export const Composer = ({
             sessionStorage.removeItem(storageKey)
           }
         }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            e.currentTarget.form?.requestSubmit()
+          }
+        }}
         placeholder={placeholder}
         ref={textareaRef}
         required
       />
 
       <div className="pointer-events-none absolute bottom-0 left-0 flex w-full items-end justify-between px-3 py-3">
-        <Combobox.Root
-          items={options.asking.map((a) => a.name)}
-          onValueChange={(name) => {
-            const asking = options.asking.find((a) => a.name === name)
-            if (asking) {
-              setSelectedAsking(asking)
-            }
-          }}
-          value={selectedAsking.name}
-        >
-          <Combobox.Input
-            className="pointer-events-auto text-sm"
-            onFocus={(e) => e.target.select()}
-          />
-          <Combobox.Portal>
-            <Combobox.Positioner>
-              <Combobox.Popup>
-                <Combobox.List>
-                  {(name) => (
-                    <Combobox.Item className="text-sm" key={name} value={name}>
-                      {name}
-                    </Combobox.Item>
-                  )}
-                </Combobox.List>
-              </Combobox.Popup>
-            </Combobox.Positioner>
-          </Combobox.Portal>
-        </Combobox.Root>
+        <Suspense fallback={null}>
+          <Combobox.Root
+            items={options.asking.map((a) => a.name)}
+            onValueChange={(name) => {
+              const asking = options.asking.find((a) => a.name === name)
+              if (asking) {
+                setSelectedAsking(asking)
+                onAskingChange?.(asking)
+              }
+            }}
+            value={selectedAsking.name}
+          >
+            <Combobox.Input
+              className="pointer-events-auto text-sm"
+              onFocus={(e) => e.target.select()}
+            />
+            <Combobox.Portal>
+              <Combobox.Positioner>
+                <Combobox.Popup>
+                  <Combobox.List>
+                    {(name) => (
+                      <Combobox.Item
+                        className="text-sm"
+                        key={name}
+                        value={name}
+                      >
+                        {name}
+                      </Combobox.Item>
+                    )}
+                  </Combobox.List>
+                </Combobox.Popup>
+              </Combobox.Positioner>
+            </Combobox.Portal>
+          </Combobox.Root>
+        </Suspense>
         <Button
           className="pointer-events-auto"
           disabled={isPending}

@@ -96,7 +96,10 @@ export function CommentContent({
                   <div data-from={msg.role} key={`${msg.id}-${idx}`}>
                     <div data-error={hasError || undefined}>
                       <div>
-                        <Streamdown mode={isStreaming ? "streaming" : "static"}>
+                        <Streamdown
+                          components={{}}
+                          mode={isStreaming ? "streaming" : "static"}
+                        >
                           {part.text}
                         </Streamdown>
                       </div>
