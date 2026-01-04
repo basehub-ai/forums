@@ -201,3 +201,186 @@ svg tspan {
   cursor: default;
   user-select: none;
 }
+
+/* ---------------------------------------- */
+/* BaseUI Component Styles                  */
+/* ---------------------------------------- */
+
+/* Tooltip */
+[data-tooltip-popup] {
+  background: var(--bright);
+  color: var(--background);
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  z-index: 50;
+  max-width: 280px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 120ms ease-out,
+    transform 120ms ease-out;
+  opacity: 0;
+  transform: scale(0.96);
+
+  &[data-open] {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  &[data-closed] {
+    pointer-events: none;
+  }
+}
+
+[data-tooltip-arrow] {
+  fill: var(--bright);
+}
+
+/* Menu / Dropdown */
+[data-menu-popup] {
+  background: var(--background);
+  border: 1px solid var(--border-solid);
+  padding: 4px;
+  font-size: 13px;
+  z-index: 50;
+  min-width: 160px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
+  opacity: 0;
+  transform: scale(0.95) translateY(-4px);
+
+  &[data-open] {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  &[data-closed] {
+    pointer-events: none;
+  }
+}
+
+[data-menu-item] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--dim);
+  outline: none;
+  transition: background-color 80ms ease-out;
+
+  &[data-highlighted] {
+    background: var(--shade);
+    color: var(--bright);
+  }
+
+  &[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+[data-menu-separator] {
+  height: 1px;
+  background: var(--border-solid);
+  margin: 4px 0;
+}
+
+[data-menu-trigger] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--dim);
+  transition: color 80ms ease-out;
+
+  &:hover {
+    color: var(--bright);
+  }
+
+  &[data-popup-open] {
+    color: var(--bright);
+  }
+}
+
+/* Combobox */
+[data-combobox-input] {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--dim);
+  font-size: 13px;
+  min-width: 100px;
+
+  &::placeholder {
+    color: var(--faint);
+  }
+
+  &:focus {
+    color: var(--bright);
+  }
+}
+
+[data-combobox-popup] {
+  background: var(--background);
+  border: 1px solid var(--border-solid);
+  padding: 4px;
+  font-size: 13px;
+  z-index: 50;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
+  opacity: 0;
+  transform: scale(0.95) translateY(-4px);
+
+  &[data-open] {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  &[data-closed] {
+    pointer-events: none;
+  }
+}
+
+[data-combobox-item] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--dim);
+  outline: none;
+  transition: background-color 80ms ease-out;
+
+  &[data-highlighted] {
+    background: var(--shade);
+    color: var(--bright);
+  }
+
+  &[data-selected] {
+    color: var(--bright);
+    font-weight: 500;
+  }
+
+  &[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+[data-combobox-list] {
+  display: flex;
+  flex-direction: column;
+}

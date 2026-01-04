@@ -79,10 +79,10 @@ export function ReactionButtons({
   const upvoteButton = (
     <button
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+        "inline-flex items-center gap-1 border border-border-solid px-2 py-0.5 text-xs transition-colors",
         userReactions.has("+1")
-          ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-          : "hover:bg-muted",
+          ? "border-accent bg-accent/10 text-accent"
+          : "text-muted hover:bg-shade hover:text-bright",
         !isSignedIn && "cursor-not-allowed opacity-50"
       )}
       disabled={isPending || !isSignedIn}
@@ -97,10 +97,10 @@ export function ReactionButtons({
   const downvoteButton = (
     <button
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+        "inline-flex items-center gap-1 border border-border-solid px-2 py-0.5 text-xs transition-colors",
         userReactions.has("-1")
-          ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-          : "hover:bg-muted",
+          ? "border-accent bg-accent/10 text-accent"
+          : "text-muted hover:bg-shade hover:text-bright",
         !isSignedIn && "cursor-not-allowed opacity-50"
       )}
       disabled={isPending || !isSignedIn}
@@ -147,10 +147,10 @@ export function ReactionButtons({
           const button = (
             <button
               className={cn(
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+                "inline-flex items-center gap-1 border border-border-solid px-2 py-0.5 text-xs transition-colors",
                 userReactions.has(r.type)
-                  ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900"
-                  : "hover:bg-muted",
+                  ? "border-accent bg-accent/10 text-accent"
+                  : "text-muted hover:bg-shade hover:text-bright",
                 !isSignedIn && "cursor-not-allowed opacity-50"
               )}
               disabled={isPending || !isSignedIn}
@@ -179,7 +179,7 @@ export function ReactionButtons({
         {isSignedIn ? (
           <Menu.Root>
             <Menu.Trigger
-              className="inline-flex h-5.5 items-center rounded-full border px-2 py-0.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
+              className="inline-flex h-5.5 items-center border border-border-solid px-2 py-0.5 text-muted text-xs transition-colors hover:bg-shade hover:text-bright disabled:opacity-50"
               disabled={isPending}
             >
               <SmilePlusIcon className="size-3" />
@@ -191,9 +191,8 @@ export function ReactionButtons({
                     {OTHER_REACTIONS.map((r) => (
                       <Menu.Item
                         className={cn(
-                          "flex cursor-pointer items-center justify-center rounded p-2 text-base",
-                          userReactions.has(r.type) &&
-                            "bg-blue-50 dark:bg-blue-900"
+                          "flex cursor-pointer items-center justify-center p-2 text-base",
+                          userReactions.has(r.type) && "bg-accent/10"
                         )}
                         key={r.type}
                         onClick={() => handleReaction(r.type)}
