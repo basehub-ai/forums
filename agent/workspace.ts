@@ -182,10 +182,7 @@ export const getWorkspace = async ({
             fi
 
             if ! which agentfs >/dev/null 2>&1; then
-              curl -sLO https://github.com/anthropics/agentfs/releases/latest/download/agentfs-linux-x86_64.tar.gz &&
-              tar xzf agentfs-linux-x86_64.tar.gz &&
-              cp -f agentfs ~/.local/bin/ &&
-              rm -rf agentfs-linux-x86_64.tar.gz agentfs
+              curl -fsSL https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.sh | sh
             fi
           ) &
           INSTALL_PID=$!

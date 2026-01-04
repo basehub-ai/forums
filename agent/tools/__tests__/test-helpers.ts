@@ -1,8 +1,8 @@
-import type { Sandbox } from "@vercel/sandbox"
-import { spawn } from "bun"
-import { mkdirSync, writeFileSync, chmodSync } from "node:fs"
+import { chmodSync, mkdirSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import type { Sandbox } from "@vercel/sandbox"
+import { spawn } from "bun"
 import type { Workspace } from "../../workspace"
 
 type CommandResult = {
@@ -16,12 +16,22 @@ const mockBinDir = join(tmpdir(), "agentfs-mock-bin")
 function ensureMockAgentfs() {
   mkdirSync(mockBinDir, { recursive: true })
   const mockScript = `#!/bin/bash
-# Mock agentfs that skips "run --session <id> --" and executes the rest
-shift # run
-shift # --session
-shift # <session-id>
-shift # --
-exec "$@"
+# Mock agentfs for testing
+case "$1" in
+  init)
+    # Create fake db file so the check passes
+    mkdir -p .agentfs
+    touch ".agentfs/$2.db"
+    ;;
+  run)
+    # Skip "run --session <id> --" and execute the rest
+    shift # run
+    shift # --session
+    shift # <session-id>
+    shift # --
+    exec "$@"
+    ;;
+esac
 `
   const scriptPath = join(mockBinDir, "agentfs")
   writeFileSync(scriptPath, mockScript)

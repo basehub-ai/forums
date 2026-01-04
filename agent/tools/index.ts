@@ -34,13 +34,20 @@ function runInAgentfs(params: RunInAgentfsParams) {
     innerCmd = `bash -c '${params.script.replace(/'/g, "'\\''")}' -- ${escapedArgs}`
   }
 
+  const safeSessionId = sessionId.replace(/[^a-zA-Z0-9_-]/g, "-")
+
   return sandbox.runCommand("bash", [
     "-c",
     `
       export PATH="$HOME/.local/bin:$PATH"
-      export AGENTFS_BASE="${workspacePath}"
       cd "${workspacePath}"
-      agentfs run --session "${sessionId}" -- ${innerCmd}
+
+      # Init session if not exists (creates .agentfs/<id>.db with base overlay)
+      if [ ! -f ".agentfs/${safeSessionId}.db" ]; then
+        agentfs init "${safeSessionId}" --base "${workspacePath}"
+      fi
+
+      agentfs run --session "${safeSessionId}" -- ${innerCmd}
     `,
   ])
 }
@@ -476,7 +483,7 @@ export function getTools(context: ToolContext) {
     }),
     ReadPost: tool({
       description:
-        "Reads a forum post (https://forums.basehub.com/<owner>/<repo>/<postNumber>) and returns its content as markdown, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42).",
+        "Reads a forum post (https://forums.basehub.com/<owner>/<repo>/<postNumber>) and returns its content as markdown, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42). Any time the user references another forum post, you should use this.",
       inputSchema: z.object({
         postNumber: z
           .number()
