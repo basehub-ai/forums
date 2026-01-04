@@ -204,17 +204,38 @@ export const getWorkspace = async ({
           fi
         fi
 
-        # Create worktree path with URL-encoded ref
-        WORKTREE_NAME=$(node -p 'encodeURIComponent(process.argv[1])' "$REF")
+        # Create worktree path - use short SHA (7 chars) for full SHAs, URL-encode otherwise
+        if [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
+          WORKTREE_NAME=$(echo "$REF" | cut -c1-7)
+        else
+          WORKTREE_NAME=$(node -p 'encodeURIComponent(process.argv[1])' "$REF")
+        fi
         WORKTREE_PATH="../$WORKTREES_BASE/$WORKTREE_NAME"
+        ABS_WORKTREE_PATH=$(cd .. && pwd)/"$WORKTREES_BASE/$WORKTREE_NAME"
+
+        # Clean up stale worktree entry if directory doesn't exist
+        if git worktree list | grep -qF "$ABS_WORKTREE_PATH" && [ ! -d "$WORKTREE_PATH" ]; then
+          git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || git worktree prune
+        fi
 
         # Create or update worktree
         if [ ! -d "$WORKTREE_PATH" ]; then
-          git worktree add "$WORKTREE_PATH" "$REF" >/dev/null 2>&1
+          git worktree add "$WORKTREE_PATH" "$REF" 2>&1 || {
+            echo "Error: Failed to create worktree for ref $REF" >&2
+            exit 1
+          }
         else
-          cd "$WORKTREE_PATH"
-          git fetch origin >/dev/null 2>&1
-          git reset --hard "origin/$REF" >/dev/null 2>&1 || git reset --hard "$REF" >/dev/null 2>&1
+          (
+            cd "$WORKTREE_PATH"
+            git fetch origin >/dev/null 2>&1
+            git reset --hard "origin/$REF" >/dev/null 2>&1 || git reset --hard "$REF" >/dev/null 2>&1
+          )
+        fi
+
+        # Verify worktree was created
+        if [ ! -d "$WORKTREE_PATH" ]; then
+          echo "Error: Worktree directory does not exist after creation: $WORKTREE_PATH" >&2
+          exit 1
         fi
 
         # Output worktree path on first line
