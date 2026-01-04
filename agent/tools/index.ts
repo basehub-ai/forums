@@ -138,6 +138,26 @@ export function getTools(context: ToolContext) {
         const actualStart = Number.parseInt(actualStartStr, 10)
         const actualEnd = Number.parseInt(actualEndStr, 10)
 
+        if (
+          Number.isNaN(totalLines) ||
+          Number.isNaN(actualStart) ||
+          Number.isNaN(actualEnd)
+        ) {
+          console.error(`[Read Tool] Failed to parse metadata: ${metadataLine}`)
+          return {
+            content: `Error: Failed to parse file metadata. Raw output: ${stdout.slice(0, 500)}`,
+            metadata: {
+              totalLines: 0,
+              linesShown: 0,
+              startLine: 0,
+              endLine: 0,
+              isPaginated: false,
+              fileSize: "unknown",
+              path: fullPath,
+            },
+          }
+        }
+
         return {
           content,
           metadata: {
