@@ -42,7 +42,7 @@ export function ActivePosts({
           return (
             <ListItem key={post.id}>
               <Link
-                className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
+                className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                 href={`/${owner}/${repo}/${post.number}`}
               >
                 <AsteriskIcon className="mt-0.5 text-faint" size={16} />

@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -116,7 +122,7 @@ describe("Read Tool", () => {
     }
   })
 
-  test("handles file not found error", async () => {
+  test("handles file not found with clear error message", async () => {
     const workspace = createTestWorkspace(testDir)
     const tools = getTools({ workspace })
     const result = await tools.Read.execute?.(
@@ -127,6 +133,54 @@ describe("Read Tool", () => {
     if (result && "metadata" in result) {
       expect(result.content).toContain("Error")
       expect(result.metadata.totalLines).toBe(0)
+      // Should have a clear error, not empty/cryptic output
+      expect(result.content).not.toBe("Error: ")
+      expect(result.content.length).toBeGreaterThan(10)
+    }
+  })
+
+  test("reads file through valid symlink", async () => {
+    // Create target file in subdirectory
+    mkdirSync(join(testDir, "packages", "lib"), { recursive: true })
+    const targetContent =
+      "# README\n\nThis is the real content.\nLine 3\nLine 4"
+    writeFileSync(join(testDir, "packages", "lib", "README.md"), targetContent)
+
+    // Create symlink at root pointing to target
+    symlinkSync("packages/lib/README.md", join(testDir, "README.md"))
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+    const result = await tools.Read.execute?.(
+      { path: "README.md" },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result && "metadata" in result) {
+      expect(result.metadata.totalLines).toBe(5)
+      expect(result.content).toContain("This is the real content")
+      expect(result.content).toContain("Line 4")
+      expect(result.metadata.path).toBe("README.md")
+    }
+  })
+
+  test("handles broken symlink with clear error", async () => {
+    // Create symlink pointing to non-existent file
+    symlinkSync("nonexistent/file.md", join(testDir, "broken-link.md"))
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+    const result = await tools.Read.execute?.(
+      { path: "broken-link.md" },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result && "metadata" in result) {
+      expect(result.content).toContain("Error")
+      expect(result.metadata.totalLines).toBe(0)
+      // Should have a clear error, not empty output
+      expect(result.content).not.toBe("Error: ")
+      expect(result.content.length).toBeGreaterThan(10)
     }
   })
 
@@ -200,6 +254,49 @@ describe("Read Tool", () => {
       expect(result.content).toContain("Line 1")
       expect(result.content).toContain("Line 50")
       expect(result.content).not.toContain("Line 51")
+    }
+  })
+
+  test("reads middle-to-end range (startLine > 1, endLine = totalLines)", async () => {
+    // This reproduces the exact scenario from production:
+    // First read lines 1-100, then read lines 150-203 of a 203 line file
+    const content = Array.from({ length: 203 }, (_, i) => `Line ${i + 1}`).join(
+      "\n"
+    )
+    writeFileSync(join(testDir, "markdown.ts"), content)
+
+    const workspace = createTestWorkspace(testDir)
+    const tools = getTools({ workspace })
+
+    // First read: 1-100
+    const result1 = await tools.Read.execute?.(
+      { path: "markdown.ts", startLine: 1, endLine: 100 },
+      { messages: [], toolCallId: "" }
+    )
+
+    // Second read: 150-203 (the failing case in production)
+    const result2 = await tools.Read.execute?.(
+      { path: "markdown.ts", startLine: 150, endLine: 203 },
+      { messages: [], toolCallId: "" }
+    )
+
+    if (result1 && "metadata" in result1) {
+      expect(result1.metadata.totalLines).toBe(203)
+      expect(result1.metadata.startLine).toBe(1)
+      expect(result1.metadata.endLine).toBe(100)
+      expect(result1.content).toContain("Line 1")
+      expect(result1.content).toContain("Line 100")
+    }
+
+    if (result2 && "metadata" in result2) {
+      // This should NOT fail with empty output
+      expect(result2.content).not.toContain("Error")
+      expect(result2.content).not.toBe("")
+      expect(result2.metadata.totalLines).toBe(203)
+      expect(result2.metadata.startLine).toBe(150)
+      expect(result2.metadata.endLine).toBe(203)
+      expect(result2.content).toContain("Line 150")
+      expect(result2.content).toContain("Line 203")
     }
   })
 })

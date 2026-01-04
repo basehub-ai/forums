@@ -9,9 +9,13 @@ export type ToolContext = {
   workspace: Workspace
 }
 
+const normalizationRegex = /^\//
 function normalizePath(inputPath: string, workspacePath: string): string {
   if (inputPath.startsWith(workspacePath)) {
-    return inputPath.slice(workspacePath.length).replace(/^\//, "") || "."
+    return (
+      inputPath.slice(workspacePath.length).replace(normalizationRegex, "") ||
+      "."
+    )
   }
   if (inputPath.startsWith("/")) {
     return inputPath.slice(1)
@@ -72,6 +76,19 @@ export function getTools(context: ToolContext) {
             FILE="$1"
             START_LINE="$2"
             END_LINE="$3"
+
+            # Resolve symlinks and check file exists
+            if [ -L "$FILE" ]; then
+              RESOLVED=$(readlink -f "$FILE" 2>/dev/null || echo "")
+              if [ -z "$RESOLVED" ] || [ ! -e "$RESOLVED" ]; then
+                echo "Error: Broken symlink - $FILE points to non-existent target" >&2
+                exit 1
+              fi
+              FILE="$RESOLVED"
+            elif [ ! -e "$FILE" ]; then
+              echo "Error: File not found - $FILE" >&2
+              exit 1
+            fi
 
             # Get metadata (count actual lines, not just newlines)
             TOTAL_LINES=$(awk 'END{print NR}' "$FILE")
@@ -306,7 +323,7 @@ export function getTools(context: ToolContext) {
 
         // Normalize paths in output (replace workspace prefix with relative paths)
         const normalizedOutput = stdout.replaceAll(
-          context.workspace.path + "/",
+          `${context.workspace.path}/`,
           ""
         )
 

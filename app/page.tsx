@@ -53,7 +53,7 @@ export default async function Home() {
                 return (
                   <ListItem key={repo.name}>
                     <Link
-                      className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
+                      className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                       href={repo.name}
                     >
                       <AsteriskIcon className="mt-0.5 text-faint" size={16} />
