@@ -104,7 +104,7 @@ const streamdownComponents: ComponentProps<typeof Streamdown>["components"] = {
 
 function formatToolInput(input: unknown): string {
   if (!input || typeof input !== "object") {
-    return String(input ?? "")
+    return input ? `("${String(input)}")` : ""
   }
   const obj = input as Record<string, unknown>
   const entries = Object.entries(obj).filter(
@@ -113,14 +113,14 @@ function formatToolInput(input: unknown): string {
   if (entries.length === 0) {
     return ""
   }
-  if (entries.length === 1) {
-    const [, value] = entries[0]
-    return typeof value === "string" ? value : JSON.stringify(value)
-  }
-  return entries
+  const formatted = entries
     .slice(0, 3)
-    .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .map(([k, v]) => {
+      const value = typeof v === "string" ? v : JSON.stringify(v)
+      return `${k}: "${value}"`
+    })
     .join(", ")
+  return `(${formatted})`
 }
 
 function Tool({
