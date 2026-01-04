@@ -285,7 +285,7 @@ export const getWorkspace = async ({
   }
 
   if (stderr) {
-    console.error(`Git initialization stderr: ${stderr}`)
+    throw new Error(`Workspace initialization stderr: ${stderr}`)
   }
 
   const lines = stdout.trim().split("\n")
