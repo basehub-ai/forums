@@ -1,7 +1,7 @@
 "use client"
 
-import { Tooltip } from "@base-ui/react/tooltip"
 import Link from "next/link"
+import { Tooltip } from "@/components/ui/tooltip"
 
 export function AuthorAvatar({ username }: { username: string }) {
   return (
@@ -17,11 +17,7 @@ export function AuthorAvatar({ username }: { username: string }) {
             </Link>
           }
         />
-        <Tooltip.Portal>
-          <Tooltip.Positioner>
-            <Tooltip.Popup>{username}</Tooltip.Popup>
-          </Tooltip.Positioner>
-        </Tooltip.Portal>
+        <Tooltip.Popup>{username}</Tooltip.Popup>
       </Tooltip.Root>
     </Tooltip.Provider>
   )
