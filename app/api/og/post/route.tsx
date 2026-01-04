@@ -73,19 +73,17 @@ export async function GET(request: NextRequest) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt="Forums"
-          height={56}
+          height={40}
           src={`${getSiteOrigin()}/icon.svg`}
-          width={56}
+          width={40}
         />
         <span
           style={{
             fontSize: 36,
-            fontWeight: 600,
-            color: "#52525b",
-            textTransform: "uppercase",
+            color: "#71717a",
           }}
         >
-          Forums
+          {owner}/{repo}
         </span>
       </div>
       <div
@@ -95,17 +93,6 @@ export async function GET(request: NextRequest) {
           gap: 24,
         }}
       >
-        <div
-          style={{
-            fontSize: 36,
-            color: "#71717a",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          {owner}/{repo} #{postNumber}
-        </div>
         <div
           style={{
             fontSize: 64,
