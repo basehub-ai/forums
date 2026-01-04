@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm"
 import type { Metadata } from "next"
 import { cacheLife, cacheTag } from "next/cache"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
 import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
@@ -121,6 +121,8 @@ export const generateStaticParams = async () => {
   }))
 }
 
+const suffixRegex = /\.(md|txt)$/
+
 export default async function PostPage({
   params,
 }: {
@@ -129,6 +131,12 @@ export default async function PostPage({
   "use cache"
 
   const { postNumber: postNumberStr, owner, repo } = await params
+
+  if (postNumberStr.endsWith(".md") || postNumberStr.endsWith(".txt")) {
+    const cleanPostNumber = postNumberStr.replace(suffixRegex, "")
+    redirect(`/${owner}/${repo}/${cleanPostNumber}/llms.txt`)
+  }
+
   const postNumber = Number.parseInt(postNumberStr, 10)
 
   if (Number.isNaN(postNumber)) {
