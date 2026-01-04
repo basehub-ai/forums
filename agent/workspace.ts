@@ -167,23 +167,16 @@ export const getWorkspace = async ({
 
         export PATH="$HOME/.local/bin:$PATH"
 
-        # Install ripgrep and bubblewrap in background if not present
+        # Install ripgrep in background if not present
         INSTALL_PID=""
-        if ! which rg >/dev/null 2>&1 || ! which bwrap >/dev/null 2>&1; then
+        if ! which rg >/dev/null 2>&1; then
           (
             mkdir -p ~/.local/bin
             cd /tmp
-
-            if ! which rg >/dev/null 2>&1; then
-              curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-              tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-              cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
-              rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
-            fi
-
-            if ! which bwrap >/dev/null 2>&1; then
-              apt-get update -qq && apt-get install -y -qq bubblewrap >/dev/null 2>&1
-            fi
+            curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+            tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+            cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
+            rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
           ) &
           INSTALL_PID=$!
         fi

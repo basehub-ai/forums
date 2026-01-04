@@ -35,7 +35,7 @@ export async function responseAgent({
 
   const writable = getWritable({ namespace: streamId })
 
-  const { initialMessages, sandboxId, gitRef, postNumber } = await setupStep({
+  const { initialMessages, sandboxId, gitRef } = await setupStep({
     postId,
     commentId,
     owner,
@@ -54,7 +54,6 @@ export async function responseAgent({
         model,
         writable,
         sandboxId,
-        postNumber,
         initialMessages,
         newMessages,
       })
@@ -103,7 +102,6 @@ async function setupStep({
   initialMessages: AgentUIMessage[]
   sandboxId: string
   gitRef: string
-  postNumber: number
 }> {
   "use step"
 
@@ -130,7 +128,7 @@ async function setupStep({
       )
       .orderBy(asc(comments.createdAt)),
     db
-      .select({ gitContexts: posts.gitContexts, number: posts.number })
+      .select({ gitContexts: posts.gitContexts })
       .from(posts)
       .where(eq(posts.id, postId))
       .limit(1)
@@ -159,7 +157,6 @@ async function setupStep({
     initialMessages: allComments.flatMap((c) => c.content),
     sandboxId: workspace.sandbox.sandboxId,
     gitRef: existingGitContext?.sha ?? workspace.gitContextData.sha,
-    postNumber: post.number,
   }
 }
 
@@ -170,7 +167,6 @@ async function streamTextStep({
   model,
   writable,
   sandboxId,
-  postNumber,
   initialMessages,
   newMessages,
 }: {
@@ -180,7 +176,6 @@ async function streamTextStep({
   model: string
   writable: WritableStream
   sandboxId: string
-  postNumber: number
   initialMessages: AgentUIMessage[]
   newMessages: UIMessage[]
 }): Promise<{ finishReason: FinishReason; newMessages: AgentUIMessage[] }> {
@@ -190,24 +185,15 @@ async function streamTextStep({
     sandboxId,
     gitContext: { owner, repo, ref: gitRef },
   })
-  const sessionId = `${owner}/${repo}/${postNumber}`
   const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
 
   const result = streamText({
     messages: await convertToModelMessages(allMessages),
-    tools: getTools({ workspace, sessionId }),
+    tools: getTools({ workspace }),
     system: `You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`.
 
-## Sandbox Environment
-You're in a sandboxed environment where you can run commands and interact with the codebase. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).
-
-You have access to a Bash tool that lets you execute any shell command in this environment. All file modifications you make are isolated to this post's session and won't affect the base repository or other posts. You can:
-- Install dependencies (npm install, pip install, etc.)
-- Run builds and tests
-- Create, edit, or delete files
-- Run any development commands
-
-The sandbox preserves your changes across the conversation, so you can build upon previous modifications.
+## Environment
+The repo is already cloned and available. All file paths are relative to the workspace root. You can use Read, Grep, and List tools to explore the codebase.
 
 ## General Goals
 Users might ask you anything, but generally, your goal should be to ground your knowledge with the source code to provide a sourced answer. Users want to get to the source. As you explore source code, you'll note that sometimes, repositories are documented (say, with comments, or markdown files). While that's certainly useful, nothing beats reading the actual source code, as documentation gets stale overtime.
