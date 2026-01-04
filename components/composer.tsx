@@ -1,9 +1,10 @@
 "use client"
-import { Combobox } from "@base-ui-components/react/combobox"
+
 import { usePathname } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, useTransition } from "react"
-import { authClient } from "@/lib/auth-client"
 import { Button } from "./button"
+import { Combobox } from "@/components/ui/combobox"
+import { authClient } from "@/lib/auth-client"
 
 export type ComposerProps = {
   placeholder: string
@@ -141,26 +142,18 @@ export const Composer = ({
             value={selectedAsking.name}
           >
             <Combobox.Input
-              className="pointer-events-auto text-sm"
+              className="pointer-events-auto"
               onFocus={(e) => e.target.select()}
             />
-            <Combobox.Portal>
-              <Combobox.Positioner>
-                <Combobox.Popup>
-                  <Combobox.List>
-                    {(name) => (
-                      <Combobox.Item
-                        className="text-sm"
-                        key={name}
-                        value={name}
-                      >
-                        {name}
-                      </Combobox.Item>
-                    )}
-                  </Combobox.List>
-                </Combobox.Popup>
-              </Combobox.Positioner>
-            </Combobox.Portal>
+            <Combobox.Popup>
+              <Combobox.List>
+                {(name) => (
+                  <Combobox.Item key={name} value={name}>
+                    {name}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
           </Combobox.Root>
         </Suspense>
         <Button

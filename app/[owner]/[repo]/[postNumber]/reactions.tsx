@@ -1,9 +1,9 @@
 "use client"
 
-import { Menu } from "@base-ui/react/menu"
-import { Tooltip } from "@base-ui/react/tooltip"
 import { SmilePlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react"
 import { useTransition } from "react"
+import { Menu } from "@/components/ui/menu"
+import { Tooltip } from "@/components/ui/tooltip"
 import { addReaction, removeReaction } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -122,11 +122,7 @@ export function ReactionButtons({
         ) : (
           <Tooltip.Root>
             <Tooltip.Trigger render={upvoteButton} />
-            <Tooltip.Portal>
-              <Tooltip.Positioner>
-                <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
-              </Tooltip.Positioner>
-            </Tooltip.Portal>
+            <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
           </Tooltip.Root>
         )}
 
@@ -135,11 +131,7 @@ export function ReactionButtons({
         ) : (
           <Tooltip.Root>
             <Tooltip.Trigger render={downvoteButton} />
-            <Tooltip.Portal>
-              <Tooltip.Positioner>
-                <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
-              </Tooltip.Positioner>
-            </Tooltip.Portal>
+            <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
           </Tooltip.Root>
         )}
 
@@ -167,11 +159,7 @@ export function ReactionButtons({
           ) : (
             <Tooltip.Root key={r.type}>
               <Tooltip.Trigger render={button} />
-              <Tooltip.Portal>
-                <Tooltip.Positioner>
-                  <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
-                </Tooltip.Positioner>
-              </Tooltip.Portal>
+              <Tooltip.Popup>{signedOutTooltip}</Tooltip.Popup>
             </Tooltip.Root>
           )
         })}
@@ -184,26 +172,22 @@ export function ReactionButtons({
             >
               <SmilePlusIcon className="size-3" />
             </Menu.Trigger>
-            <Menu.Portal>
-              <Menu.Positioner align="start">
-                <Menu.Popup>
-                  <div className="grid grid-cols-4 gap-1 p-1">
-                    {OTHER_REACTIONS.map((r) => (
-                      <Menu.Item
-                        className={cn(
-                          "flex cursor-pointer items-center justify-center p-2 text-base",
-                          userReactions.has(r.type) && "bg-accent/10"
-                        )}
-                        key={r.type}
-                        onClick={() => handleReaction(r.type)}
-                      >
-                        {r.emoji}
-                      </Menu.Item>
-                    ))}
-                  </div>
-                </Menu.Popup>
-              </Menu.Positioner>
-            </Menu.Portal>
+            <Menu.Popup>
+              <div className="grid grid-cols-4 gap-1 p-1">
+                {OTHER_REACTIONS.map((r) => (
+                  <Menu.Item
+                    className={cn(
+                      "flex cursor-pointer items-center justify-center p-2 text-base",
+                      userReactions.has(r.type) && "bg-accent/10"
+                    )}
+                    key={r.type}
+                    onClick={() => handleReaction(r.type)}
+                  >
+                    {r.emoji}
+                  </Menu.Item>
+                ))}
+              </div>
+            </Menu.Popup>
           </Menu.Root>
         ) : null}
       </div>

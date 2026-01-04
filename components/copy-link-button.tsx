@@ -1,8 +1,8 @@
 "use client"
 
-import { Tooltip } from "@base-ui/react/tooltip"
 import { CheckIcon, LinkIcon } from "lucide-react"
 import { useState } from "react"
+import { Tooltip } from "@/components/ui/tooltip"
 
 export function CopyLinkButton({
   owner,
@@ -36,13 +36,9 @@ export function CopyLinkButton({
         >
           <Icon className="size-4" />
         </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Positioner>
-            <Tooltip.Popup>
-              {isCopied ? "Copied" : "Copy link to this comment"}
-            </Tooltip.Popup>
-          </Tooltip.Positioner>
-        </Tooltip.Portal>
+        <Tooltip.Popup>
+          {isCopied ? "Copied" : "Copy link to this comment"}
+        </Tooltip.Popup>
       </Tooltip.Root>
     </Tooltip.Provider>
   )

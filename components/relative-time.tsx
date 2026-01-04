@@ -1,6 +1,6 @@
 "use client"
 
-import { Tooltip } from "@base-ui/react/tooltip"
+import { Tooltip } from "@/components/ui/tooltip"
 import { formatRelativeTime } from "@/lib/utils"
 
 export function RelativeTime({
@@ -18,11 +18,7 @@ export function RelativeTime({
         <Tooltip.Trigger className={className}>
           {formatRelativeTime(timestamp)}
         </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Positioner>
-            <Tooltip.Popup>{date.toISOString()}</Tooltip.Popup>
-          </Tooltip.Positioner>
-        </Tooltip.Portal>
+        <Tooltip.Popup>{date.toISOString()}</Tooltip.Popup>
       </Tooltip.Root>
     </Tooltip.Provider>
   )

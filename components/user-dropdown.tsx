@@ -1,7 +1,8 @@
 "use client"
-import { Menu } from "@base-ui/react/menu"
+
 import type { Session, User } from "better-auth"
 import { useRouter } from "next/navigation"
+import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
@@ -23,34 +24,28 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
           {initials}
         </span>
       </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner align="end">
-          <Menu.Popup>
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <img
-                alt={user.name}
-                className="size-8 rounded-full"
-                src={user.image || ""}
-              />
-              <div className="flex flex-col">
-                <span className="font-medium text-sm">{user.name}</span>
-                <span className="text-muted-foreground text-xs">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-            <Menu.Separator />
-            <Menu.Item
-              onClick={async () => {
-                await authClient.signOut()
-                router.refresh()
-              }}
-            >
-              Sign out
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
+      <Menu.Popup align="end">
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <img
+            alt={user.name}
+            className="size-8 rounded-full"
+            src={user.image || ""}
+          />
+          <div className="flex flex-col">
+            <span className="font-medium text-sm">{user.name}</span>
+            <span className="text-muted-foreground text-xs">{user.email}</span>
+          </div>
+        </div>
+        <Menu.Separator />
+        <Menu.Item
+          onClick={async () => {
+            await authClient.signOut()
+            router.refresh()
+          }}
+        >
+          Sign out
+        </Menu.Item>
+      </Menu.Popup>
     </Menu.Root>
   )
 }

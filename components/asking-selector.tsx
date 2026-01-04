@@ -1,7 +1,7 @@
 "use client"
 
-import { Menu } from "@base-ui/react/menu"
 import { ChevronDownIcon } from "lucide-react"
+import { Menu } from "@/components/ui/menu"
 
 type Option = {
   id: string
@@ -43,31 +43,27 @@ export function AskingSelector({
           {selectedOption?.name ?? "Select"}
           <ChevronDownIcon className="h-3 w-3 opacity-50" />
         </Menu.Trigger>
-        <Menu.Portal>
-          <Menu.Positioner align="start">
-            <Menu.Popup>
-              {options.map((option) => (
-                <Menu.Item key={option.id} onClick={() => onChange(option.id)}>
-                  {option.image ? (
-                    <img
-                      alt=""
-                      className="h-4 w-4 rounded-full"
-                      height={16}
-                      src={option.image}
-                      width={16}
-                    />
-                  ) : null}
-                  {option.name}
-                  {option.isDefault ? (
-                    <span className="text-muted-foreground text-xs">
-                      (default)
-                    </span>
-                  ) : null}
-                </Menu.Item>
-              ))}
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
+        <Menu.Popup>
+          {options.map((option) => (
+            <Menu.Item key={option.id} onClick={() => onChange(option.id)}>
+              {option.image ? (
+                <img
+                  alt=""
+                  className="h-4 w-4 rounded-full"
+                  height={16}
+                  src={option.image}
+                  width={16}
+                />
+              ) : null}
+              {option.name}
+              {option.isDefault ? (
+                <span className="text-muted-foreground text-xs">
+                  (default)
+                </span>
+              ) : null}
+            </Menu.Item>
+          ))}
+        </Menu.Popup>
       </Menu.Root>
     </div>
   )
