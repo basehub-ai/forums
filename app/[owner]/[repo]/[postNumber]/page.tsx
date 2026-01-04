@@ -328,7 +328,6 @@ export default async function PostPage({
 
         <PostComposer
           askingOptions={askingOptions}
-          author={authorsById[post.authorId]}
           defaultLlmId={lastLlmAuthorId}
           postId={post.id}
         />

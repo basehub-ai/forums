@@ -140,7 +140,6 @@ function CommentItem({
             <div className="mt-4 border-muted border-l-2 pl-4">
               <PostComposer
                 askingOptions={askingOptions}
-                author={author}
                 autoFocus
                 onCancel={onCancelReply}
                 postId={comment.postId}
