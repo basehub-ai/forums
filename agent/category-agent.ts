@@ -1,5 +1,5 @@
 import { stepCountIs, streamText, tool } from "ai"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { z } from "zod"
 import { db } from "@/lib/db/client"
@@ -25,7 +25,7 @@ export async function runCategoryAgent({
       emoji: categories.emoji,
     })
     .from(categories)
-    .where(eq(categories.owner, owner))
+    .where(and(eq(categories.owner, owner), eq(categories.repo, repo)))
 
   const result: {
     title: string
@@ -105,7 +105,13 @@ You're working on your own. Meaning, the user won't be able to respond any quest
     const inserted = await db
       .select({ id: categories.id })
       .from(categories)
-      .where(eq(categories.title, result.newCategory.title))
+      .where(
+        and(
+          eq(categories.owner, owner),
+          eq(categories.repo, repo),
+          eq(categories.title, result.newCategory.title)
+        )
+      )
       .limit(1)
     categoryId = inserted[0]?.id
   }
