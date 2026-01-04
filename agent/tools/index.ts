@@ -10,7 +10,7 @@ export type ToolContext = {
   sessionId: string
 }
 
-type RunInAgentfsParams = {
+type RunIsolatedParams = {
   sessionId: string
   workspacePath: string
   sandbox: Workspace["sandbox"]
@@ -19,7 +19,7 @@ type RunInAgentfsParams = {
   | { command: string[]; script?: never; args?: never }
 )
 
-function runInAgentfs(params: RunInAgentfsParams) {
+function runIsolated(params: RunIsolatedParams) {
   const { sessionId, workspacePath, sandbox } = params
 
   let innerCmd: string
@@ -36,20 +36,43 @@ function runInAgentfs(params: RunInAgentfsParams) {
 
   const safeSessionId = sessionId.replace(/[^a-zA-Z0-9_-]/g, "-")
 
-  return sandbox.runCommand("bash", [
-    "-c",
-    `
-      export PATH="$HOME/.local/bin:$PATH"
-      cd "${workspacePath}"
+  return sandbox.runCommand({
+    cmd: "bash",
+    args: [
+      "-c",
+      `
+        set -e
+        export PATH="$HOME/.local/bin:$PATH"
 
-      # Init session if not exists (creates .agentfs/<id>.db with base overlay)
-      if [ ! -f ".agentfs/${safeSessionId}.db" ]; then
-        agentfs init "${safeSessionId}" --base "${workspacePath}"
-      fi
+        SESSION_DIR="/tmp/overlay-sessions/${safeSessionId}"
+        WORKTREE="${workspacePath}"
 
-      agentfs run --session "${safeSessionId}" -- ${innerCmd}
-    `,
-  ])
+        # Create session directories if needed
+        mkdir -p "\${SESSION_DIR}"/{upper,work,merged}
+
+        # Mount overlay if not already mounted
+        if ! mountpoint -q "\${SESSION_DIR}/merged" 2>/dev/null; then
+          sudo mount -t overlay overlay \\
+            -o "lowerdir=\${WORKTREE},upperdir=\${SESSION_DIR}/upper,workdir=\${SESSION_DIR}/work" \\
+            "\${SESSION_DIR}/merged"
+        fi
+
+        # Run command in isolated environment via bubblewrap
+        # - Read-only access to entire filesystem
+        # - Writable access only to the overlay merged directory (bound to worktree path)
+        # - Fresh /tmp for each command
+        bwrap \\
+          --ro-bind / / \\
+          --bind "\${SESSION_DIR}/merged" "\${WORKTREE}" \\
+          --tmpfs /tmp \\
+          --dev /dev \\
+          --proc /proc \\
+          --chdir "\${WORKTREE}" \\
+          -- ${innerCmd}
+      `,
+    ],
+    sudo: true,
+  })
 }
 
 export function getTools(context: ToolContext) {
@@ -133,7 +156,7 @@ export function getTools(context: ToolContext) {
           fi
         `
 
-        const result = await runInAgentfs({
+        const result = await runIsolated({
           sessionId: context.sessionId,
           workspacePath: context.workspace.path,
           sandbox: context.workspace.sandbox,
@@ -316,7 +339,7 @@ export function getTools(context: ToolContext) {
 
         rgArgs.push("--", pattern, searchPath)
 
-        const result = await runInAgentfs({
+        const result = await runIsolated({
           sessionId: context.sessionId,
           workspacePath: context.workspace.path,
           sandbox: context.workspace.sandbox,
@@ -438,7 +461,7 @@ export function getTools(context: ToolContext) {
           echo "$LISTING" | sed "s|^$SEARCH_PATH|.|"
         `
 
-        const result = await runInAgentfs({
+        const result = await runIsolated({
           sessionId: context.sessionId,
           workspacePath: context.workspace.path,
           sandbox: context.workspace.sandbox,
@@ -539,7 +562,7 @@ export function getTools(context: ToolContext) {
           Math.min(timeout ?? 60_000, maxTimeout) / 1000
         )
 
-        const result = await runInAgentfs({
+        const result = await runIsolated({
           sessionId: context.sessionId,
           workspacePath: context.workspace.path,
           sandbox: context.workspace.sandbox,

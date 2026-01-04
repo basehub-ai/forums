@@ -167,9 +167,9 @@ export const getWorkspace = async ({
 
         export PATH="$HOME/.local/bin:$PATH"
 
-        # Install ripgrep and agentfs in background if not present
+        # Install ripgrep and bubblewrap in background if not present
         INSTALL_PID=""
-        if ! which rg >/dev/null 2>&1 || ! which agentfs >/dev/null 2>&1; then
+        if ! which rg >/dev/null 2>&1 || ! which bwrap >/dev/null 2>&1; then
           (
             mkdir -p ~/.local/bin
             cd /tmp
@@ -181,8 +181,8 @@ export const getWorkspace = async ({
               rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
             fi
 
-            if ! which agentfs >/dev/null 2>&1; then
-              curl -fsSL https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.sh | sh
+            if ! which bwrap >/dev/null 2>&1; then
+              apt-get update -qq && apt-get install -y -qq bubblewrap >/dev/null 2>&1
             fi
           ) &
           INSTALL_PID=$!

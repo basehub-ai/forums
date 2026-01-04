@@ -11,39 +11,56 @@ type CommandResult = {
   exitCode?: number
 }
 
-const mockBinDir = join(tmpdir(), "agentfs-mock-bin")
+const mockBinDir = join(tmpdir(), "isolation-mock-bin")
 
-function ensureMockAgentfs() {
+function ensureMockBwrap() {
   mkdirSync(mockBinDir, { recursive: true })
+
+  // Mock bwrap: skip all the --ro-bind, --bind, --tmpfs etc args and just run the command after --
   const mockScript = `#!/bin/bash
-# Mock agentfs for testing
-case "$1" in
-  init)
-    # Create fake db file so the check passes
-    mkdir -p .agentfs
-    touch ".agentfs/$2.db"
-    ;;
-  run)
-    # Skip "run --session <id> --" and execute the rest
-    shift # run
-    shift # --session
-    shift # <session-id>
-    shift # --
-    exec "$@"
-    ;;
-esac
+# Mock bwrap for testing - skip isolation args and run the command directly
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --)
+      shift
+      exec "$@"
+      ;;
+    --ro-bind|--bind|--tmpfs|--dev|--proc|--chdir)
+      shift 2 # skip flag and its argument
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
 `
-  const scriptPath = join(mockBinDir, "agentfs")
+  const scriptPath = join(mockBinDir, "bwrap")
   writeFileSync(scriptPath, mockScript)
   chmodSync(scriptPath, 0o755)
+
+  // Mock sudo: just run the command without privilege escalation
+  const sudoScript = `#!/bin/bash
+exec "$@"
+`
+  const sudoPath = join(mockBinDir, "sudo")
+  writeFileSync(sudoPath, sudoScript)
+  chmodSync(sudoPath, 0o755)
+
+  // Mock mountpoint: always return success (already mounted) so we skip the mount step in tests
+  const mountpointScript = `#!/bin/bash
+exit 0
+`
+  const mountpointPath = join(mockBinDir, "mountpoint")
+  writeFileSync(mountpointPath, mountpointScript)
+  chmodSync(mountpointPath, 0o755)
 }
 
-ensureMockAgentfs()
+ensureMockBwrap()
 
 export function createRealSandbox(): Sandbox {
   return {
     runCommand: async (
-      cmdOrParams: string | { cmd: string; args?: string[] },
+      cmdOrParams: string | { cmd: string; args?: string[]; sudo?: boolean },
       args?: string[]
     ): Promise<CommandResult> => {
       let cmd: string
