@@ -57,22 +57,47 @@ export async function GET(request: NextRequest) {
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         backgroundColor: "#fafafa",
         padding: 60,
+        gap: 32,
       }}
     >
       <div
         style={{
           display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt="Forums"
+          height={56}
+          src={`${getSiteOrigin()}/icon.svg`}
+          width={56}
+        />
+        <span
+          style={{
+            fontSize: 36,
+            fontWeight: 600,
+            color: "#52525b",
+            textTransform: "uppercase",
+          }}
+        >
+          Forums
+        </span>
+      </div>
+      <div
+        style={{
+          display: "flex",
           flexDirection: "column",
-          gap: 20,
-          flex: 1,
+          gap: 24,
         }}
       >
         <div
           style={{
-            fontSize: 28,
+            fontSize: 36,
             color: "#71717a",
             display: "flex",
             alignItems: "center",
@@ -83,7 +108,7 @@ export async function GET(request: NextRequest) {
         </div>
         <div
           style={{
-            fontSize: 52,
+            fontSize: 64,
             fontWeight: "bold",
             color: "#09090b",
             lineHeight: 1.2,
@@ -95,7 +120,7 @@ export async function GET(request: NextRequest) {
         {body && (
           <div
             style={{
-              fontSize: 28,
+              fontSize: 36,
               color: "#52525b",
               lineHeight: 1.5,
               maxWidth: 1080,
@@ -106,31 +131,6 @@ export async function GET(request: NextRequest) {
             {body}
           </div>
         )}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt="Forums"
-          height={44}
-          src={`${getSiteOrigin()}/icon.svg`}
-          width={44}
-        />
-        <span
-          style={{
-            fontSize: 28,
-            fontWeight: 600,
-            color: "#52525b",
-            textTransform: "uppercase",
-          }}
-        >
-          Forums
-        </span>
       </div>
     </div>,
     {

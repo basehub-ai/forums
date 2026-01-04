@@ -1,10 +1,8 @@
 import { extractTool, searchTool } from "@parallel-web/ai-sdk-tools"
 import { type ToolSet, tool } from "ai"
-import { and, asc, eq } from "drizzle-orm"
 import { join } from "path"
 import { z } from "zod"
-import { comments, posts } from "@/lib/db/schema"
-import type { AgentUIMessage } from "../types"
+import { getSiteOrigin } from "@/lib/utils"
 import type { Workspace } from "../workspace"
 
 export type ToolContext = {
@@ -443,7 +441,7 @@ export function getTools(context: ToolContext) {
     }),
     ReadPost: tool({
       description:
-        "Reads a forum post and returns its content, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42).",
+        "Reads a forum post (https://forums.basehub.com/<owner>/<repo>/<postNumber>) and returns its content as markdown, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42).",
       inputSchema: z.object({
         postNumber: z
           .number()
@@ -459,96 +457,21 @@ export function getTools(context: ToolContext) {
           .describe("The repository of the post to read"),
       }),
       outputSchema: z.object({
-        post: z.object({
-          id: z.string(),
-          number: z.number(),
-          owner: z.string(),
-          repo: z.string(),
-          title: z.string().nullable(),
-          createdAt: z.number(),
-        }),
-        rootComment: z.object({
-          authorUsername: z.string().nullable(),
-          content: z.string().describe("The original post content as text"),
-          createdAt: z.number(),
-        }),
-        comments: z
-          .array(
-            z.object({
-              authorUsername: z.string().nullable(),
-              content: z.string().describe("Comment content as text"),
-              createdAt: z.number(),
-              isFromLLM: z.boolean(),
-            })
-          )
-          .describe("All comments on this post, in chronological order"),
-        summary: z.object({
-          totalComments: z.number(),
-        }),
+        content: z
+          .string()
+          .describe("The post content as markdown, including all comments"),
       }),
       execute: async ({ postNumber, postOwner, postRepo }) => {
         if (!(postNumber && postOwner && postRepo)) {
           throw new Error("Post number, owner, and repository are required")
         }
-        const { db } = await import("@/lib/db/client")
-        const post = await db
-          .select()
-          .from(posts)
-          .where(
-            and(
-              eq(posts.number, postNumber),
-              eq(posts.owner, postOwner),
-              eq(posts.repo, postRepo)
-            )
-          )
-          .limit(1)
-          .then((r) => r[0] ?? null)
-
-        const allComments = await db
-          .select()
-          .from(comments)
-          .where(eq(comments.postId, post?.id ?? ""))
-          .orderBy(asc(comments.createdAt))
-
-        const rootComment = allComments.find((c) => c.id === post.rootCommentId)
-        const otherComments = allComments.filter(
-          (c) => c.id !== post.rootCommentId
-        )
-
-        function extractText(content: AgentUIMessage[]): string {
-          return content
-            .flatMap((m) => m.parts)
-            .filter(
-              (p): p is { type: "text"; text: string } => p.type === "text"
-            )
-            .map((p) => p.text)
-            .join("\n\n")
+        const url = `${getSiteOrigin()}/${postOwner}/${postRepo}/${postNumber}/llms.txt`
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch post: ${response.status}`)
         }
-
-        return {
-          post: {
-            id: post.id,
-            number: post.number,
-            owner: post.owner,
-            repo: post.repo,
-            title: post.title,
-            createdAt: post.createdAt,
-          },
-          rootComment: {
-            authorUsername: rootComment?.authorUsername ?? null,
-            content: rootComment ? extractText(rootComment.content) : "",
-            createdAt: rootComment?.createdAt ?? post.createdAt,
-          },
-          comments: otherComments.map((c) => ({
-            authorUsername: c.authorUsername,
-            content: extractText(c.content),
-            createdAt: c.createdAt,
-            isFromLLM: c.authorId.startsWith("llm_"),
-          })),
-          summary: {
-            totalComments: otherComments.length,
-          },
-        }
+        const content = await response.text()
+        return { content }
       },
     }),
 

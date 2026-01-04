@@ -32,10 +32,10 @@ export function PostComposer({
     <div>
       <div
         className={cn(
-          "z-10 mb-4 flex items-center justify-between bg-shade px-2 py-1"
+          "z-10 mb-4 flex h-8 items-center justify-between bg-shade px-2 py-1"
         )}
       >
-        <div className="inline-flex h-8 items-center gap-2 font-semibold text-bright text-sm">
+        <div className="inline-flex items-center gap-2 font-semibold text-bright text-sm">
           {data ? (
             <>
               <img

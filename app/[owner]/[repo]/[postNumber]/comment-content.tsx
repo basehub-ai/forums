@@ -10,7 +10,6 @@ import {
   useState,
 } from "react"
 import { Streamdown } from "streamdown"
-import type { AgentToolName, AgentTools } from "@/agent/tools"
 import type { AgentUIMessage } from "@/agent/types"
 import { ERROR_CODES } from "@/lib/errors"
 
@@ -103,13 +102,26 @@ const streamdownComponents: ComponentProps<typeof Streamdown>["components"] = {
   td: (props) => <td className="px-3 py-2 text-muted" {...props} />,
 }
 
-type ExtractNonAsync<T> = T extends AsyncIterable<infer U> ? U : T
-type InferToolResult<T> = T extends {
-  execute: (...args: infer _P) => infer R
+function formatToolInput(input: unknown): string {
+  if (!input || typeof input !== "object") {
+    return String(input ?? "")
+  }
+  const obj = input as Record<string, unknown>
+  const entries = Object.entries(obj).filter(
+    ([, v]) => v !== undefined && v !== null && v !== ""
+  )
+  if (entries.length === 0) {
+    return ""
+  }
+  if (entries.length === 1) {
+    const [, value] = entries[0]
+    return typeof value === "string" ? value : JSON.stringify(value)
+  }
+  return entries
+    .slice(0, 3)
+    .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .join(", ")
 }
-  ? ExtractNonAsync<Awaited<R>>
-  : never
-type ToolResult<N extends AgentToolName> = InferToolResult<AgentTools[N]>
 
 function Tool({
   id,
@@ -141,7 +153,7 @@ function Tool({
   return (
     <div className="my-4">
       <button
-        className="flex items-center gap-2 text-left"
+        className="flex items-start gap-2 text-left"
         onClick={toggle}
         type="button"
       >
@@ -232,150 +244,10 @@ export function CommentContent({
                     <Collapsible.Panel>{part.text}</Collapsible.Panel>
                   </Collapsible.Root>
                 )
-              case "tool-Read": {
-                const toolPart = part as ToolUIPart
-                const output = toolPart.output as ToolResult<"Read"> | undefined
-                const input = toolPart.input as { path?: string } | undefined
-                return (
-                  <Tool
-                    detail={
-                      output ? (
-                        <pre className="overflow-x-auto text-xs">
-                          <code>{output.content}</code>
-                        </pre>
-                      ) : undefined
-                    }
-                    id={toolPart.toolCallId}
-                    key={`${msg.id}-${idx}`}
-                    name="Read"
-                    summary={input?.path ?? "file"}
-                  />
-                )
-              }
-              case "tool-Grep": {
-                const toolPart = part as ToolUIPart
-                const output = toolPart.output as ToolResult<"Grep"> | undefined
-                const input = toolPart.input as { pattern?: string } | undefined
-                return (
-                  <Tool
-                    detail={
-                      output ? (
-                        <pre className="overflow-x-auto text-xs">
-                          <code>{output.matches}</code>
-                        </pre>
-                      ) : undefined
-                    }
-                    id={toolPart.toolCallId}
-                    key={`${msg.id}-${idx}`}
-                    name="Grep"
-                    summary={input?.pattern ?? "pattern"}
-                  />
-                )
-              }
-              case "tool-List": {
-                const toolPart = part as ToolUIPart
-                const output = toolPart.output as ToolResult<"List"> | undefined
-                const input = toolPart.input as { path?: string } | undefined
-                return (
-                  <Tool
-                    detail={
-                      output ? (
-                        <pre className="overflow-x-auto text-xs">
-                          <code>{output.listing || "(no files)"}</code>
-                        </pre>
-                      ) : undefined
-                    }
-                    id={toolPart.toolCallId}
-                    key={`${msg.id}-${idx}`}
-                    name="List"
-                    summary={input?.path ?? "."}
-                  />
-                )
-              }
-              case "tool-ReadPost": {
-                const toolPart = part as ToolUIPart
-                const output = toolPart.output as
-                  | ToolResult<"ReadPost">
-                  | undefined
-                const input = toolPart.input as
-                  | {
-                      postNumber?: number
-                      postOwner?: string
-                      postRepo?: string
-                    }
-                  | undefined
-                const ref = input?.postOwner
-                  ? `${input.postOwner}/${input.postRepo}#${input.postNumber}`
-                  : `#${input?.postNumber ?? "?"}`
-                return (
-                  <Tool
-                    detail={
-                      output ? (
-                        <div className="text-sm">
-                          <div className="font-medium">
-                            {output.post.title ?? "Untitled"}
-                          </div>
-                          <div className="mt-1 text-muted">
-                            {output.rootComment.content.slice(0, 200)}
-                            {output.rootComment.content.length > 200
-                              ? "..."
-                              : ""}
-                          </div>
-                        </div>
-                      ) : undefined
-                    }
-                    id={toolPart.toolCallId}
-                    key={`${msg.id}-${idx}`}
-                    name="Read Post"
-                    summary={ref}
-                  />
-                )
-              }
-              case "tool-WebSearch": {
-                const toolPart = part as ToolUIPart
-                const input = toolPart.input as { query?: string } | undefined
-                return (
-                  <Tool
-                    detail={
-                      toolPart.output ? (
-                        <pre className="overflow-x-auto text-xs">
-                          <code>
-                            {JSON.stringify(toolPart.output, null, 2)}
-                          </code>
-                        </pre>
-                      ) : undefined
-                    }
-                    id={toolPart.toolCallId}
-                    key={`${msg.id}-${idx}`}
-                    name="Web Search"
-                    summary={input?.query ?? "search"}
-                  />
-                )
-              }
-              case "tool-WebExtract": {
-                const toolPart = part as ToolUIPart
-                const input = toolPart.input as { url?: string } | undefined
-                return (
-                  <Tool
-                    detail={
-                      toolPart.output ? (
-                        <pre className="overflow-x-auto text-xs">
-                          <code>
-                            {JSON.stringify(toolPart.output, null, 2)}
-                          </code>
-                        </pre>
-                      ) : undefined
-                    }
-                    id={toolPart.toolCallId}
-                    key={`${msg.id}-${idx}`}
-                    name="Extract"
-                    summary={input?.url ?? "url"}
-                  />
-                )
-              }
               default: {
                 if (part.type.startsWith("tool-") && "state" in part) {
                   const toolPart = part as ToolUIPart
+                  console.log(part)
                   const toolName = toolPart.type.slice(5)
                   return (
                     <Tool
@@ -391,7 +263,7 @@ export function CommentContent({
                       id={toolPart.toolCallId}
                       key={`${msg.id}-${idx}`}
                       name={toolName}
-                      summary={JSON.stringify(toolPart.input)}
+                      summary={formatToolInput(toolPart.input)}
                     />
                   )
                 }
