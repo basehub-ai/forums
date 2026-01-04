@@ -323,8 +323,8 @@ export default async function PostPage({
 
         <PostComposer
           askingOptions={askingOptions}
+          author={authorsById[post.authorId]}
           postId={post.id}
-          storageKey={`post-composer:${owner}:${repo}:${post.number}`}
         />
       </Container>
     </PostMetadataProvider>

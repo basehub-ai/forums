@@ -220,7 +220,7 @@ export const getWorkspace = async ({
 
         # Create or update worktree
         if [ ! -d "$WORKTREE_PATH" ]; then
-          git worktree add "$WORKTREE_PATH" "$REF" 2>&1 || {
+          git worktree add "$WORKTREE_PATH" "$REF" >/dev/null 2>&1 || {
             echo "Error: Failed to create worktree for ref $REF" >&2
             exit 1
           }

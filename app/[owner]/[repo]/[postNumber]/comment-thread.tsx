@@ -3,6 +3,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Suspense } from "react"
 import type { AgentUIMessage } from "@/agent/types"
+import type { ComposerProps } from "@/components/composer"
 import { CopyLinkButton } from "@/components/copy-link-button"
 import { RelativeTime } from "@/components/relative-time"
 import type {
@@ -20,18 +21,11 @@ type Comment = InferSelectModel<typeof commentsSchema>
 type Mention = InferSelectModel<typeof mentionsSchema>
 type Reaction = InferSelectModel<typeof reactionsSchema>
 
-type AuthorInfo = {
+export type AuthorInfo = {
   name: string
   username: string
   image: string
   isLlm: boolean
-}
-
-type AskingOption = {
-  id: string
-  name: string
-  image?: string | null
-  isDefault?: boolean
 }
 
 const REPLIES_ENABLED = false
@@ -66,7 +60,7 @@ function CommentItem({
   onReply?: (commentId: string) => void
   onCancelReply?: () => void
   isReplying?: boolean
-  askingOptions?: AskingOption[]
+  askingOptions: ComposerProps["options"]["asking"]
 }) {
   const profileUrl = author.isLlm
     ? `/llm/${author.username}`
@@ -146,6 +140,7 @@ function CommentItem({
             <div className="mt-4 border-muted border-l-2 pl-4">
               <PostComposer
                 askingOptions={askingOptions}
+                author={author}
                 autoFocus
                 onCancel={onCancelReply}
                 postId={comment.postId}
@@ -199,7 +194,7 @@ export function CommentThread({
   replyingToId?: string | null
   onReply?: (commentId: string) => void
   onCancelReply?: () => void
-  askingOptions?: AskingOption[]
+  askingOptions: ComposerProps["options"]["asking"]
 }) {
   const reactionsByComment: Record<string, Reaction[]> = {}
   for (const reaction of reactions) {

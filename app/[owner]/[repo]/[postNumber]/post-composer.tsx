@@ -1,10 +1,10 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { useEffect, useRef, useState, useTransition } from "react"
-import { AskingSelector } from "@/components/asking-selector"
+import Link from "next/link"
+import { Composer } from "@/components/composer"
 import { createComment } from "@/lib/actions/posts"
-import { authClient } from "@/lib/auth-client"
+import { cn } from "@/lib/utils"
+import type { AuthorInfo } from "./comment-thread"
 
 type AskingOption = {
   id: string
@@ -14,13 +14,12 @@ type AskingOption = {
 }
 
 export function PostComposer({
+  author,
   postId,
   askingOptions,
   threadCommentId,
-  autoFocus,
-  onCancel,
-  storageKey,
 }: {
+  author: AuthorInfo
   postId: string
   askingOptions: AskingOption[]
   threadCommentId?: string
@@ -28,131 +27,49 @@ export function PostComposer({
   onCancel?: () => void
   storageKey?: string
 }) {
-  const { data: auth } = authClient.useSession()
-  const isSignedIn = !!auth?.session
-  const userImage = auth?.user?.image
-  const pathname = usePathname()
-  const [isPending, startTransition] = useTransition()
-  const formRef = useRef<HTMLFormElement>(null)
-  const [message, setMessage] = useState("")
-  const [seekingAnswerFrom, setSeekingAnswerFrom] = useState<string | null>(
-    null
-  )
-
-  useEffect(() => {
-    if (!storageKey) {
-      return
-    }
-    const saved = sessionStorage.getItem(storageKey)
-    if (saved) {
-      setMessage(saved)
-    }
-  }, [storageKey])
-
-  useEffect(() => {
-    if (!storageKey) {
-      return
-    }
-    if (message) {
-      sessionStorage.setItem(storageKey, message)
-    } else {
-      sessionStorage.removeItem(storageKey)
-    }
-  }, [storageKey, message])
-
-  const handleBlur = (e: React.FocusEvent) => {
-    if (!onCancel) {
-      return
-    }
-    const form = formRef.current
-    if (!form) {
-      return
-    }
-    const relatedTarget = e.relatedTarget as Node | null
-    if (relatedTarget && form.contains(relatedTarget)) {
-      return
-    }
-    onCancel()
-  }
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (!isSignedIn) {
-      authClient.signIn.social({ provider: "github", callbackURL: pathname })
-      return
-    }
-
-    if (!message.trim()) {
-      return
-    }
-
-    startTransition(async () => {
-      await createComment({
-        postId,
-        content: {
-          id: crypto.randomUUID(),
-          role: "user",
-          parts: [{ type: "text", text: message }],
-        },
-        threadCommentId,
-        seekingAnswerFrom,
-      })
-
-      setMessage("")
-      if (storageKey) {
-        sessionStorage.removeItem(storageKey)
-      }
-    })
-  }
-
-  const label = threadCommentId ? "Write a reply" : "Add a comment"
-  const placeholder = "Write your comment here"
+  const profileUrl = author.isLlm
+    ? `/llm/${author.username}`
+    : `/user/${author.username}`
 
   return (
-    <form
-      className="rounded-lg border bg-card p-4"
-      onBlur={handleBlur}
-      onSubmit={handleSubmit}
-      ref={formRef}
-    >
-      <div className="mb-3 flex items-center gap-2">
-        {userImage ? (
-          <img
-            alt="Your avatar"
-            className="size-6 rounded-full"
-            src={userImage}
-          />
-        ) : (
-          <div className="size-6 rounded-full bg-muted" />
+    <div>
+      <div
+        className={cn(
+          "z-10 mb-4 flex items-center justify-between bg-shade px-2 py-1"
         )}
-        <span className="font-medium text-bright text-sm">{label}</span>
+      >
+        <div className="flex items-center">
+          <Link
+            className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline"
+            href={profileUrl}
+          >
+            <img
+              alt={`Avatar of ${author.name}`}
+              className="size-6 rounded-full"
+              src={author.image}
+            />
+            Add a comment
+          </Link>
+        </div>
       </div>
 
-      <textarea
-        autoFocus={autoFocus}
-        className="dashed mb-3 min-h-20 w-full resize-none bg-transparent p-3 text-sm placeholder:text-muted-foreground"
-        disabled={isPending}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder={placeholder}
-        value={message}
+      <Composer
+        onSubmit={async ({ value, options }) => {
+          await createComment({
+            postId,
+            content: {
+              id: crypto.randomUUID(),
+              role: "user",
+              parts: [{ type: "text", text: value }],
+            },
+            threadCommentId,
+            seekingAnswerFrom: options.asking.id,
+          })
+        }}
+        options={{ asking: askingOptions }}
+        placeholder="Follow up"
+        storageKey={`post-composer:${postId}:${threadCommentId ?? "main"}`}
       />
-
-      <div className="flex items-center justify-between">
-        <AskingSelector
-          disabled={isPending}
-          onChange={setSeekingAnswerFrom}
-          options={askingOptions}
-          value={seekingAnswerFrom}
-        />
-        <button
-          className="rounded bg-accent px-3 py-1.5 font-medium text-label text-sm disabled:opacity-50"
-          disabled={isPending}
-          type="submit"
-        >
-          {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In to post"}
-        </button>
-      </div>
-    </form>
+    </div>
   )
 }
