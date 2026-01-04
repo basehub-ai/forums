@@ -2,8 +2,8 @@
 
 import { Composer } from "@/components/composer"
 import { createComment } from "@/lib/actions/posts"
+import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
-import type { AuthorInfo } from "./comment-thread"
 
 type AskingOption = {
   id: string
@@ -13,13 +13,11 @@ type AskingOption = {
 }
 
 export function PostComposer({
-  author,
   postId,
   askingOptions,
   threadCommentId,
   defaultLlmId,
 }: {
-  author: AuthorInfo
   postId: string
   askingOptions: AskingOption[]
   threadCommentId?: string
@@ -28,6 +26,8 @@ export function PostComposer({
   storageKey?: string
   defaultLlmId?: string
 }) {
+  const { data } = authClient.useSession()
+
   return (
     <div>
       <div
@@ -35,13 +35,19 @@ export function PostComposer({
           "z-10 mb-4 flex items-center justify-between bg-shade px-2 py-1"
         )}
       >
-        <div className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline">
-          <img
-            alt={`Avatar of ${author.name}`}
-            className="size-6 rounded-full"
-            src={author.image}
-          />
-          Add a comment
+        <div className="inline-flex items-center gap-2 font-semibold text-bright text-sm">
+          {data ? (
+            <>
+              <img
+                alt={`Avatar of ${data.user.name}`}
+                className="size-6 rounded-full"
+                src={data.user.image || ""}
+              />
+              Add a comment
+            </>
+          ) : (
+            <>Log in to add a comment</>
+          )}
         </div>
       </div>
 

@@ -38,7 +38,7 @@
   --accent: rgba(255, 108, 2, 1);
   --accent-transparent: rgba(255, 108, 2, 0.2);
   --highlight-blue: #0072e4;
-  --highlight-yellow: #ffcc49;
+  --highlight-yellow: #c78f00;
 
   /* bg */
   /* --base: #fff; */
@@ -88,6 +88,8 @@
     /* action */
     --shade: #161616;
     --shade-hover: #1b1b1b;
+
+    --highlight-yellow: #ffcc49;
   }
 
   .light-only {
