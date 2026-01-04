@@ -1,6 +1,7 @@
 "use client"
 
 import { Tooltip } from "@base-ui/react/tooltip"
+import { useEffect, useState } from "react"
 import { formatRelativeTime } from "@/lib/utils"
 
 export function RelativeTime({
@@ -11,12 +12,22 @@ export function RelativeTime({
   className?: string
 }) {
   const date = timestamp instanceof Date ? timestamp : new Date(timestamp)
+  const [relativeTime, setRelativeTime] = useState(() =>
+    formatRelativeTime(timestamp)
+  )
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRelativeTime(formatRelativeTime(timestamp))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [timestamp])
 
   return (
     <Tooltip.Provider>
       <Tooltip.Root>
         <Tooltip.Trigger className={className}>
-          {formatRelativeTime(timestamp)}
+          {relativeTime}
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Positioner>
