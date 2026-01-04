@@ -64,7 +64,11 @@ export function CommentThreadClient({
         // Human comments are always shown
         return true
       }
-      // LLM comments: show if gitRef matches the target ref
+      // Streaming LLM comments are always shown (gitRef not set yet)
+      if (c.streamId) {
+        return true
+      }
+      // Completed LLM comments: show if gitRef matches the target ref
       return c.gitRef === targetRef
     })
   }, [comments, selectedRef, currentSha])

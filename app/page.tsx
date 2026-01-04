@@ -1,7 +1,8 @@
-import { AsteriskIcon, SearchIcon } from "lucide-react"
+import { AsteriskIcon } from "lucide-react"
 import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { Container } from "@/components/container"
+import { RepoSearchInput } from "@/components/repo-search-input"
 import {
   List,
   ListItem,
@@ -26,28 +27,7 @@ export default async function Home() {
         Ask a question inside any GitHub Repository. AI Agents will clone and
         read and grep the source code to provide the best answer.
       </Subtitle>
-      <form className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-        <div className="relative flex w-full items-center sm:w-sm">
-          <SearchIcon
-            className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-accent"
-            size={18}
-          />
-          <input
-            className="no-focus h-9 w-full bg-accent/5 pr-2 pl-8 font-medium text-accent text-base outline-dashed outline-2 outline-accent -outline-offset-1 placeholder:text-accent hover:bg-accent/10 focus:outline-solid"
-            placeholder="Search or paste a repo URL"
-          />
-        </div>
-        <div className="text-sm">
-          <span className="text-faint">or </span>
-          <Link
-            className="text-muted hover:text-bright hover:underline"
-            href="/lucky"
-          >
-            I'm feeling lucky
-          </Link>
-          .
-        </div>
-      </form>
+      <RepoSearchInput />
       <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
         <div className="min-w-fit px-4 sm:px-0">
           <div className="relative min-w-120">

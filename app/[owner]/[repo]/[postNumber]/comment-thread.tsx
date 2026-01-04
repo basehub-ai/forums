@@ -225,7 +225,7 @@ export function CommentThread({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-16">
       {timeline.map((item) => {
         if (item.type === "mention") {
           const author = authorsById[item.data.authorId]

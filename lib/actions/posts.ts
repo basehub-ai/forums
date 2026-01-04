@@ -223,30 +223,28 @@ export async function createPost(data: {
     llmCommentId = nanoid()
     streamId = String(now)
 
-    await Promise.all([
-      db.insert(comments).values({
-        id: newCommentId,
-        postId,
-        authorId: llm.id,
-        authorUsername: llm.model,
-        content: [],
+    const { runId } = await start(responseAgent, [
+      {
+        commentId: newCommentId,
         streamId,
-        createdAt: now + 1,
-        updatedAt: now + 1,
-      }),
-      start(responseAgent, [
-        {
-          commentId: newCommentId,
-          streamId,
-          postId,
-          owner: data.owner,
-          repo: data.repo,
-          model: llm.model,
-        },
-      ]).then(({ runId }) =>
-        db.update(comments).set({ runId }).where(eq(comments.id, newCommentId))
-      ),
+        postId,
+        owner: data.owner,
+        repo: data.repo,
+        model: llm.model,
+      },
     ])
+
+    await db.insert(comments).values({
+      id: newCommentId,
+      postId,
+      authorId: llm.id,
+      authorUsername: llm.model,
+      content: [],
+      streamId,
+      runId,
+      createdAt: now + 1,
+      updatedAt: now + 1,
+    })
   }
 
   const contentText = data.content.parts
@@ -360,53 +358,47 @@ export async function createComment(data: {
   let llmCommentId: string | undefined
   let streamId: string | undefined
 
-  const promises: Promise<unknown>[] = [
-    db.insert(comments).values({
-      id: commentId,
-      postId: data.postId,
-      threadCommentId: data.threadCommentId,
-      authorId: session.user.id,
-      authorUsername,
-      content: [data.content],
-      seekingAnswerFrom: data.seekingAnswerFrom,
-      createdAt: now,
-      updatedAt: now,
-    }),
-  ]
+  await db.insert(comments).values({
+    id: commentId,
+    postId: data.postId,
+    threadCommentId: data.threadCommentId,
+    authorId: session.user.id,
+    authorUsername,
+    content: [data.content],
+    seekingAnswerFrom: data.seekingAnswerFrom,
+    createdAt: now,
+    updatedAt: now,
+  })
 
   if (llm) {
     const newCommentId = nanoid()
     llmCommentId = newCommentId
     streamId = String(now)
 
-    promises.push(
-      db.insert(comments).values({
-        id: newCommentId,
-        postId: data.postId,
-        threadCommentId: llmThreadCommentId,
-        authorId: llm.id,
-        authorUsername: llm.model,
-        content: [],
+    const { runId } = await start(responseAgent, [
+      {
+        commentId: newCommentId,
         streamId,
-        createdAt: now + 1,
-        updatedAt: now + 1,
-      }),
-      start(responseAgent, [
-        {
-          commentId: newCommentId,
-          streamId,
-          postId: data.postId,
-          owner: post.owner,
-          repo: post.repo,
-          model: llm.model,
-        },
-      ]).then(({ runId }) =>
-        db.update(comments).set({ runId }).where(eq(comments.id, newCommentId))
-      )
-    )
-  }
+        postId: data.postId,
+        owner: post.owner,
+        repo: post.repo,
+        model: llm.model,
+      },
+    ])
 
-  await Promise.all(promises)
+    await db.insert(comments).values({
+      id: newCommentId,
+      postId: data.postId,
+      threadCommentId: llmThreadCommentId,
+      authorId: llm.id,
+      authorUsername: llm.model,
+      content: [],
+      streamId,
+      runId,
+      createdAt: now + 1,
+      updatedAt: now + 1,
+    })
+  }
 
   waitUntil(
     (async () => {
