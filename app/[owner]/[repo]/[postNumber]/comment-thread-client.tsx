@@ -1,7 +1,7 @@
 "use client"
 
 import type { InferSelectModel } from "drizzle-orm"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 import type {
   comments as commentsSchema,
@@ -9,6 +9,7 @@ import type {
   reactions as reactionsSchema,
 } from "@/lib/db/schema"
 import { CommentThread } from "./comment-thread"
+import { usePostMetadata } from "./post-metadata-context"
 
 type Comment = InferSelectModel<typeof commentsSchema>
 type Mention = InferSelectModel<typeof mentionsSchema>
@@ -51,6 +52,22 @@ export function CommentThreadClient({
 }) {
   const [replyingToId, setReplyingToId] = useState<string | null>(null)
   const isSignedIn = !!authClient.useSession().data?.session
+  const { selectedRef, gitContext } = usePostMetadata()
+  const currentSha = gitContext?.sha ?? null
+
+  // Filter comments based on selected ref (or current HEAD if none selected)
+  const filteredComments = useMemo(() => {
+    const targetRef = selectedRef ?? currentSha
+    return comments.filter((c) => {
+      const isLlm = c.authorId.startsWith("llm_")
+      if (!isLlm) {
+        // Human comments are always shown
+        return true
+      }
+      // LLM comments: show if gitRef matches the target ref
+      return c.gitRef === targetRef
+    })
+  }, [comments, selectedRef, currentSha])
 
   useEffect(() => {
     const hash = window.location.hash.slice(1)
@@ -67,7 +84,7 @@ export function CommentThreadClient({
       askingOptions={askingOptions}
       authorsById={authorsById}
       commentNumbers={commentNumbers}
-      comments={comments}
+      comments={filteredComments}
       mentions={mentions}
       onCancelReply={() => {
         if (isSignedIn) {

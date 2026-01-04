@@ -1,11 +1,13 @@
 "use client"
 
 import { Tooltip } from "@base-ui/react/tooltip"
-import { TagIcon } from "lucide-react"
+import { ChevronRight, TagIcon } from "lucide-react"
 import Link from "next/link"
-import type { ReactNode } from "react"
+import { useRouter } from "next/navigation"
+import { type ReactNode, useTransition } from "react"
 import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
+import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
 import { usePostMetadata } from "./post-metadata-context"
 
 function categorySlugify(title: string) {
@@ -21,7 +23,8 @@ export function PostHeader({
   repo: string
   postNumber: number
 }) {
-  const { title, category, gitContext } = usePostMetadata()
+  const { title, category, gitContext, archivedRefs } = usePostMetadata()
+  const hasArchivedRefs = archivedRefs.length > 0
 
   return (
     <header>
@@ -33,7 +36,9 @@ export function PostHeader({
         </Link>
         {category && (
           <>
-            <Subtitle className="select-none">&gt;</Subtitle>
+            <Subtitle className="select-none">
+              <ChevronRight size={14} />
+            </Subtitle>
             <Link
               className="hover:underline"
               href={`/${owner}/${repo}/category/${categorySlugify(category.title)}`}
@@ -109,37 +114,88 @@ export function PostHeader({
       )}
 
       <StaleBanner />
+      {hasArchivedRefs && <RefSelector />}
     </header>
   )
 }
 
+function RefSelector() {
+  const { gitContext, archivedRefs, selectedRef, setSelectedRef } =
+    usePostMetadata()
+
+  if (!gitContext) {
+    return null
+  }
+
+  const currentSha = gitContext.sha
+
+  return (
+    <div className="mt-4 flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground">Viewing response from:</span>
+      <select
+        className="border border-faint bg-shade px-2 py-1 text-bright"
+        onChange={(e) =>
+          setSelectedRef(e.target.value === currentSha ? null : e.target.value)
+        }
+        value={selectedRef ?? currentSha}
+      >
+        <option value={currentSha}>{currentSha.slice(0, 7)} (current)</option>
+        {archivedRefs.map((ref) => (
+          <option key={ref} value={ref}>
+            {ref.slice(0, 7)} (archived)
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 function StaleBanner() {
-  const { staleInfo, gitContext, owner, repo } = usePostMetadata()
+  const { staleInfo, gitContext, owner, repo, postId } = usePostMetadata()
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   if (!(staleInfo && gitContext)) {
     return null
   }
 
+  function handleRerun() {
+    startTransition(async () => {
+      await rerunLlmCommentsInPost({ postId, updateGitContext: true })
+      router.refresh()
+    })
+  }
+
   return (
-    <div className="mt-4 border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
-      This post might have stale content, as{" "}
-      <Link
-        className="underline hover:text-muted"
-        href={`https://github.com/${owner}/${repo}/tree/${gitContext.branch}`}
-        target="_blank"
+    <div className="mt-4 flex items-center justify-between border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
+      <span>
+        This post might have stale content, as{" "}
+        <Link
+          className="underline hover:text-muted"
+          href={`https://github.com/${owner}/${repo}/tree/${gitContext.branch}`}
+          target="_blank"
+        >
+          {gitContext.branch}
+        </Link>{" "}
+        is{" "}
+        <Link
+          className="underline hover:text-muted"
+          href={`https://github.com/${owner}/${repo}/compare/${gitContext.sha}...${gitContext.branch}`}
+          target="_blank"
+        >
+          {staleInfo.commitsAhead} commit
+          {staleInfo.commitsAhead !== 1 ? "s" : ""} ahead
+        </Link>
+        .
+      </span>
+      <button
+        className="bg-highlight-yellow px-1.5 py-0.5 text-bright disabled:opacity-50"
+        disabled={isPending}
+        onClick={handleRerun}
+        type="button"
       >
-        {gitContext.branch}
-      </Link>{" "}
-      is{" "}
-      <Link
-        className="underline hover:text-muted"
-        href={`https://github.com/${owner}/${repo}/compare/${gitContext.sha}...${gitContext.branch}`}
-        target="_blank"
-      >
-        {staleInfo.commitsAhead} commit{staleInfo.commitsAhead !== 1 ? "s" : ""}{" "}
-        ahead
-      </Link>
-      .
+        {isPending ? "Re-running..." : "Re-run"}
+      </button>
     </div>
   )
 }

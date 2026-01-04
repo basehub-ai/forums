@@ -125,7 +125,7 @@ export default async function PostPage({
         authorId: posts.authorId,
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
-        gitContext: posts.gitContext,
+        gitContexts: posts.gitContexts,
         category: {
           id: categories.id,
           title: categories.title,
@@ -197,7 +197,8 @@ export default async function PostPage({
     notFound()
   }
 
-  const { category, gitContext, ...post } = postWithCategory
+  const { category, gitContexts, ...post } = postWithCategory
+  const gitContext = gitContexts?.[0] ?? null
 
   cacheTag(`post:${post.id}`)
 
@@ -270,6 +271,9 @@ export default async function PostPage({
 
   const commentNumbers = computeCommentNumbers(postComments)
 
+  // Archived refs are all git contexts except the current HEAD
+  const archivedRefs = (gitContexts?.slice(1) ?? []).map((g) => g.sha)
+
   const askingOptions = [
     ...allLlmUsers.map((u) => ({
       id: u.id,
@@ -282,6 +286,7 @@ export default async function PostPage({
 
   return (
     <PostMetadataProvider
+      archivedRefs={archivedRefs}
       authorId={post.authorId}
       categories={repoCategories}
       initialCategory={category?.id ? category : null}
@@ -293,24 +298,26 @@ export default async function PostPage({
       staleInfo={staleInfo}
     >
       <Container>
-        <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
+        <div className="min-h-body-min-height">
+          <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
 
-        <div className="mt-8 space-y-4">
-          <CommentThreadClient
-            askingOptions={askingOptions}
-            authorsById={authorsById}
-            commentNumbers={commentNumbers}
-            comments={postComments}
-            mentions={postMentions}
-            owner={owner}
-            reactions={postReactions}
-            repo={repo}
-            rootCommentId={post.rootCommentId}
-          />
+          <div className="mt-8 space-y-4">
+            <CommentThreadClient
+              askingOptions={askingOptions}
+              authorsById={authorsById}
+              commentNumbers={commentNumbers}
+              comments={postComments}
+              mentions={postMentions}
+              owner={owner}
+              reactions={postReactions}
+              repo={repo}
+              rootCommentId={post.rootCommentId}
+            />
+          </div>
         </div>
 
         <hr className="divider-md my-14 h-px border-0" />
-        <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-4">
+        <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm">
           END OF POST
         </p>
 

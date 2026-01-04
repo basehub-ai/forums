@@ -44,7 +44,7 @@ function Tool({
   }
 
   return (
-    <div className="my-2">
+    <div className="my-8">
       <button
         className="flex items-center gap-2 text-left"
         onClick={toggle}
@@ -73,12 +73,14 @@ function Tool({
 type CommentContentProps = {
   content: AgentUIMessage[]
   isStreaming?: boolean
+  isRetrying?: boolean
   onRetry?: () => void
 }
 
 export function CommentContent({
   content,
   isStreaming = false,
+  isRetrying = false,
   onRetry,
 }: CommentContentProps) {
   return (
@@ -103,11 +105,12 @@ export function CommentContent({
                       <div data-actions>
                         <button
                           aria-label="Retry"
-                          className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm"
+                          className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm disabled:opacity-50"
+                          disabled={isRetrying}
                           onClick={onRetry}
                           type="button"
                         >
-                          Retry
+                          {isRetrying ? "Retrying..." : "Retry"}
                         </button>
                       </div>
                     )}

@@ -8,7 +8,7 @@ export const posts = p.pgTable(
     number: p.integer().notNull(),
     owner: p.varchar({ length: 255 }).notNull(),
     repo: p.varchar({ length: 255 }).notNull(),
-    gitContext: p.jsonb("git_context").$type<GitContextData>(),
+    gitContexts: p.jsonb("git_contexts").$type<GitContextData[]>(),
 
     title: p.varchar({ length: 500 }),
     categoryId: p.varchar("category_id", { length: 32 }),
@@ -49,6 +49,7 @@ export const comments = p.pgTable(
 
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: p.bigint("updated_at", { mode: "number" }).notNull(),
+    gitRef: p.varchar("git_ref", { length: 40 }),
   },
   (table) => [
     p.index("idx_comments_post_created").on(table.postId, table.createdAt),

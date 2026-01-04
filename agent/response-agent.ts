@@ -4,7 +4,7 @@ import {
   streamText,
   type UIMessage,
 } from "ai"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq, lt } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
@@ -37,6 +37,7 @@ export async function responseAgent({
 
   const { initialMessages, sandboxId, gitRef } = await setupStep({
     postId,
+    commentId,
     owner,
     repo,
   })
@@ -83,15 +84,18 @@ export async function responseAgent({
     repo,
     content: newMessages,
     postId,
+    gitRef,
   })
 }
 
 async function setupStep({
   postId,
+  commentId,
   owner,
   repo,
 }: {
   postId: string
+  commentId: string
   owner: string
   repo: string
 }): Promise<{
@@ -101,21 +105,39 @@ async function setupStep({
 }> {
   "use step"
 
+  // Get the current comment's createdAt to filter context
+  const currentComment = await db
+    .select({ createdAt: comments.createdAt })
+    .from(comments)
+    .where(eq(comments.id, commentId))
+    .limit(1)
+    .then((r) => r[0])
+
+  if (!currentComment) {
+    throw new Error("Comment not found")
+  }
+
   const [allComments, post] = await Promise.all([
     db
       .select()
       .from(comments)
-      .where(eq(comments.postId, postId))
+      .where(
+        and(
+          eq(comments.postId, postId),
+          // Only include comments created BEFORE the current comment
+          lt(comments.createdAt, currentComment.createdAt)
+        )
+      )
       .orderBy(asc(comments.createdAt)),
     db
-      .select({ gitContext: posts.gitContext })
+      .select({ gitContexts: posts.gitContexts })
       .from(posts)
       .where(eq(posts.id, postId))
       .limit(1)
       .then((r) => r[0]),
   ])
 
-  const existingGitContext = post?.gitContext
+  const existingGitContext = post?.gitContexts?.[0]
 
   const workspace = await getWorkspace({
     sandboxId: null,
@@ -125,7 +147,7 @@ async function setupStep({
   if (!existingGitContext) {
     await db
       .update(posts)
-      .set({ gitContext: workspace.gitContextData })
+      .set({ gitContexts: [workspace.gitContextData] })
       .where(eq(posts.id, postId))
   }
 
@@ -212,6 +234,7 @@ async function closeStreamStep({
   owner,
   repo,
   content,
+  gitRef,
 }: {
   writable: WritableStream
   commentId: string
@@ -219,6 +242,7 @@ async function closeStreamStep({
   owner: string
   repo: string
   content: AgentUIMessage[]
+  gitRef: string
 }) {
   "use step"
 
@@ -226,7 +250,7 @@ async function closeStreamStep({
     writable.close(),
     db
       .update(comments)
-      .set({ streamId: null, content })
+      .set({ streamId: null, content, gitRef })
       .where(eq(comments.id, commentId)),
   ])
 

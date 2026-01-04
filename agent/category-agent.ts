@@ -77,6 +77,7 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         // biome-ignore lint/suspicious/useAwait: .
         execute: async (cat) => {
           result.newCategory = cat
+          result.newCategory.title = result.newCategory.title.toLowerCase()
           return { ok: true }
         },
       }),

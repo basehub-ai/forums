@@ -1,0 +1,1 @@
+ALTER TABLE "comments" ADD COLUMN "git_ref" varchar(40);

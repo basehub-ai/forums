@@ -25,6 +25,7 @@
   --tracking-prose: -0.8px;
 
   --spacing-header: var(--header-height);
+  --spacing-body-min-height: calc(100vh - var(--header-height));
 }
 
 :root {

@@ -40,11 +40,12 @@ export default async function Home() {
         <div className="text-sm">
           <span className="text-faint">or </span>
           <Link
-            className="text-muted underline hover:text-bright"
+            className="text-muted hover:text-bright hover:underline"
             href="/lucky"
           >
             I'm feeling lucky
           </Link>
+          .
         </div>
       </form>
       <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">

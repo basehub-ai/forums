@@ -123,9 +123,7 @@ export default async function CategoryPage({
         </Subtitle>
       </Link>
 
-      <Title className="mt-1 mb-8">
-        {category.emoji} {category.title}
-      </Title>
+      <Title className="mt-1 mb-8">{category.title}</Title>
 
       <div className="mb-8">
         <NewPostComposer

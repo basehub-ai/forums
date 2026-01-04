@@ -1,6 +1,6 @@
 "use server"
 import { waitUntil } from "@vercel/functions"
-import { and, eq, sql } from "drizzle-orm"
+import { and, asc, eq, sql } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { headers } from "next/headers"
 import slugify from "slugify"
@@ -509,7 +509,7 @@ export async function getPostMetadata(postId: string) {
     .select({
       title: posts.title,
       categoryId: posts.categoryId,
-      gitContext: posts.gitContext,
+      gitContexts: posts.gitContexts,
       owner: posts.owner,
       repo: posts.repo,
     })
@@ -521,7 +521,8 @@ export async function getPostMetadata(postId: string) {
     throw new Error("Post not found")
   }
 
-  if (typeof post.title !== "string" || !post.gitContext) {
+  const gitContext = post.gitContexts?.[0]
+  if (typeof post.title !== "string" || !gitContext) {
     return null
   }
 
@@ -530,7 +531,7 @@ export async function getPostMetadata(postId: string) {
 
   return {
     title: post.title,
-    gitContext: post.gitContext,
+    gitContext,
     category: post.categoryId
       ? await db
           .select({
@@ -651,4 +652,236 @@ export async function updatePost(data: {
   }
 
   return { success: true }
+}
+
+async function startLlmCommentRerun({
+  oldComment,
+  post,
+  llm,
+  now,
+  streamId,
+}: {
+  oldComment: {
+    postId: string
+    threadCommentId: string | null
+    createdAt: number
+  }
+  post: { owner: string; repo: string }
+  llm: { id: string; model: string }
+  now: number
+  streamId: string
+}): Promise<string> {
+  const newCommentId = nanoid()
+
+  await db.insert(comments).values({
+    id: newCommentId,
+    postId: oldComment.postId,
+    threadCommentId: oldComment.threadCommentId,
+    authorId: llm.id,
+    authorUsername: llm.model,
+    content: [],
+    streamId,
+    createdAt: oldComment.createdAt,
+    updatedAt: now,
+  })
+
+  const { runId } = await start(responseAgent, [
+    {
+      commentId: newCommentId,
+      streamId,
+      postId: oldComment.postId,
+      owner: post.owner,
+      repo: post.repo,
+      model: llm.model,
+    },
+  ])
+
+  await db.update(comments).set({ runId }).where(eq(comments.id, newCommentId))
+
+  return newCommentId
+}
+
+export async function rerunLlmComment(data: {
+  commentId: string
+}): Promise<{ commentId: string }> {
+  await getSessionOrThrow()
+  const now = Date.now()
+
+  const oldComment = await db
+    .select()
+    .from(comments)
+    .where(eq(comments.id, data.commentId))
+    .limit(1)
+    .then((r) => r[0])
+
+  if (!oldComment) {
+    throw new Error("Comment not found")
+  }
+
+  if (!oldComment.authorId.startsWith("llm_")) {
+    throw new Error("Can only re-run LLM comments")
+  }
+
+  const [post, llm, existingStream] = await Promise.all([
+    db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, oldComment.postId))
+      .limit(1)
+      .then((r) => r[0]),
+    db
+      .select()
+      .from(llmUsers)
+      .where(eq(llmUsers.id, oldComment.authorId))
+      .limit(1)
+      .then((r) => r[0]),
+    db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(
+        and(
+          eq(comments.postId, oldComment.postId),
+          sql`${comments.streamId} IS NOT NULL`
+        )
+      )
+      .limit(1)
+      .then((r) => r[0]),
+  ])
+
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  if (!llm) {
+    throw new Error("LLM user not found")
+  }
+
+  if (existingStream) {
+    throw new Error("A response is already being generated")
+  }
+
+  // Delete the old comment (we're replacing it with a new one at the same position)
+  await db.delete(comments).where(eq(comments.id, data.commentId))
+
+  const newCommentId = await startLlmCommentRerun({
+    oldComment,
+    post,
+    llm,
+    now,
+    streamId: String(now),
+  })
+
+  updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${oldComment.postId}`)
+
+  return { commentId: newCommentId }
+}
+
+export async function rerunLlmCommentsInPost(data: {
+  postId: string
+  updateGitContext?: boolean
+}): Promise<{ commentId: string }> {
+  await getSessionOrThrow()
+  const now = Date.now()
+
+  const [post, defaultLlm, existingStream] = await Promise.all([
+    db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, data.postId))
+      .limit(1)
+      .then((r) => r[0]),
+    db
+      .select()
+      .from(llmUsers)
+      .where(eq(llmUsers.isDefault, true))
+      .limit(1)
+      .then((r) => r[0]),
+    db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(
+        and(
+          eq(comments.postId, data.postId),
+          sql`${comments.streamId} IS NOT NULL`
+        )
+      )
+      .limit(1)
+      .then((r) => r[0]),
+  ])
+
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  if (!defaultLlm) {
+    throw new Error("No default LLM user found")
+  }
+
+  if (existingStream) {
+    throw new Error("A response is already being generated")
+  }
+
+  // Get current HEAD sha to find which LLM comments to re-run
+  const currentSha = post.gitContexts?.[0]?.sha
+
+  // Get LLM comments at the current HEAD (the ones we'll re-run)
+  const llmComments = await db
+    .select()
+    .from(comments)
+    .where(
+      and(
+        eq(comments.postId, data.postId),
+        sql`${comments.authorId} LIKE 'llm_%'`,
+        currentSha ? eq(comments.gitRef, currentSha) : sql`TRUE`
+      )
+    )
+    .orderBy(asc(comments.createdAt))
+
+  if (llmComments.length === 0) {
+    throw new Error("No LLM comments to re-run")
+  }
+
+  // Delete old LLM comments at current SHA (they'll be replaced)
+  await db
+    .delete(comments)
+    .where(
+      and(
+        eq(comments.postId, data.postId),
+        sql`${comments.authorId} LIKE 'llm_%'`,
+        currentSha ? eq(comments.gitRef, currentSha) : sql`TRUE`
+      )
+    )
+
+  if (data.updateGitContext) {
+    // Clear gitContexts so setupStep fetches fresh and creates new array
+    await db
+      .update(posts)
+      .set({ gitContexts: null, updatedAt: now })
+      .where(eq(posts.id, data.postId))
+  }
+
+  let lastCommentId = ""
+
+  for (const [index, oldComment] of llmComments.entries()) {
+    const llm = await db
+      .select()
+      .from(llmUsers)
+      .where(eq(llmUsers.id, oldComment.authorId))
+      .limit(1)
+      .then((r) => r[0] ?? defaultLlm)
+
+    lastCommentId = await startLlmCommentRerun({
+      oldComment,
+      post,
+      llm,
+      now,
+      streamId: String(now + index),
+    })
+  }
+
+  updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${data.postId}`)
+
+  return { commentId: lastCommentId }
 }
