@@ -1,12 +1,12 @@
 "use client"
 
-import { Tooltip } from "@/components/ui/tooltip"
 import { ChevronRight, TagIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { type ReactNode, useTransition } from "react"
 import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
+import { Tooltip } from "@/components/ui/tooltip"
 import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
 import { usePostMetadata } from "./post-metadata-context"
 

@@ -1,4 +1,4 @@
-import { track } from "@vercel/analytics"
+import { track } from "@vercel/analytics/server"
 import {
   convertToModelMessages,
   type FinishReason,
@@ -11,6 +11,12 @@ import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
 import { z } from "zod"
 import { createMentions } from "@/lib/actions/posts"
+import {
+  autumn,
+  type BillingCategory,
+  calculateCredits,
+  FEATURE_IDS,
+} from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
@@ -25,6 +31,8 @@ export async function responseAgent({
   owner,
   repo,
   model,
+  userId,
+  billingCategory,
 }: {
   commentId: string
   streamId: string
@@ -32,6 +40,8 @@ export async function responseAgent({
   owner: string
   repo: string
   model: string
+  userId: string
+  billingCategory: BillingCategory
 }) {
   "use workflow"
 
@@ -46,6 +56,8 @@ export async function responseAgent({
 
   let finishReason: FinishReason | undefined
   let stepCount = 0
+  let totalTokens = 0
+  let totalCost = 0
   const newMessages: AgentUIMessage[] = []
   while (finishReason !== "stop" && stepCount < 100) {
     try {
@@ -61,6 +73,8 @@ export async function responseAgent({
       })
       finishReason = result.finishReason
       newMessages.push(...result.newMessages)
+      totalTokens += result.totalTokens
+      totalCost += result.cost
       stepCount += 1
     } catch (err) {
       console.error(err)
@@ -87,6 +101,10 @@ export async function responseAgent({
     content: newMessages,
     postId,
     gitRef,
+    totalTokens,
+    totalCost,
+    userId,
+    billingCategory,
   })
 }
 
@@ -180,7 +198,12 @@ async function streamTextStep({
   sandboxId: string
   initialMessages: AgentUIMessage[]
   newMessages: UIMessage[]
-}): Promise<{ finishReason: FinishReason; newMessages: AgentUIMessage[] }> {
+}): Promise<{
+  finishReason: FinishReason
+  newMessages: AgentUIMessage[]
+  totalTokens: number
+  cost: number
+}> {
   "use step"
 
   const workspace = await getWorkspace({
@@ -226,20 +249,17 @@ Explore freely but not eagerly: let the user direct you, don't waste your contex
   const providerMetadata = await result.providerMetadata
   const parseCost = z
     .object({
-      cost: z.string().transform((v) => Number(v)),
+      gateway: z.object({
+        cost: z.string().transform((v) => Number(v)),
+      }),
     })
     .safeParse(providerMetadata)
-
-  if (parseCost.success) {
-    track("generated_response", {
-      tokens: usage.totalTokens,
-      cost: parseCost.data.cost,
-    })
-  }
 
   return {
     finishReason: await result.finishReason,
     newMessages: stepNewMessages,
+    totalTokens: usage.totalTokens ?? 0,
+    cost: parseCost.success ? parseCost.data.gateway.cost : 0,
   }
 }
 
@@ -251,6 +271,10 @@ async function closeStreamStep({
   repo,
   content,
   gitRef,
+  totalTokens,
+  totalCost,
+  userId,
+  billingCategory,
 }: {
   writable: WritableStream
   commentId: string
@@ -259,6 +283,10 @@ async function closeStreamStep({
   repo: string
   content: AgentUIMessage[]
   gitRef: string
+  totalTokens: number
+  totalCost: number
+  userId: string
+  billingCategory: BillingCategory
 }) {
   "use step"
 
@@ -296,6 +324,24 @@ async function closeStreamStep({
       })
     }
   }
+
   revalidateTag(`repo:${owner}:${repo}`, "max")
   revalidateTag(`post:${postId}`, "max")
+
+  const credits = calculateCredits(totalTokens)
+  const featureId = FEATURE_IDS[billingCategory]
+  try {
+    await autumn.track({
+      customer_id: userId,
+      feature_id: featureId,
+      value: credits,
+    })
+  } catch (err) {
+    console.error("Failed to track billing usage:", err)
+  }
+
+  track("generated_response", {
+    tokens: totalTokens,
+    cost: totalCost,
+  })
 }

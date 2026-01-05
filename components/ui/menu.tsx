@@ -13,7 +13,7 @@ function Trigger({
     <BaseMenu.Trigger
       className={cn(
         "inline-flex cursor-pointer items-center gap-1 text-dim text-sm transition-colors",
-        "hover:text-bright data-[popup-open]:text-bright",
+        "hover:text-bright data-popup-open:text-bright",
         className
       )}
       {...props}
@@ -37,9 +37,9 @@ function Popup({
         <BaseMenu.Popup
           className={cn(
             "z-50 min-w-[160px] border border-border-solid bg-background p-1 text-sm shadow-md",
-            "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150",
-            "data-[open]:opacity-100 data-[open]:scale-100 data-[open]:translate-y-0",
-            "data-[closed]:opacity-0 data-[closed]:scale-95 data-[closed]:-translate-y-1 data-[closed]:pointer-events-none",
+            "origin-(--transform-origin) transition-[opacity,transform] duration-150",
+            "data-open:translate-y-0 data-open:scale-100 data-open:opacity-100",
+            "data-closed:pointer-events-none data-closed:-translate-y-1 data-closed:scale-95 data-closed:opacity-0",
             className
           )}
           {...props}
@@ -59,8 +59,8 @@ function Item({
     <BaseMenu.Item
       className={cn(
         "flex cursor-pointer items-center gap-2 px-2 py-1.5 text-dim outline-none transition-colors",
-        "data-[highlighted]:bg-shade data-[highlighted]:text-bright",
-        "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+        "data-highlighted:bg-shade data-highlighted:text-bright",
+        "data-disabled:cursor-not-allowed data-disabled:opacity-50",
         className
       )}
       {...props}

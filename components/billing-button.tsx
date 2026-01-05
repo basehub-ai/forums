@@ -4,11 +4,21 @@ import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
 
 export default function BillingButton() {
-  const { checkout } = useCustomer()
+  const { checkout, customer, openBillingPortal, check } = useCustomer()
+
+  const isPro = check({ productId: "pro_plan" })
+
+  // console.log(customer)
 
   return (
     <Button
+      className=""
       onClick={async () => {
+        if (isPro) {
+          await openBillingPortal()
+          return
+        }
+
         await checkout({
           productId: "pro_plan",
           options: [
@@ -16,17 +26,14 @@ export default function BillingButton() {
               featureId: "premium_credits",
               quantity: 0,
             },
-            {
-              featureId: "boosts",
-              quantity: 0,
-            },
           ],
         })
       }}
+      size="xs"
       type="button"
-      variant="secondary"
+      variant="tertiary"
     >
-      Go Pro
+      {customer?.products?.[0]?.id === "free_plan" ? "FREE" : "PRO"}
     </Button>
   )
 }
