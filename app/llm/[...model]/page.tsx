@@ -1,8 +1,11 @@
 import { desc, eq, sql } from "drizzle-orm"
+import { AsteriskIcon } from "lucide-react"
 import type { Metadata } from "next"
 import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { Container } from "@/components/container"
+import { List, ListItem, Subtitle, Title } from "@/components/typography"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
@@ -79,20 +82,20 @@ export default async function LlmProfilePage({
     .then((r) => r[0]?.count ?? 0)
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8">
-      <div className="mb-8 flex items-center gap-4">
+    <Container>
+      <div className="mb-8 flex items-center gap-3">
         {!!llmUser.image && (
           <img
             alt={llmUser.name}
-            className="h-16 w-16 rounded-full"
+            className="h-12 w-12 rounded-full"
             src={llmUser.image}
           />
         )}
         <div>
-          <h1 className="font-bold text-2xl">{llmUser.name}</h1>
-          <p className="text-muted-foreground text-sm">
+          <Title>{llmUser.name}</Title>
+          <Subtitle className="text-dim">
             {llmUser.provider} &middot; {totalComments} responses
-          </p>
+          </Subtitle>
           {!!llmUser.deprecatedAt && (
             <p className="mt-1 text-amber-600 text-sm">
               This model was deprecated on{" "}
@@ -102,14 +105,12 @@ export default async function LlmProfilePage({
         </div>
       </div>
 
-      <h2 className="mb-4 font-semibold text-lg">Recent Responses</h2>
+      <h2 className="mb-4 font-medium text-sm uppercase">Recent Responses</h2>
 
       {recentComments.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          No responses yet from this model.
-        </p>
+        <p className="text-dim text-sm">No responses yet from this model.</p>
       ) : (
-        <div className="space-y-4">
+        <List>
           {recentComments.map((comment) => {
             const preview = comment.content[0]?.parts
               .filter(
@@ -120,28 +121,35 @@ export default async function LlmProfilePage({
               .slice(0, 200)
 
             return (
-              <Link
-                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
-                href={`/${comment.postOwner}/${comment.postRepo}/${comment.postNumber}`}
-                key={comment.id}
-              >
-                <div className="mb-1 text-muted-foreground text-sm">
-                  {comment.postOwner}/{comment.postRepo} #{comment.postNumber}
-                </div>
-                <h3 className="font-medium">
-                  {comment.postTitle ?? `Post #${comment.postNumber}`}
-                </h3>
-                {!!preview && (
-                  <p className="mt-1 text-muted-foreground text-sm">
-                    {preview}
-                    {preview.length >= 200 && "..."}
-                  </p>
-                )}
-              </Link>
+              <ListItem key={comment.id}>
+                <Link
+                  className="group flex grow items-start gap-1 overflow-hidden"
+                  href={`/${comment.postOwner}/${comment.postRepo}/${comment.postNumber}`}
+                >
+                  <AsteriskIcon
+                    className="mt-0.5 shrink-0 text-faint"
+                    size={16}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-dim group-hover:text-bright group-hover:underline">
+                      {comment.postTitle || `Post #${comment.postNumber}`}
+                    </span>
+                    <span className="ml-2 text-faint text-sm">
+                      {comment.postOwner}/{comment.postRepo}
+                    </span>
+                    {!!preview && (
+                      <p className="mt-0.5 truncate text-faint text-sm">
+                        {preview}
+                        {preview.length >= 200 && "..."}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </ListItem>
             )
           })}
-        </div>
+        </List>
       )}
-    </div>
+    </Container>
   )
 }
