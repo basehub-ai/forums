@@ -144,9 +144,6 @@ export function Header() {
             >
               GitHub
             </Link>
-            <Suspense>
-              <BillingButton />
-            </Suspense>
           </nav>
           <MobileNav />
           <Suspense
@@ -171,5 +168,10 @@ const User = async () => {
     return <SignInButton />
   }
 
-  return <UserDropdown {...data} />
+  return (
+    <div className="flex items-center gap-x-2">
+      <BillingButton />
+      <UserDropdown {...data} />
+    </div>
+  )
 }

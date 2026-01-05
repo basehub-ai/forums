@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, useTransition } from "react"
-import { Button } from "./button"
 import { Combobox } from "@/components/ui/combobox"
 import { authClient } from "@/lib/auth-client"
+import { Button } from "./button"
 
 export type ComposerProps = {
   placeholder: string
@@ -107,7 +107,7 @@ export const Composer = ({
     >
       <textarea
         autoFocus={autoFocus}
-        className="no-focus min-h-composer-min-height w-full resize-none bg-shade/10 px-3 py-3 text-bright text-sm outline-dashed outline-2 outline-muted -outline-offset-1 focus:bg-shade/30 focus:outline-solid"
+        className="no-focus min-h-composer-min-height w-full resize-none bg-shade/10 px-3 py-3 text-bright text-sm outline-dotted outline-2 outline-muted -outline-offset-1 focus:bg-shade/30 focus:outline-solid"
         name="message"
         onChange={(e) => {
           const value = e.target.value

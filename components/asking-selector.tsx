@@ -57,9 +57,7 @@ export function AskingSelector({
               ) : null}
               {option.name}
               {option.isDefault ? (
-                <span className="text-muted-foreground text-xs">
-                  (default)
-                </span>
+                <span className="text-muted-foreground text-xs">(default)</span>
               ) : null}
             </Menu.Item>
           ))}

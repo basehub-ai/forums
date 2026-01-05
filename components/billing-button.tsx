@@ -4,11 +4,9 @@ import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
 
 export default function BillingButton() {
-  const { checkout, customer, openBillingPortal, check } = useCustomer()
+  const { checkout, openBillingPortal, check } = useCustomer()
 
-  const isPro = check({ productId: "pro_plan" })
-
-  // console.log(customer)
+  const isPro = check({ productId: "pro_plan" }).data.allowed
 
   return (
     <Button
@@ -33,7 +31,7 @@ export default function BillingButton() {
       type="button"
       variant="tertiary"
     >
-      {customer?.products?.[0]?.id === "free_plan" ? "FREE" : "PRO"}
+      {isPro ? "PRO" : "FREE"}
     </Button>
   )
 }
