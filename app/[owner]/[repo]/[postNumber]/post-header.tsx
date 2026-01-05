@@ -69,15 +69,15 @@ export function PostHeader({
           </Link>
           {gitContext.tags.length > 0 && (
             <Link
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 overflow-hidden"
               href={`https://github.com/${owner}/${repo}/releases/tag/${gitContext.tags[0]}`}
               target="_blank"
             >
               <TagIcon className="h-3.5 w-3.5" />
-              {gitContext.tags[0]}
+              <span className="truncate">{gitContext.tags[0]}</span>
             </Link>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-hidden">
             <Tooltip.Provider>
               <Tooltip.Root>
                 <Tooltip.Trigger

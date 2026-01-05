@@ -9,6 +9,20 @@ export type ToolContext = {
   workspace: Workspace
 }
 
+const normalizationRegex = /^\//
+function normalizePath(inputPath: string, workspacePath: string): string {
+  if (inputPath.startsWith(workspacePath)) {
+    return (
+      inputPath.slice(workspacePath.length).replace(normalizationRegex, "") ||
+      "."
+    )
+  }
+  if (inputPath.startsWith("/")) {
+    return inputPath.slice(1)
+  }
+  return inputPath
+}
+
 export function getTools(context: ToolContext) {
   return {
     Read: tool({
@@ -46,11 +60,14 @@ export function getTools(context: ToolContext) {
           fileSize: z
             .string()
             .describe("Human-readable file size (e.g., '2.5K', '1.2M')"),
-          path: z.string().describe("Absolute path to the file"),
+          path: z
+            .string()
+            .describe("Path to the file relative to workspace root"),
         }),
       }),
       execute: async ({ path, startLine, endLine }) => {
-        const fullPath = join(context.workspace.path, path)
+        const normalizedPath = normalizePath(path, context.workspace.path)
+        const fullPath = join(context.workspace.path, normalizedPath)
 
         const result = await context.workspace.sandbox.runCommand("bash", [
           "-c",
@@ -59,6 +76,19 @@ export function getTools(context: ToolContext) {
             FILE="$1"
             START_LINE="$2"
             END_LINE="$3"
+
+            # Resolve symlinks and check file exists
+            if [ -L "$FILE" ]; then
+              RESOLVED=$(readlink -f "$FILE" 2>/dev/null || echo "")
+              if [ -z "$RESOLVED" ] || [ ! -e "$RESOLVED" ]; then
+                echo "Error: Broken symlink - $FILE points to non-existent target" >&2
+                exit 1
+              fi
+              FILE="$RESOLVED"
+            elif [ ! -e "$FILE" ]; then
+              echo "Error: File not found - $FILE" >&2
+              exit 1
+            fi
 
             # Get metadata (count actual lines, not just newlines)
             TOTAL_LINES=$(awk 'END{print NR}' "$FILE")
@@ -122,7 +152,7 @@ export function getTools(context: ToolContext) {
               endLine: 0,
               isPaginated: false,
               fileSize: "0",
-              path: fullPath,
+              path: normalizedPath,
             },
           }
         }
@@ -151,7 +181,7 @@ export function getTools(context: ToolContext) {
               endLine: 0,
               isPaginated: false,
               fileSize: "unknown",
-              path: fullPath,
+              path: normalizedPath,
             },
           }
         }
@@ -165,7 +195,7 @@ export function getTools(context: ToolContext) {
             endLine: actualEnd,
             isPaginated: actualEnd < totalLines,
             fileSize: fileSize || "unknown",
-            path: fullPath,
+            path: normalizedPath,
           },
         }
       },
@@ -244,9 +274,10 @@ export function getTools(context: ToolContext) {
         maxCount,
         filesWithMatches,
       }) => {
-        const searchPath = path
-          ? join(context.workspace.path, path)
-          : context.workspace.path
+        const normalizedPath = path
+          ? normalizePath(path, context.workspace.path)
+          : "."
+        const searchPath = join(context.workspace.path, normalizedPath)
 
         const args: string[] = []
 
@@ -290,7 +321,13 @@ export function getTools(context: ToolContext) {
           console.error(`[Grep Tool] Warning: ${stderr}`)
         }
 
-        const lines = stdout
+        // Normalize paths in output (replace workspace prefix with relative paths)
+        const normalizedOutput = stdout.replaceAll(
+          `${context.workspace.path}/`,
+          ""
+        )
+
+        const lines = normalizedOutput
           .trim()
           .split("\n")
           .filter((l) => l.length > 0)
@@ -303,13 +340,13 @@ export function getTools(context: ToolContext) {
             ).size
 
         return {
-          matches: stdout || "(no matches found)",
+          matches: normalizedOutput || "(no matches found)",
           summary: {
             matchCount: filesWithMatches
               ? 0
               : lines.filter((l) => l.includes(":")).length,
             fileCount,
-            searchPath,
+            searchPath: normalizedPath,
             pattern,
           },
         }
@@ -365,9 +402,10 @@ export function getTools(context: ToolContext) {
         }),
       }),
       execute: async ({ path, depth, includeHidden, filesOnly, pattern }) => {
-        const searchPath = path
-          ? join(context.workspace.path, path)
-          : context.workspace.path
+        const normalizedPath = path
+          ? normalizePath(path, context.workspace.path)
+          : "."
+        const searchPath = join(context.workspace.path, normalizedPath)
 
         const result = await context.workspace.sandbox.runCommand("bash", [
           "-c",
@@ -433,7 +471,7 @@ export function getTools(context: ToolContext) {
             totalItems: lines.length,
             totalFiles,
             totalDirs,
-            searchPath,
+            searchPath: normalizedPath,
             depth,
           },
         }
@@ -441,7 +479,7 @@ export function getTools(context: ToolContext) {
     }),
     ReadPost: tool({
       description:
-        "Reads a forum post (https://forums.basehub.com/<owner>/<repo>/<postNumber>) and returns its content as markdown, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42).",
+        "Reads a forum post (https://forums.basehub.com/<owner>/<repo>/<postNumber>) and returns its content as markdown, including the original question and all comments. Use this when you need context from a linked or referenced post (like #42 or owner/repo/42). Any time the user references another forum post, you should use this.",
       inputSchema: z.object({
         postNumber: z
           .number()

@@ -105,7 +105,6 @@ async function setupStep({
 }> {
   "use step"
 
-  // Get the current comment's createdAt to filter context
   const currentComment = await db
     .select({ createdAt: comments.createdAt })
     .from(comments)
@@ -124,7 +123,6 @@ async function setupStep({
       .where(
         and(
           eq(comments.postId, postId),
-          // Only include comments created BEFORE the current comment
           lt(comments.createdAt, currentComment.createdAt)
         )
       )
@@ -149,6 +147,10 @@ async function setupStep({
       .update(posts)
       .set({ gitContexts: [workspace.gitContextData] })
       .where(eq(posts.id, postId))
+  }
+
+  if (!post) {
+    throw new Error("Post not found")
   }
 
   return {
@@ -188,18 +190,15 @@ async function streamTextStep({
   const result = streamText({
     messages: await convertToModelMessages(allMessages),
     tools: getTools({ workspace }),
-    system: `You are a coding agent. You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`. The repo is already cloned and available to you at path \`${workspace.path}\` (you're already cd'd into it, so all tools you use will be executed from this path).
+    system: `You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`.
 
-## Post References
-When a user mentions another post, you MUST use the ReadPost tool to fetch its content before responding. Post references can appear in these formats:
-- \`#42\` → post 42 in the current repo (use owner: "${owner}", repo: "${repo}")
-- \`owner/repo#42\` → post 42 in owner/repo
-- \`owner/repo/42\` → post 42 in owner/repo
-- \`/owner/repo/42\` → post 42 in owner/repo
-- \`forums.basehub.com/owner/repo/42\` → post 42 in owner/repo
-- The user can just tell you with natural language the owner, repo, and number of the post to read.
+## Environment
+The repo is already cloned and available. All file paths are relative to the workspace root. You can use Read, Grep, and List tools to explore the codebase.
 
-If you see any of these patterns, call ReadPost immediately to get the full context of the referenced post before formulating your answer.`,
+## General Goals
+Users might ask you anything, but generally, your goal should be to ground your knowledge with the source code to provide a sourced answer. Users want to get to the source. As you explore source code, you'll note that sometimes, repositories are documented (say, with comments, or markdown files). While that's certainly useful, nothing beats reading the actual source code, as documentation gets stale overtime.
+
+Explore freely but not eagerly: let the user direct you, don't waste your context by being over-eager.`,
     model,
   })
 
