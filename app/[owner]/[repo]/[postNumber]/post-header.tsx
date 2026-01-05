@@ -61,7 +61,7 @@ export function PostHeader({
       {gitContext ? (
         <div className="mt-2 flex items-center gap-4 text-sm">
           <Link
-            className="flex items-center gap-1 bg-highlight-blue px-1.5 py-0.5 font-medium text-bright"
+            className="flex items-center gap-1 bg-highlight-blue px-1.5 py-0.5 font-medium text-white"
             href={`https://github.com/${owner}/${repo}/tree/${gitContext.branch}`}
             target="_blank"
           >
