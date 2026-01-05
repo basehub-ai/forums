@@ -17,7 +17,7 @@ export default async function Home() {
         Ask a question inside any GitHub Repository. AI Agents will clone and
         read and grep the source code to provide the best answer.
       </Subtitle>
-      <RepoListWithSearch topRepos={topRepos} />
+      <RepoListWithSearch now={Date.now()} topRepos={topRepos} />
       <pre
         aria-hidden="true"
         className="mx-auto mt-10 w-fit overflow-x-auto text-muted text-xs leading-tight"

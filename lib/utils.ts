@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
-import { formatDistanceToNowStrict } from "date-fns"
+import { formatDistanceStrict, formatDistanceToNowStrict } from "date-fns"
 import { customAlphabet } from "nanoid"
 import { twMerge } from "tailwind-merge"
 
@@ -33,6 +33,12 @@ export function formatCompactNumber(n: number): string {
   return `${Math.floor(n / 1000)}k`
 }
 
-export function formatRelativeTime(date: Date | number): string {
+export function formatRelativeTime(
+  date: Date | number,
+  now?: Date | number
+): string {
+  if (now !== undefined) {
+    return formatDistanceStrict(date, now, { addSuffix: true })
+  }
   return formatDistanceToNowStrict(date, { addSuffix: true })
 }

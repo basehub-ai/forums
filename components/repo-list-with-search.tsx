@@ -73,7 +73,13 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   )
 }
 
-export function RepoListWithSearch({ topRepos }: { topRepos: RepoStats[] }) {
+export function RepoListWithSearch({
+  topRepos,
+  now,
+}: {
+  topRepos: RepoStats[]
+  now: number
+}) {
   const router = useRouter()
   const [value, setValue] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
@@ -224,7 +230,7 @@ export function RepoListWithSearch({ topRepos }: { topRepos: RepoStats[] }) {
                       {formatCompactNumber(repo.posts)}
                     </TableCellText>
                     <TableCellText className="w-(--col-w-3) text-end">
-                      {formatRelativeTime(repo.lastActive)}
+                      {formatRelativeTime(repo.lastActive, now)}
                     </TableCellText>
                   </div>
                 </ListItem>
