@@ -45,6 +45,7 @@ export async function updateLlmUser(
     provider?: string
     image?: string
     isInModelPicker?: boolean
+    billing_category?: string
   }
 ) {
   await assertAdmin()
@@ -67,6 +68,20 @@ export async function deleteLlmUser(id: string) {
   await assertAdmin()
 
   await db.delete(llmUsers).where(eq(llmUsers.id, id))
+
+  revalidatePath("/admin/llm-users")
+}
+
+export async function setBillingCategory(
+  id: string,
+  category: "standard" | "premium"
+) {
+  await assertAdmin()
+
+  await db
+    .update(llmUsers)
+    .set({ billing_category: category })
+    .where(eq(llmUsers.id, id))
 
   revalidatePath("/admin/llm-users")
 }

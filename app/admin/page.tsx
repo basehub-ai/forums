@@ -2,15 +2,15 @@ import Link from "next/link"
 
 export default function AdminPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <Link
-        className="block rounded-lg border p-4 hover:bg-muted"
+        className="group flex items-center gap-2 text-dim hover:underline"
         href="/admin/llm-users"
       >
-        <h2 className="font-semibold">LLM Users</h2>
-        <p className="text-muted-foreground text-sm">
-          Manage AI models that can respond in the forum
-        </p>
+        <span className="text-bright group-hover:text-bright">LLM Users</span>
+        <span className="text-muted text-sm">
+          — Manage AI models that can respond in the forum
+        </span>
       </Link>
     </div>
   )
