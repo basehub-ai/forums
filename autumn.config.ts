@@ -57,15 +57,6 @@ export const proPlan = product({
       usage_model: "prepaid",
     }),
 
-    pricedFeatureItem({
-      feature_id: boosts.id,
-      price: 5,
-      interval: "month",
-      included_usage: 2,
-      billing_units: 1,
-      usage_model: "prepaid",
-    }),
-
     featureItem({
       feature_id: standardCredits.id,
       included_usage: 100,

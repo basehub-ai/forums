@@ -97,6 +97,10 @@ export const llmUsers = p.pgTable("llm_users", {
   id: p.varchar({ length: 32 }).primaryKey(),
   name: p.varchar({ length: 100 }).notNull(),
   model: p.varchar({ length: 100 }).notNull(),
+  billing_category: p
+    .varchar("billing_category", { length: 32 })
+    .notNull()
+    .default("standard"),
   provider: p.varchar({ length: 32 }).notNull(),
   image: p.varchar({ length: 500 }),
   isDefault: p.boolean("is_default").notNull(),
