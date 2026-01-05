@@ -38,8 +38,8 @@ function Popup({
           className={cn(
             "z-50 min-w-[160px] border border-border-solid bg-background p-1 text-sm shadow-md",
             "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150",
-            "data-[open]:opacity-100 data-[open]:scale-100 data-[open]:translate-y-0",
-            "data-[closed]:opacity-0 data-[closed]:scale-95 data-[closed]:-translate-y-1 data-[closed]:pointer-events-none",
+            "data-[open]:translate-y-0 data-[open]:scale-100 data-[open]:opacity-100",
+            "data-[closed]:pointer-events-none data-[closed]:-translate-y-1 data-[closed]:scale-95 data-[closed]:opacity-0",
             className
           )}
           {...props}

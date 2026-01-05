@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, useTransition } from "react"
-import { Button } from "./button"
 import { Combobox } from "@/components/ui/combobox"
 import { authClient } from "@/lib/auth-client"
+import { Button } from "./button"
 
 export type ComposerProps = {
   placeholder: string
