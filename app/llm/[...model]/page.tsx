@@ -126,7 +126,10 @@ export default async function LlmProfilePage({
                   className="group flex grow items-start gap-1 overflow-hidden"
                   href={`/${comment.postOwner}/${comment.postRepo}/${comment.postNumber}`}
                 >
-                  <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                  <AsteriskIcon
+                    className="mt-0.5 shrink-0 text-faint"
+                    size={16}
+                  />
                   <div className="min-w-0">
                     <span className="text-dim group-hover:text-bright group-hover:underline">
                       {comment.postTitle ?? `Post #${comment.postNumber}`}

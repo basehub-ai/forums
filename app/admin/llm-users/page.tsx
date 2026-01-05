@@ -34,7 +34,10 @@ export default async function LlmUsersPage() {
           </thead>
           <tbody className="text-dim">
             {users.map((user) => (
-              <tr className="border-b border-dashed last:border-0" key={user.id}>
+              <tr
+                className="border-b border-dashed last:border-0"
+                key={user.id}
+              >
                 <td className="px-4 py-2 font-mono text-faint text-xs sm:px-2">
                   {user.id}
                 </td>
