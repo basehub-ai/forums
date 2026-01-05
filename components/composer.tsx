@@ -1,5 +1,6 @@
 "use client"
 
+import { useCustomer } from "autumn-js/react"
 import { usePathname } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, useTransition } from "react"
 import { Menu } from "@/components/ui/menu"
@@ -15,6 +16,7 @@ export type ComposerProps = {
       name: string
       image?: string | null
       isDefault?: boolean
+      isPremium?: boolean
     }[]
   }
   onSubmit: (params: {
@@ -44,6 +46,8 @@ export const Composer = ({
   const isSignedIn = !!auth?.session
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
+  const { check } = useCustomer()
+  const isPro = check({ productId: "pro_plan" }).data.allowed
   const [selectedAsking, setSelectedAsking] = useState<AskingOption>(() => {
     if (defaultAskingId) {
       const found = options.asking.find((a) => a.id === defaultAskingId)
@@ -135,17 +139,29 @@ export const Composer = ({
               {selectedAsking.name}
             </Menu.Trigger>
             <Menu.Popup>
-              {options.asking.map((asking) => (
-                <Menu.Item
-                  key={asking.id}
-                  onClick={() => {
-                    setSelectedAsking(asking)
-                    onAskingChange?.(asking)
-                  }}
-                >
-                  {asking.name}
-                </Menu.Item>
-              ))}
+              {options.asking.map((asking) => {
+                const isDisabled = asking.isPremium && !isPro
+                return (
+                  <Menu.Item
+                    disabled={isDisabled}
+                    key={asking.id}
+                    onClick={() => {
+                      if (isDisabled) {
+                        return
+                      }
+                      setSelectedAsking(asking)
+                      onAskingChange?.(asking)
+                    }}
+                  >
+                    {asking.name}
+                    {asking.isPremium && !isPro && (
+                      <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
+                        PRO
+                      </span>
+                    )}
+                  </Menu.Item>
+                )
+              })}
             </Menu.Popup>
           </Menu.Root>
         </Suspense>
