@@ -1,16 +1,27 @@
 "use client"
 
+import { useCustomer } from "autumn-js/react"
 import type { Session, User } from "better-auth"
 import { useRouter } from "next/navigation"
 import { Menu } from "@/components/ui/menu"
+import { Meter } from "@/components/ui/meter"
 import { authClient } from "@/lib/auth-client"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
+  const { customer, check, checkout } = useCustomer()
+  const isPro = check({ productId: "pro_plan" }).data.allowed
+
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
     .join("")
+
+  const standardCredits = customer?.features?.standard_credits
+  const premiumCredits = customer?.features?.premium_credits
+
+  const standardMax = standardCredits?.included_usage
+  const premiumMax = premiumCredits?.included_usage
 
   return (
     <Menu.Root>
@@ -35,6 +46,62 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             <span className="font-semibold text-sm">{user.name}</span>
             <span className="text-xs">{user.email}</span>
           </div>
+        </div>
+        <Menu.Separator />
+        <div className="space-y-2 px-2 py-1.5">
+          <Meter.Root
+            max={standardMax}
+            min={0}
+            value={standardCredits?.usage ?? 0}
+          >
+            <div className="flex items-center justify-between">
+              <Meter.Label>Standard</Meter.Label>
+              <span className="text-muted text-xs tabular-nums">
+                {standardCredits?.usage ?? 0}/{standardMax}
+              </span>
+            </div>
+            <Meter.Track>
+              <Meter.Indicator />
+            </Meter.Track>
+            <span className="text-muted text-xs tabular-nums">
+              {standardCredits?.balance ?? 0} credits remaining
+            </span>
+          </Meter.Root>
+          {isPro ? (
+            <Meter.Root
+              max={premiumMax}
+              min={0}
+              value={premiumCredits?.usage ?? 0}
+            >
+              <div className="flex items-center justify-between">
+                <Meter.Label>Premium</Meter.Label>
+                <span className="text-muted text-xs tabular-nums">
+                  {premiumCredits?.usage ?? 0}/{premiumMax}
+                </span>
+              </div>
+              <Meter.Track>
+                <Meter.Indicator />
+              </Meter.Track>
+            </Meter.Root>
+          ) : (
+            <button
+              className="w-0 min-w-full cursor-pointer text-balance text-left text-accent text-xs hover:underline"
+              onClick={async () => {
+                await checkout({
+                  productId: "pro_plan",
+                  options: [
+                    {
+                      featureId: "premium_credits",
+                      quantity: 0,
+                    },
+                  ],
+                })
+              }}
+              type="button"
+            >
+              Upgrade your plan to get more credits
+            </button>
+          )}
         </div>
         <Menu.Separator />
         <Menu.Item

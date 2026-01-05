@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { Suspense } from "react"
 import BillingButton from "@/components/billing-button"
+import { CreditWarning } from "@/components/credit-warning"
 import { auth } from "@/lib/auth"
 import { Button } from "./button"
 import { Container } from "./container"
@@ -145,6 +146,7 @@ const User = async () => {
 
   return (
     <div className="flex items-center gap-x-2">
+      <CreditWarning />
       <BillingButton />
       <UserDropdown {...data} />
     </div>
