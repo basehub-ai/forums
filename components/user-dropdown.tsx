@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Menu } from "@/components/ui/menu"
 import { Meter } from "@/components/ui/meter"
 import { authClient } from "@/lib/auth-client"
+import { getSiteOrigin } from "@/lib/utils"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
@@ -95,6 +96,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
                       quantity: 0,
                     },
                   ],
+                  successUrl: getSiteOrigin(),
                 })
               }}
               type="button"

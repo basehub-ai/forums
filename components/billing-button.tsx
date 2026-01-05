@@ -2,6 +2,7 @@
 
 import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
+import { getSiteOrigin } from "@/lib/utils"
 
 export default function BillingButton() {
   const { checkout, openBillingPortal, check } = useCustomer()
@@ -10,7 +11,7 @@ export default function BillingButton() {
 
   return (
     <Button
-      className=""
+      className="cursor-pointer"
       onClick={async () => {
         if (isPro) {
           await openBillingPortal()
@@ -25,6 +26,7 @@ export default function BillingButton() {
               quantity: 0,
             },
           ],
+          successUrl: getSiteOrigin(),
         })
       }}
       size="xs"
