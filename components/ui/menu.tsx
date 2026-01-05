@@ -12,8 +12,8 @@ function Trigger({
   return (
     <BaseMenu.Trigger
       className={cn(
-        "inline-flex cursor-pointer items-center gap-1 text-dim text-sm transition-colors",
-        "hover:text-bright data-[popup-open]:text-bright",
+        "inline-flex cursor-pointer items-center gap-1 text-faint text-sm transition-colors duration-300 hover:text-bright hover:underline hover:duration-100 active:text-bright data-popup-open:text-bright",
+        "hover:text-bright data-popup-open:text-bright",
         className
       )}
       {...props}
@@ -34,18 +34,28 @@ function Popup({
   return (
     <BaseMenu.Portal>
       <BaseMenu.Positioner align={align} sideOffset={sideOffset}>
-        <BaseMenu.Popup
-          className={cn(
-            "z-50 min-w-[160px] border border-border-solid bg-background p-1 text-sm shadow-md",
-            "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150",
-            "data-[open]:translate-y-0 data-[open]:scale-100 data-[open]:opacity-100",
-            "data-[closed]:pointer-events-none data-[closed]:-translate-y-1 data-[closed]:scale-95 data-[closed]:opacity-0",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </BaseMenu.Popup>
+        <div className="relative">
+          <BaseMenu.Popup
+            className={cn(
+              "peer relative z-50 min-w-[160px] border border-muted bg-background p-1 text-sm",
+              "transform-gpu transition-opacity duration-100",
+              "data-open:opacity-100",
+              "outline-none data-closed:pointer-events-none data-closed:opacity-0",
+              className
+            )}
+            {...props}
+          >
+            {children}
+          </BaseMenu.Popup>
+          <div
+            className={cn(
+              "absolute top-1.5 left-1.5 h-full w-[calc(100%-1px)] bg-[radial-gradient(circle,var(--border-solid)_1px,transparent_1px)] bg-size-[3px_3px]",
+              "transform-gpu transition-opacity duration-100",
+              "peer-data-open:opacity-100",
+              "peer-data-closed:opacity-0"
+            )}
+          />
+        </div>
       </BaseMenu.Positioner>
     </BaseMenu.Portal>
   )
@@ -58,9 +68,9 @@ function Item({
   return (
     <BaseMenu.Item
       className={cn(
-        "flex cursor-pointer items-center gap-2 px-2 py-1.5 text-dim outline-none transition-colors",
-        "data-[highlighted]:bg-shade data-[highlighted]:text-bright",
-        "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+        "flex cursor-pointer items-center gap-2 px-2 py-1.5 text-muted outline-none transition-colors",
+        "data-highlighted:bg-shade data-highlighted:text-bright",
+        "data-disabled:cursor-not-allowed data-disabled:opacity-50",
         className
       )}
       {...props}

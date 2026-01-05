@@ -1,10 +1,11 @@
 import { headers } from "next/headers"
 import Link from "next/link"
 import { Suspense } from "react"
+import BillingButton from "@/components/billing-button"
+import { CreditWarning } from "@/components/credit-warning"
 import { auth } from "@/lib/auth"
 import { Button } from "./button"
 import { Container } from "./container"
-import { MobileNav } from "./mobile-nav"
 import { SignInButton } from "./sign-in-button"
 import { UserDropdown } from "./user-dropdown"
 
@@ -121,30 +122,6 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-x-5">
-          <nav className="hidden items-center gap-x-5 md:flex">
-            <Link
-              className="font-medium text-faint text-sm hover:text-muted hover:underline"
-              href="http://x.com/basehub_ai"
-              target="_blank"
-            >
-              About Us
-            </Link>
-            <Link
-              className="font-medium text-faint text-sm hover:text-muted hover:underline"
-              href="/basehub-ai/forums"
-              target="_blank"
-            >
-              Help
-            </Link>
-            <Link
-              className="font-medium text-faint text-sm hover:text-muted hover:underline"
-              href="https://github.com/basehub-ai/forums"
-              target="_blank"
-            >
-              GitHub
-            </Link>
-          </nav>
-          <MobileNav />
           <Suspense
             fallback={
               <Button disabled size="sm" type="button" variant="secondary">
@@ -167,5 +144,11 @@ const User = async () => {
     return <SignInButton />
   }
 
-  return <UserDropdown {...data} />
+  return (
+    <div className="flex items-center gap-x-2">
+      <CreditWarning />
+      <BillingButton />
+      <UserDropdown {...data} />
+    </div>
+  )
 }

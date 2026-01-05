@@ -145,6 +145,7 @@ export default async function RepoPage({
               name: u.name,
               image: u.image,
               isDefault: u.isDefault,
+              isPremium: u.billing_category === "premium",
             })),
             { id: "human", name: "Human only" },
           ]}

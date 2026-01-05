@@ -1,6 +1,7 @@
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
+import { Container } from "@/components/container"
 import { auth, isAdmin } from "@/lib/auth"
 
 export default async function AdminLayoutWrapper({
@@ -23,9 +24,9 @@ async function AdminLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="mb-6 font-bold text-2xl">Admin</h1>
+    <Container>
+      <h1 className="mb-8 font-bold text-bright text-lg underline">Admin</h1>
       {children}
-    </div>
+    </Container>
   )
 }

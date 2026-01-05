@@ -1,16 +1,27 @@
 "use client"
 
+import { useCustomer } from "autumn-js/react"
 import type { Session, User } from "better-auth"
 import { useRouter } from "next/navigation"
 import { Menu } from "@/components/ui/menu"
+import { Meter } from "@/components/ui/meter"
 import { authClient } from "@/lib/auth-client"
+import { formatRelativeTime, getSiteOrigin } from "@/lib/utils"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
+  const { customer, check, checkout } = useCustomer()
+  const isPro = check({ productId: "pro_plan" }).data.allowed
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
     .join("")
+
+  const standardCredits = customer?.features?.standard_credits
+  const premiumCredits = customer?.features?.premium_credits
+
+  const standardMax = standardCredits?.included_usage
+  const premiumMax = premiumCredits?.included_usage
 
   return (
     <Menu.Root>
@@ -20,7 +31,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
           className="size-5 rounded-full"
           src={user.image || ""}
         />
-        <span className="select-none font-medium text-faint uppercase group-hover:underline">
+        <span className="select-none uppercase group-hover:underline">
           {initials}
         </span>
       </Menu.Trigger>
@@ -32,9 +43,90 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             src={user.image || ""}
           />
           <div className="flex flex-col">
-            <span className="font-medium text-sm">{user.name}</span>
-            <span className="text-muted-foreground text-xs">{user.email}</span>
+            <span className="font-semibold text-sm">{user.name}</span>
+            <span className="text-xs">{user.email}</span>
           </div>
+        </div>
+        <Menu.Separator />
+        <div className="space-y-2 px-2 py-1.5">
+          <Meter.Root
+            max={standardMax}
+            min={0}
+            value={standardCredits?.usage ?? 0}
+          >
+            <div className="flex items-center justify-between">
+              <Meter.Label>{isPro ? "Standard" : "Credits"}</Meter.Label>
+              <span className="text-muted text-xs tabular-nums">
+                {standardCredits?.usage ?? 0}/{standardMax}
+              </span>
+            </div>
+            <Meter.Track>
+              <Meter.Indicator />
+            </Meter.Track>
+            {isPro ? (
+              <span className="text-muted text-xs tabular-nums">
+                {standardCredits?.balance ?? 0} credits remaining
+              </span>
+            ) : (
+              <span className="text-muted text-xs tabular-nums">
+                Resets{" "}
+                {standardCredits?.next_reset_at
+                  ? formatRelativeTime(standardCredits?.next_reset_at)
+                  : "N/A"}
+              </span>
+            )}
+          </Meter.Root>
+          {isPro ? (
+            <>
+              <Meter.Root
+                max={premiumMax}
+                min={0}
+                value={premiumCredits?.usage ?? 0}
+              >
+                <div className="flex items-center justify-between">
+                  <Meter.Label>Premium</Meter.Label>
+                  <span className="text-muted text-xs tabular-nums">
+                    {premiumCredits?.usage ?? 0}/{premiumMax}
+                  </span>
+                </div>
+                <Meter.Track>
+                  <Meter.Indicator />
+                </Meter.Track>
+                <span className="text-muted text-xs tabular-nums">
+                  {premiumCredits?.balance ?? 0} credits remaining
+                </span>
+              </Meter.Root>
+              <span className="text-muted text-xs tabular-nums">
+                Resets{" "}
+                {new Date(
+                  premiumCredits?.next_reset_at ?? 0
+                ).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            </>
+          ) : (
+            <button
+              className="w-0 min-w-full cursor-pointer text-balance text-left text-accent text-xs hover:underline"
+              onClick={async () => {
+                await checkout({
+                  productId: "pro_plan",
+                  options: [
+                    {
+                      featureId: "premium_credits",
+                      quantity: 0,
+                    },
+                  ],
+                  successUrl: getSiteOrigin(),
+                })
+              }}
+              type="button"
+            >
+              Upgrade your plan to get more credits now
+            </button>
+          )}
         </div>
         <Menu.Separator />
         <Menu.Item

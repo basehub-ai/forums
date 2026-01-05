@@ -9,6 +9,7 @@ import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
 import type { AgentUIMessage } from "@/agent/types"
 import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
+import { autumn, type BillingCategory, FEATURE_IDS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import {
   categories,
@@ -219,6 +220,24 @@ export async function createPost(data: {
   let streamId: string | undefined
 
   if (llm) {
+    const billingCategory = (llm.billing_category ||
+      "standard") as BillingCategory
+    const featureId = FEATURE_IDS[billingCategory]
+
+    const { data: checkResult, error } = await autumn.check({
+      customer_id: session.user.id,
+      feature_id: featureId,
+      required_balance: 3,
+    })
+
+    if (error || !checkResult) {
+      throw new Error("Failed to check billing status. Please try again.")
+    }
+
+    if (!checkResult.allowed) {
+      throw new Error("Insufficient credits. Please upgrade your plan.")
+    }
+
     const newCommentId = nanoid()
     llmCommentId = nanoid()
     streamId = String(now)
@@ -231,6 +250,8 @@ export async function createPost(data: {
         owner: data.owner,
         repo: data.repo,
         model: llm.model,
+        userId: session.user.id,
+        billingCategory,
       },
     ])
 
@@ -371,6 +392,24 @@ export async function createComment(data: {
   })
 
   if (llm) {
+    const billingCategory = (llm.billing_category ||
+      "standard") as BillingCategory
+    const featureId = FEATURE_IDS[billingCategory]
+
+    const { data: checkResult, error } = await autumn.check({
+      customer_id: session.user.id,
+      feature_id: featureId,
+      required_balance: 3,
+    })
+
+    if (error || !checkResult) {
+      throw new Error("Failed to check billing status. Please try again.")
+    }
+
+    if (!checkResult.allowed) {
+      throw new Error("Insufficient credits. Please upgrade your plan.")
+    }
+
     const newCommentId = nanoid()
     llmCommentId = newCommentId
     streamId = String(now)
@@ -383,6 +422,8 @@ export async function createComment(data: {
         owner: post.owner,
         repo: post.repo,
         model: llm.model,
+        userId: session.user.id,
+        billingCategory,
       },
     ])
 
@@ -652,6 +693,8 @@ async function startLlmCommentRerun({
   llm,
   now,
   streamId,
+  userId,
+  billingCategory,
 }: {
   oldComment: {
     postId: string
@@ -659,9 +702,11 @@ async function startLlmCommentRerun({
     createdAt: number
   }
   post: { owner: string; repo: string }
-  llm: { id: string; model: string }
+  llm: { id: string; model: string; billing_category: string }
   now: number
   streamId: string
+  userId: string
+  billingCategory: BillingCategory
 }): Promise<string> {
   const newCommentId = nanoid()
 
@@ -685,6 +730,8 @@ async function startLlmCommentRerun({
       owner: post.owner,
       repo: post.repo,
       model: llm.model,
+      userId,
+      billingCategory,
     },
   ])
 
@@ -696,7 +743,7 @@ async function startLlmCommentRerun({
 export async function rerunLlmComment(data: {
   commentId: string
 }): Promise<{ commentId: string }> {
-  await getSessionOrThrow()
+  const session = await getSessionOrThrow()
   const now = Date.now()
 
   const oldComment = await db
@@ -752,6 +799,24 @@ export async function rerunLlmComment(data: {
     throw new Error("A response is already being generated")
   }
 
+  const billingCategory = (llm.billing_category ||
+    "standard") as BillingCategory
+  const featureId = FEATURE_IDS[billingCategory]
+
+  const { data: checkResult, error } = await autumn.check({
+    customer_id: session.user.id,
+    feature_id: featureId,
+    required_balance: 3,
+  })
+
+  if (error || !checkResult) {
+    throw new Error("Failed to check billing status. Please try again.")
+  }
+
+  if (!checkResult.allowed) {
+    throw new Error("Insufficient credits. Please upgrade your plan.")
+  }
+
   // Delete the old comment (we're replacing it with a new one at the same position)
   await db.delete(comments).where(eq(comments.id, data.commentId))
 
@@ -761,6 +826,8 @@ export async function rerunLlmComment(data: {
     llm,
     now,
     streamId: String(now),
+    userId: session.user.id,
+    billingCategory,
   })
 
   updateTag(`repo:${post.owner}:${post.repo}`)
@@ -773,7 +840,7 @@ export async function rerunLlmCommentsInPost(data: {
   postId: string
   updateGitContext?: boolean
 }): Promise<{ commentId: string }> {
-  await getSessionOrThrow()
+  const session = await getSessionOrThrow()
   const now = Date.now()
 
   const [post, defaultLlm, existingStream] = await Promise.all([
@@ -834,6 +901,22 @@ export async function rerunLlmCommentsInPost(data: {
     throw new Error("No LLM comments to re-run")
   }
 
+  // Check credits for all comments (worst case: 3 credits per comment)
+  const billingCategory = (defaultLlm.billing_category ||
+    "standard") as BillingCategory
+  const featureId = FEATURE_IDS[billingCategory]
+  const requiredCredits = llmComments.length * 3
+
+  const { data: checkResult } = await autumn.check({
+    customer_id: session.user.id,
+    feature_id: featureId,
+    required_balance: requiredCredits,
+  })
+
+  if (!checkResult?.allowed) {
+    throw new Error("Insufficient credits. Please upgrade your plan.")
+  }
+
   // Delete old LLM comments at current SHA (they'll be replaced)
   await db
     .delete(comments)
@@ -863,12 +946,17 @@ export async function rerunLlmCommentsInPost(data: {
       .limit(1)
       .then((r) => r[0] ?? defaultLlm)
 
+    const commentBillingCategory = (llm.billing_category ||
+      "standard") as BillingCategory
+
     lastCommentId = await startLlmCommentRerun({
       oldComment,
       post,
       llm,
       now,
       streamId: String(now + index),
+      userId: session.user.id,
+      billingCategory: commentBillingCategory,
     })
   }
 

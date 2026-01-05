@@ -247,7 +247,6 @@ export function CommentContent({
               default: {
                 if (part.type.startsWith("tool-") && "state" in part) {
                   const toolPart = part as ToolUIPart
-                  console.log(part)
                   const toolName = toolPart.type.slice(5)
                   return (
                     <Tool

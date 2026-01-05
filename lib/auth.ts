@@ -1,3 +1,4 @@
+import { autumn } from "autumn-js/better-auth"
 import type { User } from "better-auth"
 import { betterAuth } from "better-auth"
 import { oAuthProxy } from "better-auth/plugins"
@@ -28,7 +29,7 @@ export const auth = betterAuth({
     },
   },
   baseURL: getSiteOrigin(),
-  plugins: [oAuthProxy({ productionURL: productionOrigin })],
+  plugins: [oAuthProxy({ productionURL: productionOrigin }), autumn()],
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
