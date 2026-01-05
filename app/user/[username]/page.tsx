@@ -114,7 +114,7 @@ export default async function UserProfilePage({
                   />
                   <div className="min-w-0">
                     <span className="text-dim group-hover:text-bright group-hover:underline">
-                      {comment.postTitle ?? `Post #${comment.postNumber}`}
+                      {comment.postTitle || `Post #${comment.postNumber}`}
                     </span>
                     <span className="ml-2 text-faint text-sm">
                       {comment.postOwner}/{comment.postRepo}

@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { Container } from "@/components/container"
+import { AdminSkeleton } from "@/components/profile-skeleton"
 import { Title } from "@/components/typography"
 import { auth, isAdmin } from "@/lib/auth"
 
@@ -11,7 +12,7 @@ export default async function AdminLayoutWrapper({
   children: React.ReactNode
 }) {
   return (
-    <Suspense>
+    <Suspense fallback={<AdminSkeleton />}>
       <AdminLayout>{children}</AdminLayout>
     </Suspense>
   )
