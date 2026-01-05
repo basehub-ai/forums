@@ -81,7 +81,7 @@ function CommentItem({
             depth === 0 ? "sticky top-0" : "sticky top-8"
           )}
         >
-          <div className="flex items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center">
             <Link
               className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline"
               href={profileUrl}
@@ -94,7 +94,7 @@ function CommentItem({
 
               {author.name}
             </Link>
-            &nbsp;
+            <span className="hidden sm:inline">&nbsp;</span>
             <span className="text-muted-foreground text-sm">
               {actionLabel}{" "}
               <Suspense>
@@ -140,7 +140,6 @@ function CommentItem({
             <div className="mt-4 border-muted border-l-2 pl-4">
               <PostComposer
                 askingOptions={askingOptions}
-                author={author}
                 autoFocus
                 onCancel={onCancelReply}
                 postId={comment.postId}

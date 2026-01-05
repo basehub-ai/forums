@@ -1,8 +1,10 @@
 import { and, eq } from "drizzle-orm"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
+import { getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
-import { categories, posts } from "@/lib/db/schema"
+import { posts } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 
 const size = {
   width: 1200,
@@ -25,15 +27,13 @@ export async function GET(request: NextRequest) {
     return new Response("Invalid post number", { status: 400 })
   }
 
-  const postWithCategory = await db
+  const post = await db
     .select({
       title: posts.title,
       number: posts.number,
-      categoryTitle: categories.title,
-      categoryEmoji: categories.emoji,
+      rootCommentId: posts.rootCommentId,
     })
     .from(posts)
-    .leftJoin(categories, eq(posts.categoryId, categories.id))
     .where(
       and(
         eq(posts.owner, owner),
@@ -44,9 +44,9 @@ export async function GET(request: NextRequest) {
     .limit(1)
     .then((r) => r[0])
 
-  const title = postWithCategory?.title || `Post #${postNumber}`
-  const category = postWithCategory?.categoryEmoji
-    ? `${postWithCategory.categoryEmoji} ${postWithCategory.categoryTitle}`
+  const title = post?.title || `Post #${postNumber}`
+  const body = post?.rootCommentId
+    ? await getRootCommentText(post.rootCommentId)
     : null
 
   return new ImageResponse(
@@ -57,51 +57,68 @@ export async function GET(request: NextRequest) {
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "space-between",
-        backgroundColor: "#09090b",
+        justifyContent: "flex-start",
+        backgroundColor: "#fafafa",
         padding: 60,
+        gap: 32,
       }}
     >
       <div
         style={{
           display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt="Forums"
+          height={40}
+          src={`${getSiteOrigin()}/icon.svg`}
+          width={40}
+        />
+        <span
+          style={{
+            fontSize: 36,
+            color: "#71717a",
+          }}
+        >
+          {owner}/{repo}
+        </span>
+      </div>
+      <div
+        style={{
+          display: "flex",
           flexDirection: "column",
-          gap: 16,
+          gap: 24,
         }}
       >
         <div
           style={{
-            fontSize: 28,
-            color: "#71717a",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          {owner}/{repo} #{postNumber}
-        </div>
-        <div
-          style={{
-            fontSize: 56,
+            fontSize: 64,
             fontWeight: "bold",
-            color: "#fafafa",
+            color: "#09090b",
             lineHeight: 1.2,
             maxWidth: 1080,
           }}
         >
           {title}
         </div>
+        {body && (
+          <div
+            style={{
+              fontSize: 36,
+              color: "#52525b",
+              lineHeight: 1.5,
+              maxWidth: 1080,
+              display: "block",
+              lineClamp: 3,
+            }}
+          >
+            {body}
+          </div>
+        )}
       </div>
-      {category && (
-        <div
-          style={{
-            fontSize: 32,
-            color: "#a1a1aa",
-          }}
-        >
-          {category}
-        </div>
-      )}
     </div>,
     {
       ...size,

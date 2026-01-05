@@ -1,10 +1,11 @@
 import { and, asc, eq } from "drizzle-orm"
 import type { Metadata } from "next"
 import { cacheLife, cacheTag } from "next/cache"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
 import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
+import { getPostByNumber, getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import {
   categories,
@@ -64,6 +65,8 @@ async function getStaleInfo(
   }
 }
 
+const DESCRIPTION_MAX_LENGTH = 160
+
 export async function generateMetadata({
   params,
 }: {
@@ -71,9 +74,36 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { owner, repo, postNumber } = await params
   const origin = getSiteOrigin()
+  const postNumberInt = Number.parseInt(postNumber, 10)
+
+  if (Number.isNaN(postNumberInt)) {
+    return {}
+  }
+
+  const post = await getPostByNumber(owner, repo, postNumberInt)
+  if (!post) {
+    return {}
+  }
+
+  const title = `${post.title} — ${owner}/${repo}`
+
+  let description = ""
+  if (post.rootCommentId) {
+    const text = await getRootCommentText(post.rootCommentId)
+    if (text) {
+      description =
+        text.length > DESCRIPTION_MAX_LENGTH
+          ? `${text.slice(0, DESCRIPTION_MAX_LENGTH)}…`
+          : text
+    }
+  }
 
   return {
+    title,
+    description,
     openGraph: {
+      title,
+      description,
       images: [
         `${origin}/api/og/post?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&postNumber=${encodeURIComponent(postNumber)}`,
       ],
@@ -91,6 +121,8 @@ export const generateStaticParams = async () => {
   }))
 }
 
+const suffixRegex = /\.(md|txt)$/
+
 export default async function PostPage({
   params,
 }: {
@@ -99,6 +131,12 @@ export default async function PostPage({
   "use cache"
 
   const { postNumber: postNumberStr, owner, repo } = await params
+
+  if (postNumberStr.endsWith(".md") || postNumberStr.endsWith(".txt")) {
+    const cleanPostNumber = postNumberStr.replace(suffixRegex, "")
+    redirect(`/${owner}/${repo}/${cleanPostNumber}/llms.txt`)
+  }
+
   const postNumber = Number.parseInt(postNumberStr, 10)
 
   if (Number.isNaN(postNumber)) {
@@ -328,7 +366,6 @@ export default async function PostPage({
 
         <PostComposer
           askingOptions={askingOptions}
-          author={authorsById[post.authorId]}
           defaultLlmId={lastLlmAuthorId}
           postId={post.id}
         />

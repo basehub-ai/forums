@@ -1,5 +1,5 @@
 import { stepCountIs, streamText, tool } from "ai"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { z } from "zod"
 import { db } from "@/lib/db/client"
@@ -25,7 +25,7 @@ export async function runCategoryAgent({
       emoji: categories.emoji,
     })
     .from(categories)
-    .where(eq(categories.owner, owner))
+    .where(and(eq(categories.owner, owner), eq(categories.repo, repo)))
 
   const result: {
     title: string
@@ -39,6 +39,7 @@ export async function runCategoryAgent({
 1. Set a concise post title (10 words max) using setTitle.
    - If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
    - Only use statement-style titles for announcements, discussions, or purely informational posts
+   - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
 
 Existing categories:
@@ -105,7 +106,13 @@ You're working on your own. Meaning, the user won't be able to respond any quest
     const inserted = await db
       .select({ id: categories.id })
       .from(categories)
-      .where(eq(categories.title, result.newCategory.title))
+      .where(
+        and(
+          eq(categories.owner, owner),
+          eq(categories.repo, repo),
+          eq(categories.title, result.newCategory.title)
+        )
+      )
       .limit(1)
     categoryId = inserted[0]?.id
   }

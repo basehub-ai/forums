@@ -165,18 +165,20 @@ export const getWorkspace = async ({
         WORKTREES_BASE="$3"
         PROVIDED_REF="$4"
 
+        export PATH="$HOME/.local/bin:$PATH"
+
         # Install ripgrep in background if not present
+        INSTALL_PID=""
         if ! which rg >/dev/null 2>&1; then
           (
-            mkdir -p ~/.local/bin &&
-            cd /tmp &&
+            mkdir -p ~/.local/bin
+            cd /tmp
             curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
             tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
             cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
             rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
           ) &
-          RG_PID=$!
-          export PATH="$HOME/.local/bin:$PATH"
+          INSTALL_PID=$!
         fi
 
         # Clone as bare repo if needed
@@ -187,9 +189,9 @@ export const getWorkspace = async ({
         cd "$REPO_DIR"
         git fetch origin --quiet
 
-        # Wait for ripgrep installation to complete if it was started
-        if [ -n "$RG_PID" ]; then
-          wait $RG_PID || true
+        # Wait for tool installation to complete if it was started
+        if [ -n "$INSTALL_PID" ]; then
+          wait $INSTALL_PID || true
         fi
 
         # Determine ref: use provided or detect default branch
@@ -276,7 +278,7 @@ export const getWorkspace = async ({
   }
 
   if (stderr) {
-    console.error(`Git initialization stderr: ${stderr}`)
+    throw new Error(`Workspace initialization stderr: ${stderr}`)
   }
 
   const lines = stdout.trim().split("\n")

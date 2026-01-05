@@ -1,6 +1,6 @@
 "use client"
 
-import { Tooltip } from "@base-ui/react/tooltip"
+import { Tooltip } from "@/components/ui/tooltip"
 import { ChevronRight, TagIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -69,15 +69,15 @@ export function PostHeader({
           </Link>
           {gitContext.tags.length > 0 && (
             <Link
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 overflow-hidden"
               href={`https://github.com/${owner}/${repo}/releases/tag/${gitContext.tags[0]}`}
               target="_blank"
             >
               <TagIcon className="h-3.5 w-3.5" />
-              {gitContext.tags[0]}
+              <span className="truncate">{gitContext.tags[0]}</span>
             </Link>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-hidden">
             <Tooltip.Provider>
               <Tooltip.Root>
                 <Tooltip.Trigger
@@ -91,13 +91,7 @@ export function PostHeader({
                     </Link>
                   }
                 />
-                <Tooltip.Portal>
-                  <Tooltip.Positioner>
-                    <Tooltip.Popup>
-                      Exploring code at this commit.
-                    </Tooltip.Popup>
-                  </Tooltip.Positioner>
-                </Tooltip.Portal>
+                <Tooltip.Popup>Exploring code at this commit.</Tooltip.Popup>
               </Tooltip.Root>
             </Tooltip.Provider>
             <span className="truncate">

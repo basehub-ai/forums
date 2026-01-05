@@ -53,7 +53,7 @@ export default async function Home() {
                 return (
                   <ListItem key={repo.name}>
                     <Link
-                      className="group mr-3 flex grow items-center gap-1 text-dim hover:underline"
+                      className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                       href={repo.name}
                     >
                       <AsteriskIcon className="mt-0.5 text-faint" size={16} />
@@ -86,25 +86,25 @@ export default async function Home() {
       <pre
         aria-hidden="true"
         className="mx-auto mt-10 w-fit overflow-x-auto text-muted text-xs leading-tight"
-      >{`┌───────────────────┐
-│  Ask a question   │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│  Clone the repo   │
-└─────────┬─────────┘
-          │
-          ▼
-┌───────────────────┐
-│  Explore the code │
-└─────────┬─────────┘
-          │
-          ▼
-╔═══════════════════╗
-║  Source-backed    ║
-║      answer       ║
-╚═══════════════════╝`}</pre>
+      >{`    ┌───────────────────┐
+    │  Ask a question   │
+    └─────────┬─────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│  Repo cloned in sandbox   │
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│  Agent explores codebase  │
+└─────────────┬─────────────┘
+              │
+              ▼
+    ╔═══════════════════╗
+    ║  Source-backed    ║
+    ║      answer       ║
+    ╚═══════════════════╝`}</pre>
     </Container>
   )
 }

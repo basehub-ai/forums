@@ -3,27 +3,19 @@ import type { Metadata } from "next"
 import { cacheTag } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import slugify from "slugify"
 import { Container } from "@/components/container"
 import { Subtitle, Title } from "@/components/typography"
+import {
+  categorySlugify,
+  getCategoryBySlug,
+  getCategoryPostCount,
+} from "@/lib/data/categories"
+import { getGithubRepo } from "@/lib/data/github"
 import { db } from "@/lib/db/client"
 import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "../../active-posts"
 import { NewPostComposer } from "../../new-post-composer"
-
-function categorySlugify(title: string) {
-  return slugify(title, { lower: true, strict: true })
-}
-
-async function getCategoryBySlug(owner: string, repo: string, slug: string) {
-  const repoCategories = await db
-    .select()
-    .from(categories)
-    .where(and(eq(categories.owner, owner), eq(categories.repo, repo)))
-
-  return repoCategories.find((c) => categorySlugify(c.title) === slug)
-}
 
 export async function generateMetadata({
   params,
@@ -32,9 +24,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { owner, repo, categorySlug } = await params
   const origin = getSiteOrigin()
+  const category = await getCategoryBySlug(owner, repo, categorySlug)
+
+  if (!category) {
+    return {}
+  }
+
+  const postCount = await getCategoryPostCount(owner, repo, category.id)
+  const title = `${category.title} — ${owner}/${repo}`
+  const description =
+    postCount > 0
+      ? `There are ${postCount} posts categorized.`
+      : "No posts yet!"
 
   return {
+    title,
+    description,
     openGraph: {
+      title,
+      description,
       images: [
         `${origin}/api/og/category?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&categorySlug=${encodeURIComponent(categorySlug)}`,
       ],
@@ -42,7 +50,7 @@ export async function generateMetadata({
   }
 }
 
-export const generateStaticParams = async () => {
+export async function generateStaticParams() {
   const allCategories = await db.select().from(categories)
 
   return allCategories.map((category) => ({
@@ -65,12 +73,7 @@ export default async function CategoryPage({
   const [category, allLlmUsers, repoData] = await Promise.all([
     getCategoryBySlug(owner, repo, categorySlug),
     db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
-    fetch(`https://api.github.com/repos/${owner}/${repo}`).then(async (res) => {
-      if (!res.ok || res.status === 404) {
-        return null
-      }
-      return res.json()
-    }),
+    getGithubRepo(owner, repo),
   ])
 
   if (!category) {

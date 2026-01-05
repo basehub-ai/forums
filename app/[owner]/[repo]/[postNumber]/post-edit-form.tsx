@@ -1,8 +1,8 @@
 "use client"
 
-import { Menu } from "@base-ui/react/menu"
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react"
 import { useState, useTransition } from "react"
+import { Menu } from "@/components/ui/menu"
 import { usePostMetadata } from "./post-metadata-context"
 
 export function PostEditForm({ onClose }: { onClose: () => void }) {
@@ -79,27 +79,20 @@ export function PostEditForm({ onClose }: { onClose: () => void }) {
             )}
             <ChevronDownIcon className="h-3 w-3 opacity-50" />
           </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Positioner align="start">
-              <Menu.Popup>
-                <Menu.Item onClick={() => setNewCategoryId(null)}>
-                  <span className="text-muted-foreground">None</span>
-                </Menu.Item>
-                {categories.map((cat) => (
-                  <Menu.Item
-                    key={cat.id}
-                    onClick={() => setNewCategoryId(cat.id)}
-                  >
-                    {cat.emoji && <span>{cat.emoji}</span>}
-                    {cat.title}
-                    {cat.id === newCategoryId && (
-                      <CheckIcon className="ml-auto h-3 w-3" />
-                    )}
-                  </Menu.Item>
-                ))}
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
+          <Menu.Popup>
+            <Menu.Item onClick={() => setNewCategoryId(null)}>
+              <span className="text-muted-foreground">None</span>
+            </Menu.Item>
+            {categories.map((cat) => (
+              <Menu.Item key={cat.id} onClick={() => setNewCategoryId(cat.id)}>
+                {cat.emoji && <span>{cat.emoji}</span>}
+                {cat.title}
+                {cat.id === newCategoryId && (
+                  <CheckIcon className="ml-auto h-3 w-3" />
+                )}
+              </Menu.Item>
+            ))}
+          </Menu.Popup>
         </Menu.Root>
       </div>
 

@@ -4,20 +4,14 @@ import type { Metadata } from "next"
 import { cacheTag } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { z } from "zod"
 import { Container } from "@/components/container"
 import { Subtitle, Title } from "@/components/typography"
+import { getGithubRepo } from "@/lib/data/github"
 import { db } from "@/lib/db/client"
 import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
 import { formatCompactNumber, getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "./active-posts"
 import { NewPostComposer } from "./new-post-composer"
-
-const githubRepoSchema = z.object({
-  description: z.string().nullable(),
-  stargazers_count: z.number(),
-  homepage: z.string().nullable(),
-})
 
 export async function generateMetadata({
   params,
@@ -26,9 +20,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { owner, repo } = await params
   const origin = getSiteOrigin()
+  const repoData = await getGithubRepo(owner, repo)
+
+  const title = `${owner}/${repo} — Forums`
+  const description = repoData?.description
+    ? `Forum of ${owner}/${repo}. ${repoData.description}`
+    : `Forum of ${owner}/${repo}.`
 
   return {
+    title,
+    description,
     openGraph: {
+      title,
+      description,
       images: [
         `${origin}/api/og/repo?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
       ],
@@ -87,12 +91,7 @@ export default async function RepoPage({
       .from(categories)
       .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
     db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
-    fetch(`https://api.github.com/repos/${owner}/${repo}`).then(async (res) => {
-      if (!res.ok || res.status === 404) {
-        return null
-      }
-      return githubRepoSchema.parse(await res.json())
-    }),
+    getGithubRepo(owner, repo),
   ])
 
   if (!repoData) {
