@@ -20,7 +20,7 @@ function Popup({
       <BaseTooltip.Positioner sideOffset={sideOffset}>
         <BaseTooltip.Popup
           className={cn(
-            "z-50 max-w-[280px] bg-bright px-2 py-1 text-label text-sm shadow-sm",
+            "z-50 max-w-[280px] border border-border-solid bg-shade px-2 py-1 text-bright text-sm shadow-sm",
             "transition-[opacity,transform] duration-100",
             className
           )}
