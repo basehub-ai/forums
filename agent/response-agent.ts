@@ -1,3 +1,4 @@
+import { track } from "@vercel/analytics"
 import {
   convertToModelMessages,
   type FinishReason,
@@ -8,6 +9,7 @@ import { and, asc, eq, lt } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
+import { z } from "zod"
 import { createMentions } from "@/lib/actions/posts"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
@@ -220,6 +222,21 @@ If you see any of these patterns, call ReadPost immediately to get the full cont
       },
     })
     .pipeTo(writable, { preventClose: true })
+
+  const usage = await result.usage
+  const providerMetadata = await result.providerMetadata
+  const parseCost = z
+    .object({
+      cost: z.string().transform((v) => Number(v)),
+    })
+    .safeParse(providerMetadata)
+
+  if (parseCost.success) {
+    track("generated_response", {
+      tokens: usage.totalTokens,
+      cost: parseCost.data.cost,
+    })
+  }
 
   return {
     finishReason: await result.finishReason,

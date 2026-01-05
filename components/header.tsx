@@ -1,6 +1,7 @@
 import { headers } from "next/headers"
 import Link from "next/link"
 import { Suspense } from "react"
+import BillingButton from "@/components/billing-button"
 import { auth } from "@/lib/auth"
 import { Button } from "./button"
 import { Container } from "./container"
@@ -143,6 +144,9 @@ export function Header() {
             >
               GitHub
             </Link>
+            <Suspense>
+              <BillingButton />
+            </Suspense>
           </nav>
           <MobileNav />
           <Suspense
