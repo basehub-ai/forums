@@ -1,9 +1,9 @@
 import type { InferSelectModel } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import Link from "next/link"
+import { RelativeTime } from "@/components/relative-time"
 import { List, ListItem, TableCellText } from "@/components/typography"
 import type { categories } from "@/lib/db/schema"
-import { formatRelativeTime } from "@/lib/utils"
 import { AuthorAvatar } from "./author-avatar"
 
 type PostListItem = {
@@ -58,7 +58,7 @@ export function ActivePosts({
                     </TableCellText>
                   )}
                   <TableCellText className="text-end text-sm">
-                    {formatRelativeTime(post.createdAt)}
+                    <RelativeTime timestamp={post.createdAt} />
                   </TableCellText>
                 </div>
               </ListItem>
