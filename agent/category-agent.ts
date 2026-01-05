@@ -39,6 +39,7 @@ export async function runCategoryAgent({
 1. Set a concise post title (10 words max) using setTitle.
    - If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
    - Only use statement-style titles for announcements, discussions, or purely informational posts
+   - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
 
 Existing categories:
