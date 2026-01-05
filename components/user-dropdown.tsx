@@ -6,13 +6,12 @@ import { useRouter } from "next/navigation"
 import { Menu } from "@/components/ui/menu"
 import { Meter } from "@/components/ui/meter"
 import { authClient } from "@/lib/auth-client"
-import { getSiteOrigin } from "@/lib/utils"
+import { formatRelativeTime, getSiteOrigin } from "@/lib/utils"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
   const { customer, check, checkout } = useCustomer()
   const isPro = check({ productId: "pro_plan" }).data.allowed
-
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
@@ -56,7 +55,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             value={standardCredits?.usage ?? 0}
           >
             <div className="flex items-center justify-between">
-              <Meter.Label>Standard</Meter.Label>
+              <Meter.Label>{isPro ? "Standard" : "Credits"}</Meter.Label>
               <span className="text-muted text-xs tabular-nums">
                 {standardCredits?.usage ?? 0}/{standardMax}
               </span>
@@ -64,26 +63,50 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             <Meter.Track>
               <Meter.Indicator />
             </Meter.Track>
-            <span className="text-muted text-xs tabular-nums">
-              {standardCredits?.balance ?? 0} credits remaining
-            </span>
+            {isPro ? (
+              <span className="text-muted text-xs tabular-nums">
+                {standardCredits?.balance ?? 0} credits remaining
+              </span>
+            ) : (
+              <span className="text-muted text-xs tabular-nums">
+                Resets{" "}
+                {standardCredits?.next_reset_at
+                  ? formatRelativeTime(standardCredits?.next_reset_at)
+                  : "N/A"}
+              </span>
+            )}
           </Meter.Root>
           {isPro ? (
-            <Meter.Root
-              max={premiumMax}
-              min={0}
-              value={premiumCredits?.usage ?? 0}
-            >
-              <div className="flex items-center justify-between">
-                <Meter.Label>Premium</Meter.Label>
+            <>
+              <Meter.Root
+                max={premiumMax}
+                min={0}
+                value={premiumCredits?.usage ?? 0}
+              >
+                <div className="flex items-center justify-between">
+                  <Meter.Label>Premium</Meter.Label>
+                  <span className="text-muted text-xs tabular-nums">
+                    {premiumCredits?.usage ?? 0}/{premiumMax}
+                  </span>
+                </div>
+                <Meter.Track>
+                  <Meter.Indicator />
+                </Meter.Track>
                 <span className="text-muted text-xs tabular-nums">
-                  {premiumCredits?.usage ?? 0}/{premiumMax}
+                  {premiumCredits?.balance ?? 0} credits remaining
                 </span>
-              </div>
-              <Meter.Track>
-                <Meter.Indicator />
-              </Meter.Track>
-            </Meter.Root>
+              </Meter.Root>
+              <span className="text-muted text-xs tabular-nums">
+                Resets{" "}
+                {new Date(
+                  premiumCredits?.next_reset_at ?? 0
+                ).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            </>
           ) : (
             <button
               className="w-0 min-w-full cursor-pointer text-balance text-left text-accent text-xs hover:underline"
@@ -101,7 +124,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
               }}
               type="button"
             >
-              Upgrade your plan to get more credits
+              Upgrade your plan to get more credits now
             </button>
           )}
         </div>
