@@ -28,22 +28,3 @@ export function ProfileSkeleton() {
     </Container>
   )
 }
-
-export function AdminSkeleton() {
-  return (
-    <Container>
-      <div className="mb-6 h-5 w-16 animate-pulse rounded bg-muted/50" />
-      <List>
-        {[1, 2].map((i) => (
-          <div className="flex items-start gap-1" key={i}>
-            <div className="mt-0.5 h-4 w-4 animate-pulse rounded bg-muted/50" />
-            <div className="space-y-1.5">
-              <div className="h-4 w-24 animate-pulse rounded bg-muted/50" />
-              <div className="h-3 w-56 animate-pulse rounded bg-muted/50" />
-            </div>
-          </div>
-        ))}
-      </List>
-    </Container>
-  )
-}
