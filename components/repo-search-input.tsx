@@ -54,7 +54,7 @@ export function RepoSearchInput() {
           size={18}
         />
         <input
-          className="no-focus h-9 w-full bg-accent/5 pr-2 pl-8 font-medium text-accent text-base outline-dotted outline-2 outline-accent -outline-offset-1 placeholder:text-accent hover:bg-accent/10 focus:outline-dashed focus:outline-2"
+          className="no-focus h-9 w-full bg-accent/5 pr-2 pl-8 font-medium text-accent text-base outline-dotted outline-2 outline-accent -outline-offset-1 placeholder:text-accent hover:bg-accent/10 focus:outline-dashed"
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search or paste a repo URL"
           value={value}

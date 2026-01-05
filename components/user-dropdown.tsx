@@ -20,7 +20,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
           className="size-5 rounded-full"
           src={user.image || ""}
         />
-        <span className="select-none font-medium text-faint uppercase group-hover:underline">
+        <span className="select-none uppercase group-hover:underline">
           {initials}
         </span>
       </Menu.Trigger>
@@ -32,8 +32,8 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             src={user.image || ""}
           />
           <div className="flex flex-col">
-            <span className="font-medium text-sm">{user.name}</span>
-            <span className="text-muted-foreground text-xs">{user.email}</span>
+            <span className="font-semibold text-sm">{user.name}</span>
+            <span className="text-xs">{user.email}</span>
           </div>
         </div>
         <Menu.Separator />

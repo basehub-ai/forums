@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import type { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
+import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 import "./globals.css"
 import { getSiteOrigin } from "@/lib/utils"
@@ -22,7 +23,7 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
-        <div className="root">
+        <div className="root flex min-h-screen flex-col">
           <AutumnProvider betterAuthUrl={getSiteOrigin()}>
             <ThemeProvider
               attribute="class"
@@ -31,7 +32,8 @@ export default function RootLayout({
               enableSystem
             >
               <Header />
-              <main className="py-4">{children}</main>
+              <main className="flex-1 py-4">{children}</main>
+              <Footer />
             </ThemeProvider>
             <Analytics />
           </AutumnProvider>
