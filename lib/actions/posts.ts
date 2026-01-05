@@ -224,13 +224,17 @@ export async function createPost(data: {
       "standard") as BillingCategory
     const featureId = FEATURE_IDS[billingCategory]
 
-    const { data: checkResult } = await autumn.check({
+    const { data: checkResult, error } = await autumn.check({
       customer_id: session.user.id,
       feature_id: featureId,
       required_balance: 3,
     })
 
-    if (!checkResult?.allowed) {
+    if (error || !checkResult) {
+      throw new Error("Failed to check billing status. Please try again.")
+    }
+
+    if (!checkResult.allowed) {
       throw new Error("Insufficient credits. Please upgrade your plan.")
     }
 
@@ -392,13 +396,17 @@ export async function createComment(data: {
       "standard") as BillingCategory
     const featureId = FEATURE_IDS[billingCategory]
 
-    const { data: checkResult } = await autumn.check({
+    const { data: checkResult, error } = await autumn.check({
       customer_id: session.user.id,
       feature_id: featureId,
       required_balance: 3,
     })
 
-    if (!checkResult?.allowed) {
+    if (error || !checkResult) {
+      throw new Error("Failed to check billing status. Please try again.")
+    }
+
+    if (!checkResult.allowed) {
       throw new Error("Insufficient credits. Please upgrade your plan.")
     }
 
@@ -795,13 +803,17 @@ export async function rerunLlmComment(data: {
     "standard") as BillingCategory
   const featureId = FEATURE_IDS[billingCategory]
 
-  const { data: checkResult } = await autumn.check({
+  const { data: checkResult, error } = await autumn.check({
     customer_id: session.user.id,
     feature_id: featureId,
     required_balance: 3,
   })
 
-  if (!checkResult?.allowed) {
+  if (error || !checkResult) {
+    throw new Error("Failed to check billing status. Please try again.")
+  }
+
+  if (!checkResult.allowed) {
     throw new Error("Insufficient credits. Please upgrade your plan.")
   }
 
