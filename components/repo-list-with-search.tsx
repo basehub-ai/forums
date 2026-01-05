@@ -3,7 +3,7 @@
 import { AsteriskIcon, SearchIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   List,
   ListItem,
@@ -81,37 +81,49 @@ export function RepoListWithSearch({ topRepos }: { topRepos: RepoStats[] }) {
     null
   )
   const [isSearching, setIsSearching] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  const doSearch = useCallback(async (query: string) => {
+  useEffect(() => {
+    const query = value.trim()
+
     if (!query || query.length < 2) {
       setSearchResults(null)
       setSearchQuery("")
+      setIsSearching(false)
       return
     }
 
-    setIsSearching(true)
-    setSearchQuery(query)
-
-    try {
-      const res = await fetch(
-        `/api/search/repos?q=${encodeURIComponent(query)}`
-      )
-      const data = (await res.json()) as { results?: SearchResult[] }
-      setSearchResults(data.results ?? [])
-    } catch {
-      setSearchResults([])
-    } finally {
-      setIsSearching(false)
-    }
-  }, [])
-
-  useEffect(() => {
     const timer = setTimeout(() => {
-      doSearch(value)
+      abortControllerRef.current?.abort()
+      const controller = new AbortController()
+      abortControllerRef.current = controller
+
+      setIsSearching(true)
+      setSearchQuery(query)
+
+      fetch(`/api/search/repos?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal,
+      })
+        .then((res) => res.json() as Promise<{ results?: SearchResult[] }>)
+        .then((data) => {
+          if (!controller.signal.aborted) {
+            setSearchResults(data.results ?? [])
+            setIsSearching(false)
+          }
+        })
+        .catch((err) => {
+          if (err instanceof Error && err.name !== "AbortError") {
+            setSearchResults([])
+            setIsSearching(false)
+          }
+        })
     }, 200)
 
-    return () => clearTimeout(timer)
-  }, [value, doSearch])
+    return () => {
+      clearTimeout(timer)
+      abortControllerRef.current?.abort()
+    }
+  }, [value])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
