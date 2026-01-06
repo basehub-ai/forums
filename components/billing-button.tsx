@@ -2,7 +2,6 @@
 
 import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
-import { getSiteOrigin } from "@/lib/utils"
 
 export default function BillingButton({ isPro }: { isPro: boolean }) {
   const { checkout, openBillingPortal } = useCustomer()
@@ -26,7 +25,7 @@ export default function BillingButton({ isPro }: { isPro: boolean }) {
               quantity: 0,
             },
           ],
-          successUrl: getSiteOrigin(),
+          successUrl: window.location.href,
           checkoutSessionParams: {
             cancel_url: window.location.href,
           },
