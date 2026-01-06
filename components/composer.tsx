@@ -153,7 +153,9 @@ export const Composer = ({
                       onAskingChange?.(asking)
                     }}
                   >
-                    {asking.name}
+                    {asking.isPremium && isPro
+                      ? ` 💎 ${asking.name}`
+                      : asking.name}
                     {asking.isPremium && !isPro && (
                       <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
                         PRO
