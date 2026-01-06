@@ -10,7 +10,7 @@ import { formatRelativeTime } from "@/lib/utils"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
-  const { customer, check, checkout } = useCustomer()
+  const { customer, check, checkout, openBillingPortal } = useCustomer()
   const isPro = check({ productId: "pro_plan" }).data.allowed
   const initials = user.name
     .split(" ")
@@ -43,7 +43,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             src={user.image || ""}
           />
           <div className="flex flex-col">
-            <span className="font-semibold text-sm">{user.name}</span>
+            <span className="font-semibold text-dim text-sm">{user.name}</span>
             <span className="text-xs">{user.email}</span>
           </div>
         </div>
@@ -132,6 +132,17 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
           )}
         </div>
         <Menu.Separator />
+        {isPro && (
+          <Menu.Item
+            onClick={async () => {
+              await openBillingPortal({
+                returnUrl: window.location.href,
+              })
+            }}
+          >
+            Manage plan
+          </Menu.Item>
+        )}
         <Menu.Item
           onClick={async () => {
             await authClient.signOut()

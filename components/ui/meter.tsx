@@ -20,10 +20,7 @@ function Label({
   ...props
 }: React.ComponentProps<typeof BaseMeter.Label>) {
   return (
-    <BaseMeter.Label
-      className={cn("text-muted text-xs", className)}
-      {...props}
-    />
+    <BaseMeter.Label className={cn("text-dim text-xs", className)} {...props} />
   )
 }
 

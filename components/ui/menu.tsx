@@ -2,6 +2,7 @@
 
 import { Menu as BaseMenu } from "@base-ui/react/menu"
 import { cn } from "@/lib/utils"
+import { DotsShadow } from "./dots-shadow"
 
 const Root = BaseMenu.Root
 
@@ -37,7 +38,7 @@ function Popup({
         <div className="relative">
           <BaseMenu.Popup
             className={cn(
-              "peer relative z-50 min-w-[160px] border border-muted bg-background p-1 text-sm",
+              "peer relative z-50 min-w-[160px] border border-dim bg-background p-1 text-sm",
               "transform-gpu transition-opacity duration-100",
               "data-open:opacity-100",
               "outline-none data-closed:pointer-events-none data-closed:opacity-0",
@@ -47,9 +48,8 @@ function Popup({
           >
             {children}
           </BaseMenu.Popup>
-          <div
+          <DotsShadow
             className={cn(
-              "absolute top-1.5 left-1.5 h-full w-[calc(100%-1px)] bg-[radial-gradient(circle,var(--border-solid)_1px,transparent_1px)] bg-size-[3px_3px]",
               "transform-gpu transition-opacity duration-100",
               "peer-data-open:opacity-100",
               "peer-data-closed:opacity-0"
