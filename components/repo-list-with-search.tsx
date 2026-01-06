@@ -222,7 +222,10 @@ export function RepoListWithSearch({
                   >
                     <AsteriskIcon className="mt-0.5 text-faint" size={16} />
                     <span className="whitespace-nowrap leading-none group-hover:text-bright">
-                      <HighlightedText query={displayedQuery} text={repo.name} />
+                      <HighlightedText
+                        query={displayedQuery}
+                        text={repo.name}
+                      />
                     </span>
                   </Link>
                   <div className="flex shrink-0">
