@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { IndexReposButton } from "./index-repos-button"
 
 export default function AdminPage() {
   return (
@@ -12,6 +13,12 @@ export default function AdminPage() {
           — Manage AI models that can respond in the forum
         </span>
       </Link>
+      <div className="flex items-center gap-3">
+        <IndexReposButton />
+        <span className="text-muted text-sm">
+          — Re-index all repositories for search
+        </span>
+      </div>
     </div>
   )
 }
