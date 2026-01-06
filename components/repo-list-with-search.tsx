@@ -109,35 +109,32 @@ export function RepoListWithSearch({
       return
     }
 
-    const timer = setTimeout(() => {
-      abortControllerRef.current?.abort()
-      const controller = new AbortController()
-      abortControllerRef.current = controller
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
-      setIsSearching(true)
-      setSearchQuery(query)
+    setIsSearching(true)
+    setSearchQuery(query)
 
-      fetch(`/api/search/repos?q=${encodeURIComponent(query)}`, {
-        signal: controller.signal,
+    fetch(`/api/search/repos?q=${encodeURIComponent(query)}`, {
+      signal: controller.signal,
+    })
+      .then((res) => res.json() as Promise<{ results?: SearchResult[] }>)
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setSearchResults(data.results ?? [])
+          setDisplayedQuery(query)
+          setIsSearching(false)
+        }
       })
-        .then((res) => res.json() as Promise<{ results?: SearchResult[] }>)
-        .then((data) => {
-          if (!controller.signal.aborted) {
-            setSearchResults(data.results ?? [])
-            setDisplayedQuery(query)
-            setIsSearching(false)
-          }
-        })
-        .catch((err) => {
-          if (err instanceof Error && err.name !== "AbortError") {
-            setSearchResults([])
-            setIsSearching(false)
-          }
-        })
-    }, 200)
+      .catch((err) => {
+        if (err instanceof Error && err.name !== "AbortError") {
+          setSearchResults([])
+          setIsSearching(false)
+        }
+      })
 
     return () => {
-      clearTimeout(timer)
       abortControllerRef.current?.abort()
     }
   }, [value])
@@ -180,7 +177,9 @@ export function RepoListWithSearch({
             size={18}
           />
           <input
+            autoFocus
             className="no-focus h-9 w-full bg-accent/5 pr-2 pl-8 font-medium text-accent text-base outline-dotted outline-2 outline-accent -outline-offset-1 placeholder:text-accent hover:bg-accent/10 focus:outline-dashed"
+            maxLength={56}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Search or paste a repo URL"
             value={value}
@@ -200,8 +199,8 @@ export function RepoListWithSearch({
 
       <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
         <div
-          ref={containerRef}
           className="min-w-fit px-4 sm:px-0"
+          ref={containerRef}
           style={minHeight ? { minHeight } : undefined}
         >
           <div className="relative min-w-120">
