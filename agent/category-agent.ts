@@ -94,7 +94,7 @@ You're working on your own. Meaning, the user won't be able to respond any quest
     const fallback = await generateText({
       model: "anthropic/claude-haiku-4.5",
       system:
-        "Generate a concise title (10 words max) for the following post. If it's a question or problem, frame as a question. Reply with ONLY the title, nothing else.",
+        "Generate a concise title (10 words max) for the following post doing your best to describe what the post is/will be about, based on the user's comment. Reply with ONLY the title, nothing else.",
       prompt: content,
     })
     result.title = fallback.text.trim()
