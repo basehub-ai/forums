@@ -23,3 +23,11 @@ export const FEATURE_IDS = {
 } as const
 
 export type BillingCategory = keyof typeof FEATURE_IDS
+
+export async function checkIsPro(userId: string): Promise<boolean> {
+  const { data } = await autumn.check({
+    customer_id: userId,
+    product_id: "pro_plan",
+  })
+  return data?.allowed ?? false
+}

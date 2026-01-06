@@ -22,6 +22,7 @@ import {
 } from "@/lib/db/schema"
 import { resolvePostLinks } from "@/lib/post-links"
 import { extractPostLinks } from "@/lib/post-links-parser"
+import { checkMessageRateLimit, checkReactionRateLimit } from "@/lib/rate-limit"
 import { indexRepo } from "@/lib/turbopuffer-index"
 import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
@@ -154,6 +155,7 @@ export async function createPost(data: {
   categoryId?: string
 }) {
   const session = await getSessionOrThrow()
+  await checkMessageRateLimit(session.user.id)
   const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const postId = nanoid()
@@ -335,6 +337,7 @@ export async function createComment(data: {
   seekingAnswerFrom?: string | null
 }) {
   const session = await getSessionOrThrow()
+  await checkMessageRateLimit(session.user.id)
   const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const commentId = nanoid()
@@ -502,6 +505,7 @@ export async function addReaction({
   type: string
 }) {
   const session = await getSessionOrThrow()
+  await checkReactionRateLimit(session.user.id)
   await db
     .insert(reactions)
     .values({
@@ -530,6 +534,7 @@ export async function removeReaction({
   type: string
 }) {
   const session = await getSessionOrThrow()
+  await checkReactionRateLimit(session.user.id)
   await db
     .delete(reactions)
     .where(
@@ -750,6 +755,7 @@ export async function rerunLlmComment(data: {
   commentId: string
 }): Promise<{ commentId: string }> {
   const session = await getSessionOrThrow()
+  await checkMessageRateLimit(session.user.id)
   const now = Date.now()
 
   const oldComment = await db
@@ -847,6 +853,7 @@ export async function rerunLlmCommentsInPost(data: {
   updateGitContext?: boolean
 }): Promise<{ commentId: string }> {
   const session = await getSessionOrThrow()
+  await checkMessageRateLimit(session.user.id)
   const now = Date.now()
 
   const [post, defaultLlm, existingStream] = await Promise.all([

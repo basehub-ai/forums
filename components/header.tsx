@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import BillingButton from "@/components/billing-button"
 import { CreditWarning } from "@/components/credit-warning"
 import { auth } from "@/lib/auth"
+import { checkIsPro } from "@/lib/autumn"
 import { Button } from "./button"
 import { Container } from "./container"
 import { SignInButton } from "./sign-in-button"
@@ -144,10 +145,12 @@ const User = async () => {
     return <SignInButton />
   }
 
+  const isPro = await checkIsPro(data.user.id)
+
   return (
     <div className="flex items-center gap-x-2">
       <CreditWarning />
-      <BillingButton />
+      <BillingButton isPro={isPro} />
       <UserDropdown {...data} />
     </div>
   )
