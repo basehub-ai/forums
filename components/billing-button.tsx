@@ -2,40 +2,39 @@
 
 import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
+import { useDialogStore } from "@/lib/stores/dialogs"
 
 export default function BillingButton({ isPro }: { isPro: boolean }) {
-  const { checkout, openBillingPortal } = useCustomer()
+  const { openBillingPortal } = useCustomer()
+  const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
+
+  if (isPro) {
+    return (
+      <Button
+        className="cursor-pointer"
+        onClick={async () => {
+          await openBillingPortal({
+            returnUrl: window.location.href,
+          })
+        }}
+        size="xs"
+        type="button"
+        variant="tertiary"
+      >
+        PRO
+      </Button>
+    )
+  }
 
   return (
     <Button
       className="cursor-pointer"
-      onClick={async () => {
-        if (isPro) {
-          await openBillingPortal({
-            returnUrl: window.location.href,
-          })
-          return
-        }
-
-        await checkout({
-          productId: "pro_plan",
-          options: [
-            {
-              featureId: "premium_credits",
-              quantity: 0,
-            },
-          ],
-          successUrl: window.location.href,
-          checkoutSessionParams: {
-            cancel_url: window.location.href,
-          },
-        })
-      }}
+      onClick={() => setPaywallOpen(true)}
       size="xs"
       type="button"
       variant="tertiary"
     >
-      {isPro ? "PRO" : "FREE"}
+      FREE
     </Button>
   )
 }

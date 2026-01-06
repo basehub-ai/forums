@@ -110,7 +110,10 @@ You're working on your own. The category has already been set.`
 
   // Fallback: if title wasn't set, generate it directly
   if (!result.title) {
-    console.log("Title fallback triggered, finishReason:", await stream.finishReason)
+    console.log(
+      "Title fallback triggered, finishReason:",
+      await stream.finishReason
+    )
     const fallback = await generateText({
       model: "anthropic/claude-haiku-4.5",
       system:
