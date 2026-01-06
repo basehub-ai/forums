@@ -1,4 +1,4 @@
-import { searchRepos } from "@/lib/turbopuffer-index"
+import { searchRepos } from "@/lib/typesense-index"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -12,10 +12,7 @@ export async function GET(request: Request) {
     const results = await searchRepos(query)
     return Response.json({ results })
   } catch (error) {
-    console.error("Turbopuffer search error:", error)
-    return Response.json(
-      { results: [], error: "Search failed" },
-      { status: 500 }
-    )
+    console.error("Repo search error:", error)
+    return Response.json({ results: [], error: "Search failed" }, { status: 500 })
   }
 }

@@ -16,7 +16,7 @@ export default function AdminPage() {
       <div className="flex items-center gap-3">
         <IndexReposButton />
         <span className="text-muted text-sm">
-          — Re-index all repositories for search
+          — Rebuild search index (repos, posts, comments)
         </span>
       </div>
     </div>

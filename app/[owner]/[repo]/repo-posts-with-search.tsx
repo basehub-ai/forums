@@ -149,7 +149,10 @@ function SearchResults({
                   href={href}
                 >
                   <div className="flex items-center gap-1">
-                    <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                    <AsteriskIcon
+                      className="mt-0.5 shrink-0 text-faint"
+                      size={16}
+                    />
                     <span className="truncate leading-none group-hover:text-bright">
                       {result.title}
                     </span>

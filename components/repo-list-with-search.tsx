@@ -23,7 +23,7 @@ type SearchResult = {
   name: string
   owner: string
   repo: string
-  posts: number
+  postCount: number
   lastActive: number
 }
 
@@ -156,7 +156,7 @@ export function RepoListWithSearch({
           .map((r) => ({
             name: r.name,
             stars: 0,
-            posts: r.posts,
+            posts: r.postCount,
             lastActive: r.lastActive,
           }))
       : topRepos

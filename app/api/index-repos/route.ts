@@ -1,6 +1,6 @@
 import { headers } from "next/headers"
 import { auth, isAdmin } from "@/lib/auth"
-import { indexAllRepos } from "@/lib/turbopuffer-index"
+import { reindexAll } from "@/lib/typesense-index"
 
 export async function POST() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -10,13 +10,10 @@ export async function POST() {
   }
 
   try {
-    const count = await indexAllRepos()
-    return Response.json({ success: true, indexed: count })
+    const counts = await reindexAll()
+    return Response.json({ success: true, ...counts })
   } catch (error) {
-    console.error("Indexing error:", error)
-    return Response.json(
-      { success: false, error: "Indexing failed" },
-      { status: 500 }
-    )
+    console.error("Reindex error:", error)
+    return Response.json({ success: false, error: "Reindex failed" }, { status: 500 })
   }
 }

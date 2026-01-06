@@ -14,12 +14,14 @@ export function IndexReposButton() {
       const res = await fetch("/api/index-repos", { method: "POST" })
       const data = (await res.json()) as {
         success: boolean
-        indexed?: number
+        repos?: number
+        posts?: number
+        comments?: number
         error?: string
       }
 
       if (data.success) {
-        setResult(`Indexed ${data.indexed} repos`)
+        setResult(`${data.repos} repos, ${data.posts} posts, ${data.comments} comments`)
       } else {
         setResult(data.error ?? "Failed")
       }
@@ -40,7 +42,7 @@ export function IndexReposButton() {
       >
         {isLoading ? "Running..." : "Run"}
       </button>
-      <span className="text-bright">Index Repos</span>
+      <span className="text-bright">Reindex All</span>
       {result && <span className="text-muted text-sm">({result})</span>}
     </>
   )

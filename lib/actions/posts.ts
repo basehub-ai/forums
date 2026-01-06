@@ -22,8 +22,12 @@ import {
 } from "@/lib/db/schema"
 import { resolvePostLinks } from "@/lib/post-links"
 import { extractPostLinks } from "@/lib/post-links-parser"
-import { indexRepo } from "@/lib/turbopuffer-index"
-import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
+import {
+  indexComment,
+  indexPost,
+  indexRepo,
+  updatePostIndex,
+} from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
 
@@ -331,7 +335,7 @@ export async function createPost(data: {
     })
   )
 
-  waitUntil(indexRepo(data.owner, data.repo))
+  waitUntil(indexRepo({ owner: data.owner, repo: data.repo }))
 
   updateTag(`repo:${data.owner}:${data.repo}`)
   updateTag(`post:${postId}`)
