@@ -6,12 +6,16 @@ import { useRouter } from "next/navigation"
 import { Menu } from "@/components/ui/menu"
 import { Meter } from "@/components/ui/meter"
 import { authClient } from "@/lib/auth-client"
+import { useDialogStore } from "@/lib/stores/dialogs"
 import { formatRelativeTime } from "@/lib/utils"
 
 export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
-  const { customer, check, checkout, openBillingPortal } = useCustomer()
+  const { customer, check, openBillingPortal } = useCustomer()
+  const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
   const isPro = check({ productId: "pro_plan" }).data.allowed
+  const hasCanceledPro =
+    check({ productId: "pro_plan" }).data.status === "canceled"
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
@@ -97,7 +101,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
                 </span>
               </Meter.Root>
               <span className="text-muted text-xs tabular-nums">
-                Resets{" "}
+                {hasCanceledPro ? "Ends " : "Resets "}
                 {new Date(
                   premiumCredits?.next_reset_at ?? 0
                 ).toLocaleDateString("en-US", {
@@ -109,22 +113,8 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
             </>
           ) : (
             <button
-              className="w-0 min-w-full cursor-pointer text-balance text-left text-accent text-xs hover:underline"
-              onClick={async () => {
-                await checkout({
-                  productId: "pro_plan",
-                  options: [
-                    {
-                      featureId: "premium_credits",
-                      quantity: 0,
-                    },
-                  ],
-                  successUrl: window.location.href,
-                  checkoutSessionParams: {
-                    cancel_url: window.location.href,
-                  },
-                })
-              }}
+              className="w-0 min-w-full cursor-pointer text-balance text-left text-accent text-xs hover:text-accent hover:underline active:text-accent"
+              onClick={() => setPaywallOpen(true)}
               type="button"
             >
               Upgrade your plan to get more credits now

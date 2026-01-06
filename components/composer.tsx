@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, useTransition } from "react"
 import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
+import { useDialogStore } from "@/lib/stores/dialogs"
 import { Button } from "./button"
 
 export type ComposerProps = {
@@ -46,6 +47,7 @@ export const Composer = ({
   const isSignedIn = !!auth?.session
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
+  const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
   const { check } = useCustomer()
   const isPro = check({ productId: "pro_plan" }).data.allowed
   const [selectedAsking, setSelectedAsking] = useState<AskingOption>(() => {
@@ -143,10 +145,13 @@ export const Composer = ({
                 const isDisabled = asking.isPremium && !isPro
                 return (
                   <Menu.Item
-                    disabled={isDisabled}
+                    className={
+                      isDisabled ? "cursor-not-allowed opacity-50" : undefined
+                    }
                     key={asking.id}
                     onClick={() => {
                       if (isDisabled) {
+                        setPaywallOpen(true)
                         return
                       }
                       setSelectedAsking(asking)
