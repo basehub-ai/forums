@@ -13,6 +13,9 @@ export async function GET(request: Request) {
     return Response.json({ results })
   } catch (error) {
     console.error("Repo search error:", error)
-    return Response.json({ results: [], error: "Search failed" }, { status: 500 })
+    return Response.json(
+      { results: [], error: "Search failed" },
+      { status: 500 }
+    )
   }
 }

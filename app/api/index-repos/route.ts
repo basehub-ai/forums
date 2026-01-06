@@ -14,6 +14,9 @@ export async function POST() {
     return Response.json({ success: true, ...counts })
   } catch (error) {
     console.error("Reindex error:", error)
-    return Response.json({ success: false, error: "Reindex failed" }, { status: 500 })
+    return Response.json(
+      { success: false, error: "Reindex failed" },
+      { status: 500 }
+    )
   }
 }

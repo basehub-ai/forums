@@ -21,7 +21,9 @@ export function IndexReposButton() {
       }
 
       if (data.success) {
-        setResult(`${data.repos} repos, ${data.posts} posts, ${data.comments} comments`)
+        setResult(
+          `${data.repos} repos, ${data.posts} posts, ${data.comments} comments`
+        )
       } else {
         setResult(data.error ?? "Failed")
       }
@@ -34,16 +36,16 @@ export function IndexReposButton() {
 
   return (
     <>
+      <span className="text-bright">Reindex All</span>
+      {result && <span className="text-muted text-sm">({result})</span>}
       <button
-        className="bg-highlight-yellow px-1.5 py-0.5 text-bright disabled:opacity-50"
+        className="ml-auto bg-highlight-yellow px-1.5 py-0.5 text-background text-xs disabled:opacity-50"
         disabled={isLoading}
         onClick={handleClick}
         type="button"
       >
         {isLoading ? "Running..." : "Run"}
       </button>
-      <span className="text-bright">Reindex All</span>
-      {result && <span className="text-muted text-sm">({result})</span>}
     </>
   )
 }

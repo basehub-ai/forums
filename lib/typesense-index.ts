@@ -1,7 +1,10 @@
-import { sql } from "drizzle-orm"
 import type { InferSelectModel } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 import { db } from "./db/client"
-import type { comments as commentsTable, posts as postsTable } from "./db/schema"
+import type {
+  comments as commentsTable,
+  posts as postsTable,
+} from "./db/schema"
 import { comments, posts } from "./db/schema"
 import { typesense } from "./typesense"
 
@@ -112,7 +115,8 @@ export async function updatePostIndex(
   const doc: Record<string, unknown> = {}
   if (updates.title !== undefined) doc.title = updates.title
   if (updates.categoryId !== undefined) doc.categoryId = updates.categoryId
-  if (updates.commentCount !== undefined) doc.commentCount = updates.commentCount
+  if (updates.commentCount !== undefined)
+    doc.commentCount = updates.commentCount
 
   await typesense.collections(POSTS_COLLECTION).documents(postId).update(doc)
 }
@@ -293,7 +297,11 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
 export async function deleteAllCollections() {
   const collections = await typesense.collections().retrieve()
   for (const col of collections) {
-    if ([POSTS_COLLECTION, COMMENTS_COLLECTION, REPOS_COLLECTION].includes(col.name)) {
+    if (
+      [POSTS_COLLECTION, COMMENTS_COLLECTION, REPOS_COLLECTION].includes(
+        col.name
+      )
+    ) {
       await typesense.collections(col.name).delete()
     }
   }
@@ -322,7 +330,7 @@ export async function reindexAll(): Promise<{
       rootCommentId: posts.rootCommentId,
       createdAt: posts.createdAt,
       commentCount: sql<number>`(
-        SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
+        SELECT COUNT(*)::int FROM comments WHERE comments.post_id = ${posts.id}
       )`.as("comment_count"),
     })
     .from(posts)
