@@ -83,13 +83,14 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         },
       }),
     },
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(10),
   })
 
   await stream.finishReason
 
   // Fallback: if title wasn't set, generate it directly
   if (!result.title) {
+    console.log("Title fallback triggered, finishReason:", await stream.finishReason)
     const fallback = await generateText({
       model: "anthropic/claude-haiku-4.5",
       system:
