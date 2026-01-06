@@ -78,7 +78,7 @@ export function CommentThreadClient({
     if (hash) {
       const el = document.getElementById(hash)
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" })
+        el.scrollIntoView({ behavior: "instant", block: "start" })
       }
     }
   }, [])
