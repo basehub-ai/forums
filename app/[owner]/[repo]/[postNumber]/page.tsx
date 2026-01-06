@@ -85,7 +85,7 @@ export async function generateMetadata({
     return {}
   }
 
-  const title = `${post.title} — ${owner}/${repo}`
+  const title = `${post.title || `Post #${postNumberInt}`} — ${owner}/${repo}`
 
   let description = ""
   if (post.rootCommentId) {
