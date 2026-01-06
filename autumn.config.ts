@@ -33,7 +33,7 @@ export const freePlan = product({
   items: [
     featureItem({
       feature_id: standardCredits.id,
-      included_usage: 5,
+      included_usage: 20,
       interval: "day",
     }),
   ],
@@ -52,14 +52,14 @@ export const proPlan = product({
       feature_id: premiumCredits.id,
       price: 5,
       interval: "month",
-      included_usage: 200,
+      included_usage: 100,
       billing_units: 50,
       usage_model: "prepaid",
     }),
 
     featureItem({
       feature_id: standardCredits.id,
-      included_usage: 100,
+      included_usage: 200,
       interval: "day",
     }),
   ],
