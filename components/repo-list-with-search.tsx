@@ -83,6 +83,7 @@ export function RepoListWithSearch({
   const router = useRouter()
   const [value, setValue] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [displayedQuery, setDisplayedQuery] = useState("")
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(
     null
   )
@@ -95,6 +96,7 @@ export function RepoListWithSearch({
     if (!query || query.length < 2) {
       setSearchResults(null)
       setSearchQuery("")
+      setDisplayedQuery("")
       setIsSearching(false)
       return
     }
@@ -114,6 +116,7 @@ export function RepoListWithSearch({
         .then((data) => {
           if (!controller.signal.aborted) {
             setSearchResults(data.results ?? [])
+            setDisplayedQuery(query)
             setIsSearching(false)
           }
         })
@@ -143,7 +146,7 @@ export function RepoListWithSearch({
     searchResults !== null
       ? searchResults
           .filter((r) =>
-            r.name.toLowerCase().includes(searchQuery.toLowerCase())
+            r.name.toLowerCase().includes(displayedQuery.toLowerCase())
           )
           .map((r) => ({
             name: r.name,
@@ -188,7 +191,7 @@ export function RepoListWithSearch({
       </form>
 
       <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
-        <div className="min-w-fit px-4 sm:px-0">
+        <div className="min-h-80 min-w-fit px-4 sm:px-0">
           <div className="relative min-w-120">
             <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
             <div className="relative z-10 flex w-full">
@@ -198,7 +201,7 @@ export function RepoListWithSearch({
                 </TableColumnTitle>
               </div>
               <div className="flex shrink-0">
-                {!searchQuery && (
+                {!displayedQuery && (
                   <TableColumnTitle className="mr-8">Stars</TableColumnTitle>
                 )}
                 <TableColumnTitle className="mr-13.5">Posts</TableColumnTitle>
@@ -219,11 +222,11 @@ export function RepoListWithSearch({
                   >
                     <AsteriskIcon className="mt-0.5 text-faint" size={16} />
                     <span className="whitespace-nowrap leading-none group-hover:text-bright">
-                      <HighlightedText query={searchQuery} text={repo.name} />
+                      <HighlightedText query={displayedQuery} text={repo.name} />
                     </span>
                   </Link>
                   <div className="flex shrink-0">
-                    {!searchQuery && (
+                    {!displayedQuery && (
                       <TableCellText className="w-(--col-w-1)">
                         {formatCompactNumber(repo.stars)}
                       </TableCellText>
@@ -238,9 +241,9 @@ export function RepoListWithSearch({
                 </ListItem>
               ))}
             </List>
-          ) : searchQuery ? (
+          ) : displayedQuery ? (
             <p className="mt-4 text-muted">
-              No repositories found for "{searchQuery}".
+              No repositories found for "{displayedQuery}".
             </p>
           ) : (
             <p className="mt-4 text-muted">
