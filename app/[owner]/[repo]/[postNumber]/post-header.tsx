@@ -2,7 +2,6 @@
 
 import { ChevronRight, TagIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { type ReactNode, useTransition } from "react"
 import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
@@ -147,7 +146,6 @@ function RefSelector() {
 function StaleBanner() {
   const { staleInfo, gitContext, owner, repo, postId } = usePostMetadata()
   const [isPending, startTransition] = useTransition()
-  const router = useRouter()
 
   if (!(staleInfo && gitContext)) {
     return null
@@ -156,7 +154,7 @@ function StaleBanner() {
   function handleRerun() {
     startTransition(async () => {
       await rerunLlmCommentsInPost({ postId, updateGitContext: true })
-      router.refresh()
+      window.location.reload()
     })
   }
 

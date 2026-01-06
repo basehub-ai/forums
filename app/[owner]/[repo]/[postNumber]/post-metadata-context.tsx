@@ -34,6 +34,7 @@ type PostMetadata = {
   archivedRefs: string[]
   selectedRef: string | null
   setSelectedRef: (ref: string | null) => void
+  clearStaleInfo: () => void
   updateMetadata: (data: {
     title?: string
     categoryId?: string | null
@@ -50,7 +51,7 @@ export function PostMetadataProvider({
   initialTitle,
   initialCategory,
   initialGitContext,
-  staleInfo,
+  staleInfo: initialStaleInfo,
   archivedRefs,
   categories,
   children,
@@ -72,10 +73,15 @@ export function PostMetadataProvider({
   const [gitContext, setGitContext] = useState<GitContextData | null>(
     initialGitContext
   )
+  const [staleInfo, setStaleInfo] = useState<StaleInfo>(initialStaleInfo)
   const [isPolling, setIsPolling] = useState(
     !(initialTitle && initialCategory && initialGitContext)
   )
   const [selectedRef, setSelectedRef] = useState<string | null>(null)
+
+  const clearStaleInfo = useCallback(() => {
+    setStaleInfo(null)
+  }, [])
 
   const poll = useCallback(async () => {
     const result = await getPostMetadata(postId)
@@ -143,6 +149,7 @@ export function PostMetadataProvider({
         archivedRefs,
         selectedRef,
         setSelectedRef,
+        clearStaleInfo,
         updateMetadata,
       }}
     >
