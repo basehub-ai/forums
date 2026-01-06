@@ -161,8 +161,8 @@ function StaleBanner() {
   }
 
   return (
-    <div className="mt-4 flex items-center justify-between border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
-      <span>
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
+      <span className="min-w-0">
         This post might have stale content, as{" "}
         <Link
           className="underline hover:text-muted"
@@ -183,7 +183,7 @@ function StaleBanner() {
         .
       </span>
       <button
-        className="bg-highlight-yellow px-1.5 py-0.5 text-black disabled:opacity-50"
+        className="shrink-0 bg-highlight-yellow px-1.5 py-0.5 text-black disabled:opacity-50"
         disabled={isPending}
         onClick={handleRerun}
         type="button"
