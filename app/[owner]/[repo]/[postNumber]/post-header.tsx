@@ -183,7 +183,7 @@ function StaleBanner() {
         .
       </span>
       <button
-        className="bg-highlight-yellow px-1.5 py-0.5 text-bright disabled:opacity-50"
+        className="bg-highlight-yellow px-1.5 py-0.5 text-black disabled:opacity-50"
         disabled={isPending}
         onClick={handleRerun}
         type="button"
