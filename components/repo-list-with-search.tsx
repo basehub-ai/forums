@@ -88,7 +88,15 @@ export function RepoListWithSearch({
     null
   )
   const [isSearching, setIsSearching] = useState(false)
+  const [minHeight, setMinHeight] = useState<number | undefined>(undefined)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (containerRef.current && minHeight === undefined) {
+      setMinHeight(containerRef.current.offsetHeight)
+    }
+  }, [])
 
   useEffect(() => {
     const query = value.trim()
@@ -191,7 +199,11 @@ export function RepoListWithSearch({
       </form>
 
       <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
-        <div className="min-h-80 min-w-fit px-4 sm:px-0">
+        <div
+          ref={containerRef}
+          className="min-w-fit px-4 sm:px-0"
+          style={minHeight ? { minHeight } : undefined}
+        >
           <div className="relative min-w-120">
             <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
             <div className="relative z-10 flex w-full">
