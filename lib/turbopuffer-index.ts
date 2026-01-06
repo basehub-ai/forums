@@ -134,7 +134,7 @@ export async function searchRepos(query: string): Promise<SearchResult[]> {
 
   const results = await reposNamespace.query({
     top_k: 20,
-    rank_by: ["name", "BM25", query],
+    rank_by: ["name", "BM25", query, { last_as_prefix: true }],
     include_attributes: ["name", "owner", "repo", "posts", "lastActive"],
   })
 

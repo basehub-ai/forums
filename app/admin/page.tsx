@@ -13,12 +13,11 @@ export default function AdminPage() {
           — Manage AI models that can respond in the forum
         </span>
       </Link>
-      <div className="rounded-lg border p-4">
-        <h2 className="font-semibold">Index Repositories</h2>
-        <p className="mb-3 text-muted-foreground text-sm">
-          Re-index all repositories in Turbopuffer for search
-        </p>
+      <div className="flex items-center gap-3">
         <IndexReposButton />
+        <span className="text-muted text-sm">
+          — Re-index all repositories for search
+        </span>
       </div>
     </div>
   )

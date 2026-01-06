@@ -4,10 +4,7 @@ import { useState } from "react"
 
 export function IndexReposButton() {
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<{
-    success: boolean
-    message: string
-  } | null>(null)
+  const [result, setResult] = useState<string | null>(null)
 
   async function handleClick() {
     setIsLoading(true)
@@ -22,41 +19,28 @@ export function IndexReposButton() {
       }
 
       if (data.success) {
-        setResult({
-          success: true,
-          message: `Indexed ${data.indexed} repositories`,
-        })
+        setResult(`Indexed ${data.indexed} repos`)
       } else {
-        setResult({
-          success: false,
-          message: data.error ?? "Indexing failed",
-        })
+        setResult(data.error ?? "Failed")
       }
     } catch {
-      setResult({
-        success: false,
-        message: "Network error",
-      })
+      setResult("Network error")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="space-y-2">
+    <>
       <button
-        className="rounded bg-accent px-4 py-2 text-background hover:bg-accent/90 disabled:opacity-50"
+        className="text-bright hover:underline disabled:opacity-50"
         disabled={isLoading}
         onClick={handleClick}
         type="button"
       >
-        {isLoading ? "Indexing..." : "Run Index"}
+        {isLoading ? "Indexing..." : "Index Repos"}
       </button>
-      {result && (
-        <p className={result.success ? "text-green-600" : "text-red-600"}>
-          {result.message}
-        </p>
-      )}
-    </div>
+      {result && <span className="text-muted text-sm">({result})</span>}
+    </>
   )
 }
