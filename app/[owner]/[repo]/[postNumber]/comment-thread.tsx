@@ -105,12 +105,19 @@ function CommentItem({
               </Suspense>
             </span>
           </div>
-          <CopyLinkButton
-            commentNumber={commentNumber}
-            owner={owner}
-            postNumber={postNumber}
-            repo={repo}
-          />
+          <div className="flex items-center gap-2">
+            {comment.streamId && (
+              <span className="animate-pulse text-muted-foreground text-xs">
+                Streaming
+              </span>
+            )}
+            <CopyLinkButton
+              commentNumber={commentNumber}
+              owner={owner}
+              postNumber={postNumber}
+              repo={repo}
+            />
+          </div>
         </div>
 
         <div className="mt-3">

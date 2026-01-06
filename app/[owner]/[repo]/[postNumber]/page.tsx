@@ -5,12 +5,12 @@ import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
 import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
+import { getModelsForPicker } from "@/lib/data/models"
 import { getPostByNumber, getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import {
   categories,
   comments,
-  llmUsers,
   mentions,
   posts,
   reactions,
@@ -85,7 +85,7 @@ export async function generateMetadata({
     return {}
   }
 
-  const title = `${post.title} — ${owner}/${repo}`
+  const title = `${post.title || `Post #${postNumberInt}`} — ${owner}/${repo}`
 
   let description = ""
   if (post.rootCommentId) {
@@ -181,7 +181,7 @@ export default async function PostPage({
       )
       .limit(1)
       .then((r) => r[0]),
-    db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
+    getModelsForPicker(),
     db
       .select()
       .from(comments)

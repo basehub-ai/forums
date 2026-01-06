@@ -17,6 +17,7 @@
     "@base-ui/react": "^1.0.0",
     "@parallel-web/ai-sdk-tools": "^0.1.6",
     "@tailwindcss/typography": "^0.5.19",
+    "@turbopuffer/turbopuffer": "^1.10.0",
     "@types/ms": "^2.1.0",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.7",

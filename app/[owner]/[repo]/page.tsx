@@ -7,8 +7,9 @@ import { notFound } from "next/navigation"
 import { Container } from "@/components/container"
 import { Subtitle, Title } from "@/components/typography"
 import { getGithubRepo } from "@/lib/data/github"
+import { getModelsForPicker } from "@/lib/data/models"
 import { db } from "@/lib/db/client"
-import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
+import { categories, comments, posts } from "@/lib/db/schema"
 import { formatCompactNumber, getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "./active-posts"
 import { NewPostComposer } from "./new-post-composer"
@@ -90,7 +91,7 @@ export default async function RepoPage({
       .select()
       .from(categories)
       .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
-    db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
+    getModelsForPicker(),
     getGithubRepo(owner, repo),
   ])
 
@@ -137,7 +138,7 @@ export default async function RepoPage({
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-2">
         <NewPostComposer
           askingOptions={[
             ...allLlmUsers.map((u) => ({

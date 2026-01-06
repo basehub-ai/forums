@@ -1,4 +1,4 @@
-import { stepCountIs, streamText, tool } from "ai"
+import { generateText, stepCountIs, streamText, tool } from "ai"
 import { and, eq } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { z } from "zod"
@@ -83,10 +83,22 @@ You're working on your own. Meaning, the user won't be able to respond any quest
         },
       }),
     },
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(10),
   })
 
   await stream.finishReason
+
+  // Fallback: if title wasn't set, generate it directly
+  if (!result.title) {
+    console.log("Title fallback triggered, finishReason:", await stream.finishReason)
+    const fallback = await generateText({
+      model: "anthropic/claude-haiku-4.5",
+      system:
+        "Generate a concise title (10 words max) for the following post doing your best to describe what the post is/will be about, based on the user's comment. Reply with ONLY the title, nothing else.",
+      prompt: content,
+    })
+    result.title = fallback.text.trim()
+  }
 
   let categoryId = result.categoryId
   if (result.newCategory) {

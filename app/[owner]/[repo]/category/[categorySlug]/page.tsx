@@ -11,8 +11,9 @@ import {
   getCategoryPostCount,
 } from "@/lib/data/categories"
 import { getGithubRepo } from "@/lib/data/github"
+import { getModelsForPicker } from "@/lib/data/models"
 import { db } from "@/lib/db/client"
-import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
+import { categories, comments, posts } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
 import { ActivePosts } from "../../active-posts"
 import { NewPostComposer } from "../../new-post-composer"
@@ -72,7 +73,7 @@ export default async function CategoryPage({
 
   const [category, allLlmUsers, repoData] = await Promise.all([
     getCategoryBySlug(owner, repo, categorySlug),
-    db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
+    getModelsForPicker(),
     getGithubRepo(owner, repo),
   ])
 
@@ -128,7 +129,7 @@ export default async function CategoryPage({
 
       <Title className="mt-1 mb-8">{category.title}</Title>
 
-      <div className="mb-8">
+      <div className="mb-2">
         <NewPostComposer
           askingOptions={[
             ...allLlmUsers.map((u) => ({
