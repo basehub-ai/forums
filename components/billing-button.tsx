@@ -4,10 +4,8 @@ import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
 import { getSiteOrigin } from "@/lib/utils"
 
-export default function BillingButton() {
-  const { checkout, openBillingPortal, check } = useCustomer()
-
-  const isPro = check({ productId: "pro_plan" }).data.allowed
+export default function BillingButton({ isPro }: { isPro: boolean }) {
+  const { checkout, openBillingPortal } = useCustomer()
 
   return (
     <Button
