@@ -41,6 +41,12 @@ export function StreamingContent({ commentId }: { commentId: string }) {
   const isStreaming = status === "streaming" || status === "submitted"
   const lastMessage = messages.at(-1)
 
+  useEffect(() => {
+    if (status === "ready" && started.current) {
+      router.refresh()
+    }
+  }, [status, router])
+
   function handleRetry() {
     startTransition(async () => {
       await rerunLlmComment({ commentId })
