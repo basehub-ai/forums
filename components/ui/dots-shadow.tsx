@@ -19,35 +19,47 @@ function useShaderColors() {
 
   const isDark = resolvedTheme === "dark"
   return {
-    background: isDark ? "#040404" : "#fafafa",
+    background: isDark ? "#04040495" : "#fafafa95",
     foreground: isDark ? "#404040" : "#d9d9d9",
   }
 }
 
 type DotsProps = {
   className?: string
+  colorBackground?: string
+  colorForeground?: string
 }
 
-function DotsGrid() {
+function DotsGrid({
+  colorBackground,
+  colorForeground,
+}: {
+  colorBackground?: string
+  colorForeground?: string
+}) {
   const colors = useShaderColors()
 
   return (
     <DotGrid
-      colorBack={colors.background}
-      colorFill={colors.foreground}
+      colorBack={colorBackground ?? colors.background}
+      colorFill={colorForeground ?? colors.foreground}
       gapX={16}
       gapY={16}
       opacityRange={0}
       scale={0.2}
       shape="circle"
       size={5}
-      sizeRange={0.8}
+      sizeRange={0.6}
       style={{ width: "100%", height: "100%" }}
     />
   )
 }
 
-export function DotsShadow({ className }: DotsProps) {
+export function DotsShadow({
+  className,
+  colorBackground,
+  colorForeground,
+}: DotsProps) {
   return (
     <div
       className={cn(
@@ -55,7 +67,10 @@ export function DotsShadow({ className }: DotsProps) {
         className
       )}
     >
-      <DotsGrid />
+      <DotsGrid
+        colorBackground={colorBackground}
+        colorForeground={colorForeground}
+      />
     </div>
   )
 }
