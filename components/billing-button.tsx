@@ -12,7 +12,9 @@ export default function BillingButton({ isPro }: { isPro: boolean }) {
       className="cursor-pointer"
       onClick={async () => {
         if (isPro) {
-          await openBillingPortal()
+          await openBillingPortal({
+            returnUrl: window.location.href,
+          })
           return
         }
 
@@ -25,6 +27,9 @@ export default function BillingButton({ isPro }: { isPro: boolean }) {
             },
           ],
           successUrl: getSiteOrigin(),
+          checkoutSessionParams: {
+            cancel_url: window.location.href,
+          },
         })
       }}
       size="xs"

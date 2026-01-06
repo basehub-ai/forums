@@ -120,6 +120,9 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
                     },
                   ],
                   successUrl: getSiteOrigin(),
+                  checkoutSessionParams: {
+                    cancel_url: window.location.href,
+                  },
                 })
               }}
               type="button"
