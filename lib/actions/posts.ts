@@ -151,6 +151,7 @@ export async function createPost(data: {
   repo: string
   content: AgentUIMessage
   seekingAnswerFrom?: string | null
+  categoryId?: string
 }) {
   const session = await getSessionOrThrow()
   const authorUsername = await getGitHubUsername(session.user.image)
@@ -199,6 +200,7 @@ export async function createPost(data: {
             repo: data.repo,
             authorId: session.user.id,
             rootCommentId: commentId,
+            categoryId: data.categoryId,
             createdAt: now,
             updatedAt: now,
           })
@@ -283,6 +285,7 @@ export async function createPost(data: {
       owner: data.owner,
       repo: data.repo,
       content: contentText,
+      existingCategoryId: data.categoryId,
     })
   }
 

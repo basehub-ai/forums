@@ -11,10 +11,12 @@ export function NewPostComposer({
   owner,
   repo,
   askingOptions,
+  categoryId,
 }: {
   owner: string
   repo: string
   askingOptions: ComposerProps["options"]["asking"]
+  categoryId?: string
 }) {
   const router = useRouter()
   const [defaultLlmId, setDefaultLlmId] = useState<string | undefined>()
@@ -43,6 +45,7 @@ export function NewPostComposer({
             parts: [{ type: "text", text: value }],
           },
           seekingAnswerFrom: options.asking.id,
+          categoryId,
         })
         router.push(`/${owner}/${repo}/${result.postNumber}`)
       }}
