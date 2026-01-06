@@ -128,7 +128,7 @@ export type SearchResult = {
 }
 
 export async function searchRepos(query: string): Promise<SearchResult[]> {
-  if (!query || query.length < 2) {
+  if (!query || query.length < 1) {
     return []
   }
 
