@@ -19,14 +19,12 @@ export function PostSearchResults({
   query: string
 }) {
   if (isSearching) {
-    return (
-      <div className="py-3 text-sm text-muted">Searching "{query}"...</div>
-    )
+    return <div className="py-3 text-muted text-sm">Searching "{query}"...</div>
   }
 
   if (results.length === 0) {
     return (
-      <div className="py-3 text-sm text-muted">
+      <div className="py-3 text-muted text-sm">
         No posts found for "{query}".
       </div>
     )
@@ -46,14 +44,17 @@ export function PostSearchResults({
               href={href}
             >
               <div className="flex items-center gap-1">
-                <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                <AsteriskIcon
+                  className="mt-0.5 shrink-0 text-faint"
+                  size={16}
+                />
                 <span className="truncate font-medium leading-none">
                   {result.title || `Post #${result.postNumber}`}
                 </span>
               </div>
               {result.snippet && (
                 <div
-                  className="ml-5 truncate text-sm text-muted [&_mark]:bg-highlight-yellow [&_mark]:text-background"
+                  className="ml-5 truncate text-muted text-sm [&_mark]:bg-highlight-yellow [&_mark]:text-background"
                   dangerouslySetInnerHTML={{ __html: result.snippet }}
                 />
               )}

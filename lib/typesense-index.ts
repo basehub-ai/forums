@@ -125,17 +125,20 @@ export async function indexComment(
   }
 
   await ensureCollectionsOnce()
-  await typesense.collections(COMMENTS_COLLECTION).documents().upsert({
-    id: comment.id,
-    postId: comment.postId,
-    owner,
-    repo,
-    categoryId: categoryId ?? "",
-    authorId: comment.authorId,
-    text,
-    isRootComment,
-    createdAt: comment.createdAt,
-  })
+  await typesense
+    .collections(COMMENTS_COLLECTION)
+    .documents()
+    .upsert({
+      id: comment.id,
+      postId: comment.postId,
+      owner,
+      repo,
+      categoryId: categoryId ?? "",
+      authorId: comment.authorId,
+      text,
+      isRootComment,
+      createdAt: comment.createdAt,
+    })
 }
 
 export async function deleteCommentFromIndex(commentId: string) {
