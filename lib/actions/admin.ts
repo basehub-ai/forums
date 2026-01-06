@@ -35,7 +35,7 @@ export async function createLlmUser(data: {
   })
 
   revalidatePath("/admin/llm-users")
-  revalidateTag("models-list")
+  revalidateTag("models-list", "max")
 }
 
 export async function updateLlmUser(
@@ -54,7 +54,7 @@ export async function updateLlmUser(
   await db.update(llmUsers).set(data).where(eq(llmUsers.id, id))
 
   revalidatePath("/admin/llm-users")
-  revalidateTag("models-list")
+  revalidateTag("models-list", "max")
 }
 
 export async function setDefaultLlmUser(id: string) {
@@ -64,7 +64,7 @@ export async function setDefaultLlmUser(id: string) {
   await db.update(llmUsers).set({ isDefault: true }).where(eq(llmUsers.id, id))
 
   revalidatePath("/admin/llm-users")
-  revalidateTag("models-list")
+  revalidateTag("models-list", "max")
 }
 
 export async function deleteLlmUser(id: string) {
@@ -73,7 +73,7 @@ export async function deleteLlmUser(id: string) {
   await db.delete(llmUsers).where(eq(llmUsers.id, id))
 
   revalidatePath("/admin/llm-users")
-  revalidateTag("models-list")
+  revalidateTag("models-list", "max")
 }
 
 export async function setBillingCategory(
@@ -88,5 +88,5 @@ export async function setBillingCategory(
     .where(eq(llmUsers.id, id))
 
   revalidatePath("/admin/llm-users")
-  revalidateTag("models-list")
+  revalidateTag("models-list", "max")
 }
