@@ -288,13 +288,28 @@ export async function createPost(data: {
 
   waitUntil(
     (async () => {
-      const [comment] = await db
-        .select()
-        .from(comments)
-        .where(eq(comments.id, commentId))
-        .limit(1)
+      const [comment, updatedPost] = await Promise.all([
+        db
+          .select()
+          .from(comments)
+          .where(eq(comments.id, commentId))
+          .limit(1)
+          .then((r) => r[0]),
+        db
+          .select({ categoryId: posts.categoryId })
+          .from(posts)
+          .where(eq(posts.id, postId))
+          .limit(1)
+          .then((r) => r[0]),
+      ])
       if (comment) {
-        await indexComment(comment, data.owner, data.repo, true)
+        await indexComment(
+          comment,
+          data.owner,
+          data.repo,
+          true,
+          updatedPost?.categoryId
+        )
       }
     })()
   )
@@ -452,7 +467,13 @@ export async function createComment(data: {
         .where(eq(comments.id, commentId))
         .limit(1)
       if (comment) {
-        await indexComment(comment, post.owner, post.repo, false)
+        await indexComment(
+          comment,
+          post.owner,
+          post.repo,
+          false,
+          post.categoryId
+        )
       }
       const commentCount = await db
         .select({ count: sql<number>`count(*)` })

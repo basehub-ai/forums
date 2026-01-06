@@ -50,6 +50,7 @@ export async function ensureCollections() {
         { name: "postId", type: "string", facet: true },
         { name: "owner", type: "string", facet: true },
         { name: "repo", type: "string", facet: true },
+        { name: "categoryId", type: "string", optional: true, facet: true },
         { name: "authorId", type: "string", facet: true },
         { name: "text", type: "string" },
         { name: "isRootComment", type: "bool", facet: true },
@@ -115,7 +116,8 @@ export async function indexComment(
   comment: Comment,
   owner: string,
   repo: string,
-  isRootComment: boolean
+  isRootComment: boolean,
+  categoryId?: string | null
 ) {
   const text = extractText(comment)
   if (!text.trim()) {
@@ -128,6 +130,7 @@ export async function indexComment(
     postId: comment.postId,
     owner,
     repo,
+    categoryId: categoryId ?? "",
     authorId: comment.authorId,
     text,
     isRootComment,
