@@ -160,7 +160,7 @@ function Tool({
         <span
           className={`border px-1.5 py-0.5 font-medium text-xs uppercase ${
             expanded
-              ? "border-highlight-gray bg-highlight-gray text-white"
+              ? "border-highlight-gray bg-highlight-gray text-background"
               : "border-highlight-gray/30 bg-highlight-gray/10 text-highlight-gray"
           }`}
         >
