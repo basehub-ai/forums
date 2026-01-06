@@ -33,13 +33,14 @@ export function IndexReposButton() {
   return (
     <>
       <button
-        className="text-bright hover:underline disabled:opacity-50"
+        className="bg-highlight-yellow px-1.5 py-0.5 text-bright disabled:opacity-50"
         disabled={isLoading}
         onClick={handleClick}
         type="button"
       >
-        {isLoading ? "Indexing..." : "Index Repos"}
+        {isLoading ? "Running..." : "Run"}
       </button>
+      <span className="text-bright">Index Repos</span>
       {result && <span className="text-muted text-sm">({result})</span>}
     </>
   )

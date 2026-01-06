@@ -141,12 +141,16 @@ export function RepoListWithSearch({
 
   const displayRepos =
     searchResults !== null
-      ? searchResults.map((r) => ({
-          name: r.name,
-          stars: 0,
-          posts: r.posts,
-          lastActive: r.lastActive,
-        }))
+      ? searchResults
+          .filter((r) =>
+            r.name.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+          .map((r) => ({
+            name: r.name,
+            stars: 0,
+            posts: r.posts,
+            lastActive: r.lastActive,
+          }))
       : topRepos
 
   const headerText = searchQuery
@@ -205,9 +209,7 @@ export function RepoListWithSearch({
             </div>
           </div>
 
-          {isSearching ? (
-            <p className="mt-4 text-muted">Searching...</p>
-          ) : displayRepos.length > 0 ? (
+          {displayRepos.length > 0 ? (
             <List className="mt-2 min-w-120 pb-2">
               {displayRepos.map((repo) => (
                 <ListItem key={repo.name}>
