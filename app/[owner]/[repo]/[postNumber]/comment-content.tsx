@@ -160,8 +160,8 @@ function Tool({
         <span
           className={`border px-1.5 py-0.5 font-medium text-xs uppercase ${
             expanded
-              ? "border-highlight-blue bg-highlight-blue text-white"
-              : "border-highlight-blue/30 bg-highlight-blue/10 text-highlight-blue"
+              ? "border-highlight-gray bg-highlight-gray text-background"
+              : "border-highlight-gray/30 bg-highlight-gray/10 text-highlight-gray"
           }`}
         >
           {name}
@@ -169,7 +169,7 @@ function Tool({
         <span className="font-mono text-muted text-sm">{summary}</span>
       </button>
       {expanded && (
-        <div className="mt-2 ml-0 border-highlight-blue/20 border-l-2 pl-3">
+        <div className="mt-2 ml-0 border-highlight-gray/20 border-l-2 pl-3">
           {detail}
         </div>
       )}

@@ -19,6 +19,7 @@
   --color-label: var(--label);
   --color-highlight-blue: var(--highlight-blue);
   --color-highlight-yellow: var(--highlight-yellow);
+  --color-highlight-gray: var(--highlight-gray);
 
   --text-xxs: 11px;
 
@@ -39,6 +40,7 @@
   --accent-transparent: rgba(255, 108, 2, 0.2);
   --highlight-blue: #0072e4;
   --highlight-yellow: #c78f00;
+  --highlight-gray: #6b6b6b;
 
   /* bg */
   /* --base: #fff; */
@@ -90,6 +92,7 @@
     --shade-hover: #1b1b1b;
 
     --highlight-yellow: #ffcc49;
+    --highlight-gray: #a0a0a0;
   }
 
   .light-only {
