@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Composer } from "@/components/composer"
 import { createComment } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
@@ -27,6 +28,16 @@ export function PostComposer({
   defaultLlmId?: string
 }) {
   const { data } = authClient.useSession()
+  const [copied, setCopied] = useState(false)
+
+  const composerStorageKey = `post-composer:${postId}:${threadCommentId ?? "main"}`
+
+  const handleCopyMarkdown = async () => {
+    const value = sessionStorage.getItem(composerStorageKey) || ""
+    await navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div>
@@ -49,6 +60,13 @@ export function PostComposer({
             <>Log in to add a comment</>
           )}
         </div>
+        <button
+          className="text-muted text-sm hover:text-bright"
+          onClick={handleCopyMarkdown}
+          type="button"
+        >
+          {copied ? "Copied" : "Copy as markdown"}
+        </button>
       </div>
 
       <Composer
@@ -67,7 +85,7 @@ export function PostComposer({
         }}
         options={{ asking: askingOptions }}
         placeholder="Follow up"
-        storageKey={`post-composer:${postId}:${threadCommentId ?? "main"}`}
+        storageKey={composerStorageKey}
       />
     </div>
   )
