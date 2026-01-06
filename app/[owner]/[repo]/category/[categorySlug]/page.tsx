@@ -141,6 +141,7 @@ export default async function CategoryPage({
             })),
             { id: "human", name: "Human only" },
           ]}
+          categoryId={category.id}
           owner={owner}
           repo={repo}
         />
