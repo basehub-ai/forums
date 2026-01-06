@@ -57,7 +57,7 @@ export function ActivePosts({
                       <AuthorAvatar username={post.authorUsername} />
                     </TableCellText>
                   )}
-                  <TableCellText className="text-end text-sm">
+                  <TableCellText className="min-w-16 text-end text-sm">
                     <RelativeTime timestamp={post.createdAt} />
                   </TableCellText>
                 </div>
