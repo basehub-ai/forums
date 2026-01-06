@@ -50,7 +50,7 @@ function parseRepoInput(input: string): { owner: string; repo: string } | null {
 }
 
 function HighlightedText({ text, query }: { text: string; query: string }) {
-  if (!query || query.length < 2) {
+  if (!query || query.length < 1) {
     return <>{text}</>
   }
 
@@ -101,7 +101,7 @@ export function RepoListWithSearch({
   useEffect(() => {
     const query = value.trim()
 
-    if (!query || query.length < 2) {
+    if (!query || query.length < 1) {
       setSearchResults(null)
       setSearchQuery("")
       setDisplayedQuery("")
