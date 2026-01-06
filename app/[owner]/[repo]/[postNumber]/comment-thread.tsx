@@ -74,6 +74,8 @@ function CommentItem({
 
   return (
     <div id={commentNumber}>
+      {/* Anchor for direct comment ID linking from search */}
+      <span className="invisible absolute" id={`comment-${commentId}`} />
       <div className="group">
         <div
           className={cn(

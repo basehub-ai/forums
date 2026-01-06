@@ -1,16 +1,21 @@
-import { and, eq, inArray } from "drizzle-orm"
 import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db/client"
-import { comments, posts } from "@/lib/db/schema"
 import { typesense } from "@/lib/typesense"
 
 export type PostSearchResult = {
   postId: string
   postNumber: number
-  title: string | null
+  title: string
   commentId: string
   isRootComment: boolean
   snippet: string
+}
+
+type CommentDocument = {
+  id: string
+  postId: string
+  postNumber: number
+  postTitle: string
+  isRootComment: boolean
 }
 
 export async function GET(request: NextRequest) {
@@ -35,12 +40,12 @@ export async function GET(request: NextRequest) {
       .documents()
       .search({
         q: query,
-        query_by: "text",
+        query_by: "postTitle,text",
         filter_by: filterBy,
         group_by: ["postId"],
         group_limit: 1,
         per_page: 8,
-        highlight_full_fields: "text",
+        highlight_full_fields: "postTitle,text",
         highlight_start_tag: "<mark>",
         highlight_end_tag: "</mark>",
         snippet_threshold: 30,
@@ -51,67 +56,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] })
     }
 
-    type CommentDocument = { id: string; isRootComment: boolean }
-    const postIds = groupedHits.map((g) => g.group_key[0] as string)
-    const commentIds = groupedHits
-      .map((g) => (g.hits[0]?.document as CommentDocument | undefined)?.id)
-      .filter((id): id is string => typeof id === "string")
-
-    const [matchedPosts, matchedComments] = await Promise.all([
-      db
-        .select({
-          id: posts.id,
-          number: posts.number,
-          title: posts.title,
-          categoryId: posts.categoryId,
-        })
-        .from(posts)
-        .where(
-          and(
-            eq(posts.owner, owner),
-            eq(posts.repo, repo),
-            inArray(posts.id, postIds)
-          )
-        ),
-      db
-        .select({
-          id: comments.id,
-          postId: comments.postId,
-          threadCommentId: comments.threadCommentId,
-        })
-        .from(comments)
-        .where(inArray(comments.id, commentIds)),
-    ])
-
-    const postsById = Object.fromEntries(matchedPosts.map((p) => [p.id, p]))
-    const commentsById = Object.fromEntries(
-      matchedComments.map((c) => [c.id, c])
-    )
-
     const results: PostSearchResult[] = []
     for (const group of groupedHits) {
-      const postId = group.group_key[0] as string
       const hit = group.hits[0]
       if (!hit) continue
 
-      const post = postsById[postId]
-      if (!post) continue
-
-      const commentDoc = hit.document as { id: string; isRootComment: boolean }
-      const commentData = commentsById[commentDoc.id]
-      const isRootComment =
-        commentDoc.isRootComment || commentData?.threadCommentId === null
-
-      // Get highlighted snippet from Typesense
+      const doc = hit.document as CommentDocument
       const highlight = hit.highlight as Record<
         string,
         { snippet?: string; value?: string }
       >
+
+      // Prefer title highlight, fall back to text highlight
       let snippet = ""
-      if (highlight?.text?.snippet) {
+      if (highlight?.postTitle?.snippet) {
+        snippet = highlight.postTitle.snippet
+      } else if (highlight?.postTitle?.value) {
+        snippet = highlight.postTitle.value
+      } else if (highlight?.text?.snippet) {
         snippet = highlight.text.snippet
       } else if (highlight?.text?.value) {
-        // Take first 100 chars of highlighted value
         snippet =
           highlight.text.value.length > 100
             ? highlight.text.value.slice(0, 100) + "..."
@@ -119,11 +83,11 @@ export async function GET(request: NextRequest) {
       }
 
       results.push({
-        postId,
-        postNumber: post.number,
-        title: post.title,
-        commentId: commentDoc.id,
-        isRootComment,
+        postId: doc.postId,
+        postNumber: doc.postNumber,
+        title: doc.postTitle || `Post #${doc.postNumber}`,
+        commentId: doc.id,
+        isRootComment: doc.isRootComment,
         snippet,
       })
     }

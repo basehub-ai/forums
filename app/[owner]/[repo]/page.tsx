@@ -11,8 +11,7 @@ import { getModelsForPicker } from "@/lib/data/models"
 import { db } from "@/lib/db/client"
 import { categories, comments, posts } from "@/lib/db/schema"
 import { formatCompactNumber, getSiteOrigin } from "@/lib/utils"
-import { ActivePosts } from "./active-posts"
-import { NewPostComposer } from "./new-post-composer"
+import { RepoPostsWithSearch } from "./repo-posts-with-search"
 
 export async function generateMetadata({
   params,
@@ -138,24 +137,17 @@ export default async function RepoPage({
         </div>
       </div>
 
-      <div className="mb-2">
-        <NewPostComposer
-          askingOptions={[
-            ...allLlmUsers.map((u) => ({
-              id: u.id,
-              name: u.name,
-              image: u.image,
-              isDefault: u.isDefault,
-              isPremium: u.billing_category === "premium",
-            })),
-            { id: "human", name: "Human only" },
-          ]}
-          owner={owner}
-          repo={repo}
-        />
-      </div>
-
-      <ActivePosts
+      <RepoPostsWithSearch
+        askingOptions={[
+          ...allLlmUsers.map((u) => ({
+            id: u.id,
+            name: u.name,
+            image: u.image,
+            isDefault: u.isDefault,
+            isPremium: u.billing_category === "premium",
+          })),
+          { id: "human", name: "Human only" },
+        ]}
         categoriesById={categoriesById}
         owner={owner}
         posts={repoPosts}

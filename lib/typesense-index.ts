@@ -48,6 +48,8 @@ export async function ensureCollections() {
       fields: [
         { name: "id", type: "string" },
         { name: "postId", type: "string", facet: true },
+        { name: "postNumber", type: "int32" },
+        { name: "postTitle", type: "string", optional: true },
         { name: "owner", type: "string", facet: true },
         { name: "repo", type: "string", facet: true },
         { name: "categoryId", type: "string", optional: true, facet: true },
@@ -114,10 +116,14 @@ function extractText(comment: Comment): string {
 
 export async function indexComment(
   comment: Comment,
-  owner: string,
-  repo: string,
-  isRootComment: boolean,
-  categoryId?: string | null
+  meta: {
+    owner: string
+    repo: string
+    postNumber: number
+    postTitle: string | null
+    categoryId: string | null
+    isRootComment: boolean
+  }
 ) {
   const text = extractText(comment)
   if (!text.trim()) {
@@ -131,12 +137,14 @@ export async function indexComment(
     .upsert({
       id: comment.id,
       postId: comment.postId,
-      owner,
-      repo,
-      categoryId: categoryId ?? "",
+      postNumber: meta.postNumber,
+      postTitle: meta.postTitle ?? "",
+      owner: meta.owner,
+      repo: meta.repo,
+      categoryId: meta.categoryId ?? "",
       authorId: comment.authorId,
       text,
-      isRootComment,
+      isRootComment: meta.isRootComment,
       createdAt: comment.createdAt,
     })
 }
