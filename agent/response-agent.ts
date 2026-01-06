@@ -340,7 +340,7 @@ async function closeStreamStep({
     console.error("Failed to track billing usage:", err)
   }
 
-  track("generated_response", {
+  await track("generated_response", {
     tokens: totalTokens,
     cost: totalCost,
   })
