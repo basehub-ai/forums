@@ -1,8 +1,9 @@
 "use client"
 
+import { useCustomer } from "autumn-js/react"
 import { usePathname } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, useTransition } from "react"
-import { Combobox } from "@/components/ui/combobox"
+import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "./button"
 
@@ -15,6 +16,7 @@ export type ComposerProps = {
       name: string
       image?: string | null
       isDefault?: boolean
+      isPremium?: boolean
     }[]
   }
   onSubmit: (params: {
@@ -44,6 +46,8 @@ export const Composer = ({
   const isSignedIn = !!auth?.session
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
+  const { check } = useCustomer()
+  const isPro = check({ productId: "pro_plan" }).data.allowed
   const [selectedAsking, setSelectedAsking] = useState<AskingOption>(() => {
     if (defaultAskingId) {
       const found = options.asking.find((a) => a.id === defaultAskingId)
@@ -107,7 +111,7 @@ export const Composer = ({
     >
       <textarea
         autoFocus={autoFocus}
-        className="no-focus min-h-composer-min-height w-full resize-none bg-shade/10 px-3 py-3 text-bright text-sm outline-dashed outline-2 outline-muted -outline-offset-1 focus:bg-shade/30 focus:outline-solid"
+        className="no-focus min-h-composer-min-height w-full resize-none bg-shade/10 px-3 py-3 text-bright text-sm outline-dotted outline-2 outline-muted -outline-offset-1 focus:bg-shade/30 focus:outline-dashed"
         name="message"
         onChange={(e) => {
           const value = e.target.value
@@ -130,31 +134,36 @@ export const Composer = ({
 
       <div className="pointer-events-none absolute bottom-0 left-0 flex w-full items-end justify-between px-3 py-3">
         <Suspense fallback={null}>
-          <Combobox.Root
-            items={options.asking.map((a) => a.name)}
-            onValueChange={(name) => {
-              const asking = options.asking.find((a) => a.name === name)
-              if (asking) {
-                setSelectedAsking(asking)
-                onAskingChange?.(asking)
-              }
-            }}
-            value={selectedAsking.name}
-          >
-            <Combobox.Input
-              className="pointer-events-auto"
-              onFocus={(e) => e.target.select()}
-            />
-            <Combobox.Popup>
-              <Combobox.List>
-                {(name) => (
-                  <Combobox.Item key={name} value={name}>
-                    {name}
-                  </Combobox.Item>
-                )}
-              </Combobox.List>
-            </Combobox.Popup>
-          </Combobox.Root>
+          <Menu.Root>
+            <Menu.Trigger className="pointer-events-auto">
+              {selectedAsking.name}
+            </Menu.Trigger>
+            <Menu.Popup>
+              {options.asking.map((asking) => {
+                const isDisabled = asking.isPremium && !isPro
+                return (
+                  <Menu.Item
+                    disabled={isDisabled}
+                    key={asking.id}
+                    onClick={() => {
+                      if (isDisabled) {
+                        return
+                      }
+                      setSelectedAsking(asking)
+                      onAskingChange?.(asking)
+                    }}
+                  >
+                    {asking.name}
+                    {asking.isPremium && !isPro && (
+                      <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
+                        PRO
+                      </span>
+                    )}
+                  </Menu.Item>
+                )
+              })}
+            </Menu.Popup>
+          </Menu.Root>
         </Suspense>
         <Button
           className="pointer-events-auto"

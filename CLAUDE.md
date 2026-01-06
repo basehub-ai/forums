@@ -1,3 +1,5 @@
+When reporting information to me, be extremely concise and sacrifice grammar for the sake of concision.
+
 ## on tests
 
 your goal when writing tests shouldn't be to make them pass. on the contrary, it should be to expose bugs and make sure the implementation is robust. creating a good test that fails is an incredible gift for the user: now they have a bug that's easily reproduced, and you can work together to fix. never remove or weaken a test just to make it pass - surface it first, then the user will tell you what to do next.

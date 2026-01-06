@@ -85,7 +85,7 @@ export async function generateMetadata({
     return {}
   }
 
-  const title = `${post.title} — ${owner}/${repo}`
+  const title = `${post.title || `Post #${postNumberInt}`} — ${owner}/${repo}`
 
   let description = ""
   if (post.rootCommentId) {
@@ -318,6 +318,7 @@ export default async function PostPage({
       name: u.name,
       image: u.image,
       isDefault: u.isDefault,
+      isPremium: u.billing_category === "premium",
     })),
     { id: "human", name: "Human only" },
   ]
