@@ -36,7 +36,7 @@ export function ActivePosts({
   }
 
   return (
-    <div className="-mx-4 mt-10 overflow-x-auto sm:-mx-2 sm:px-2">
+    <div className="-mx-4 overflow-x-auto sm:-mx-2 sm:px-2">
       <div className="px-4 sm:px-0">
         <List className="mt-2 min-w-120 pb-2">
           {posts.map((post) => {

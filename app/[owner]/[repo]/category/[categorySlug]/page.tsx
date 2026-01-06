@@ -129,7 +129,7 @@ export default async function CategoryPage({
 
       <Title className="mt-1 mb-8">{category.title}</Title>
 
-      <div className="mb-8">
+      <div className="mb-2">
         <NewPostComposer
           askingOptions={[
             ...allLlmUsers.map((u) => ({

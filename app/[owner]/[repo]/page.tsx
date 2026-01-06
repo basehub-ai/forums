@@ -138,7 +138,7 @@ export default async function RepoPage({
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-2">
         <NewPostComposer
           askingOptions={[
             ...allLlmUsers.map((u) => ({
