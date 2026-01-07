@@ -1,14 +1,27 @@
 import { autumn } from "autumn-js/better-auth"
 import type { User } from "better-auth"
 import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { oAuthProxy } from "better-auth/plugins"
 import DataLoader from "dataloader"
 import { cacheLife } from "next/cache"
 import { productionOrigin } from "./constants"
+import { db } from "./db/client"
+import * as schema from "./db/schema"
 import { redis } from "./redis"
 import { getSiteOrigin } from "./utils"
 
 export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+  }),
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["github"],
+    },
+  },
   secondaryStorage: {
     get: async (key) => await redis.get(`auth:${key}`),
     set: async (key, value, ttl) => {
@@ -24,7 +37,7 @@ export const auth = betterAuth({
   },
   session: {
     cookieCache: {
-      version: "2",
+      version: "3",
       maxAge: 5 * 60,
       refreshCache: false,
     },
@@ -36,12 +49,6 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       redirectURI: `${productionOrigin}/api/auth/callback/github`,
-      mapProfileToUser: (profile) => {
-        return {
-          id: `github_${profile.id}`,
-          userId: `github_${profile.id}`,
-        }
-      },
     },
   },
 })

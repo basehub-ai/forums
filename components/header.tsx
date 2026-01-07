@@ -147,8 +147,6 @@ const User = async () => {
 
   const isPro = await checkIsPro(data.user.id)
 
-  console.log(data)
-
   return (
     <div className="flex items-center gap-x-2">
       <CreditWarning />
