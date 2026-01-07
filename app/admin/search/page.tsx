@@ -1,5 +1,6 @@
 import { EnsureCollectionsButton } from "./ensure-collections-button"
 import { IndexReposButton } from "./index-repos-button"
+import { RecreateReposButton } from "./recreate-repos-button"
 
 export default function AdminSearchPage() {
   return (
@@ -10,6 +11,12 @@ export default function AdminSearchPage() {
           <EnsureCollectionsButton />
           <span className="text-muted text-sm">
             — Create Typesense collections if missing
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <RecreateReposButton />
+          <span className="text-muted text-sm">
+            — Drop and recreate repos collection (use if schema changed)
           </span>
         </div>
         <div className="flex items-center gap-3">
