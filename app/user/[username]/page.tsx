@@ -87,7 +87,12 @@ export default async function UserProfilePage({
         </div>
       </div>
 
-      <h2 className="mb-4 font-medium text-sm uppercase">Recent Comments</h2>
+      <div className="relative mb-2">
+        <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+        <h2 className="relative z-10 w-fit bg-background pr-2 font-medium text-sm uppercase">
+          Recent Comments
+        </h2>
+      </div>
 
       {recentComments.length === 0 ? (
         <p className="text-dim text-sm">No comments yet from this user.</p>

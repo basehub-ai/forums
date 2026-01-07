@@ -1,9 +1,14 @@
 import type { InferSelectModel } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import Link from "next/link"
-import { RelativeTime } from "@/components/relative-time"
-import { List, ListItem, TableCellText } from "@/components/typography"
+import {
+  List,
+  ListItem,
+  TableCellText,
+  TableColumnTitle,
+} from "@/components/typography"
 import type { categories } from "@/lib/db/schema"
+import { formatRelativeTime } from "@/lib/utils"
 import { AuthorAvatar } from "./author-avatar"
 
 type PostListItem = {
@@ -36,8 +41,22 @@ export function ActivePosts({
   }
 
   return (
-    <div className="-mx-4 overflow-x-auto sm:-mx-2 sm:px-2">
+    <div className="-mx-4 overflow-x-auto [--col-w-by:20px] [--col-w-created:140px] sm:-mx-2 sm:px-2">
       <div className="px-4 sm:px-0">
+        <div className="relative min-w-120">
+          <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+          <div className="relative z-10 flex w-full">
+            <div className="flex grow">
+              <TableColumnTitle className="px-0 pr-2">
+                Latest Posts
+              </TableColumnTitle>
+            </div>
+            <div className="flex shrink-0">
+              <TableColumnTitle className="mr-17.5">OP</TableColumnTitle>
+              <TableColumnTitle className="px-0 pl-2">Created</TableColumnTitle>
+            </div>
+          </div>
+        </div>
         <List className="mt-2 min-w-120 pb-2">
           {posts.map((post) => {
             return (
@@ -52,13 +71,13 @@ export function ActivePosts({
                   </span>
                 </Link>
                 <div className="flex shrink-0 items-center">
-                  {!!post.authorUsername && (
-                    <TableCellText className="relative mr-2 h-full w-5">
+                  <TableCellText className="w-(--col-w-by)">
+                    {!!post.authorUsername && (
                       <AuthorAvatar username={post.authorUsername} />
-                    </TableCellText>
-                  )}
-                  <TableCellText className="text-end text-sm">
-                    <RelativeTime timestamp={post.createdAt} />
+                    )}
+                  </TableCellText>
+                  <TableCellText className="w-(--col-w-created) text-end">
+                    {formatRelativeTime(post.createdAt)}
                   </TableCellText>
                 </div>
               </ListItem>

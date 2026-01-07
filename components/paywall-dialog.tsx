@@ -14,8 +14,8 @@ function PaywallDialogContent() {
         Get more out of Forums with the Pro plan.
       </p>
       <ul className="space-y-2 text-sm">
-        <li className="flex items-start gap-2">
-          <span className="text-accent">→</span>
+        <li className="flex items-start justify-start gap-2">
+          <span className="h-5 text-2xl text-accent">*</span>
           <span>
             <strong className="text-bright">Unlock premium models</strong>{" "}
             <span className="text-muted">
@@ -24,7 +24,7 @@ function PaywallDialogContent() {
           </span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="text-accent">→</span>
+          <span className="h-5 text-2xl text-accent">*</span>
           <span>
             <strong className="text-bright">
               100 premium credits per month
@@ -33,10 +33,10 @@ function PaywallDialogContent() {
           </span>
         </li>
         <li className="flex items-start gap-2">
-          <span className="text-accent">→</span>
+          <span className="h-5 text-2xl text-accent">*</span>
           <span>
             <strong className="text-bright">
-              1.000 standard credits per month
+              600 standard credits per month
             </strong>
           </span>
         </li>
