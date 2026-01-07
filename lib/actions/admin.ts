@@ -1,12 +1,13 @@
 "use server"
 
-import { eq } from "drizzle-orm"
+import { eq, isNull, or, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { headers } from "next/headers"
 import { auth, isAdmin } from "@/lib/auth"
 import { db } from "@/lib/db/client"
-import { llmUsers } from "@/lib/db/schema"
+import { llmUsers, posts, comments, reactions, mentions } from "@/lib/db/schema"
+import { deletePostFromIndex } from "@/lib/typesense-index"
 
 async function assertAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -89,4 +90,67 @@ export async function setBillingCategory(
 
   revalidatePath("/admin/llm-users")
   revalidateTag("models-list", "max")
+}
+
+export async function deletePostsWithoutTitle(): Promise<{
+  success: boolean
+  deleted?: number
+  error?: string
+}> {
+  await assertAdmin()
+
+  try {
+    const titlelessPosts = await db
+      .select({ id: posts.id, owner: posts.owner, repo: posts.repo })
+      .from(posts)
+      .where(or(isNull(posts.title), eq(posts.title, "")))
+
+    if (titlelessPosts.length === 0) {
+      return { success: true, deleted: 0 }
+    }
+
+    const postIds = titlelessPosts.map((p) => p.id)
+
+    const postComments = await db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(inArray(comments.postId, postIds))
+
+    const commentIds = postComments.map((c) => c.id)
+
+    if (commentIds.length > 0) {
+      await db.delete(reactions).where(inArray(reactions.commentId, commentIds))
+      await db.delete(comments).where(inArray(comments.id, commentIds))
+    }
+
+    await db
+      .delete(mentions)
+      .where(
+        or(
+          inArray(mentions.targetPostId, postIds),
+          inArray(mentions.sourcePostId, postIds)
+        )
+      )
+
+    for (const postId of postIds) {
+      await deletePostFromIndex(postId)
+    }
+
+    await db.delete(posts).where(inArray(posts.id, postIds))
+
+    const repos = new Set(titlelessPosts.map((p) => `${p.owner}:${p.repo}`))
+    for (const repo of repos) {
+      revalidateTag(`repo:${repo}`, "max")
+    }
+    for (const post of titlelessPosts) {
+      revalidateTag(`post:${post.id}`, "max")
+    }
+
+    return { success: true, deleted: postIds.length }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    }
+  }
 }

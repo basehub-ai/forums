@@ -1,4 +1,5 @@
 import { ilike, or, sql } from "drizzle-orm"
+import { githubFetch } from "@/lib/data/github"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
 
@@ -42,16 +43,8 @@ export async function GET(request: Request) {
       )
       .limit(5),
 
-    fetch(
-      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=8`,
-      {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          ...(process.env.GITHUB_TOKEN && {
-            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          }),
-        },
-      }
+    githubFetch(
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=8`
     )
       .then(async (res) => {
         if (!res.ok) {
