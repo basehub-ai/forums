@@ -2,11 +2,19 @@
 
 import { useCustomer } from "autumn-js/react"
 import { usePathname } from "next/navigation"
-import { Suspense, useEffect, useRef, useState, useTransition } from "react"
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react"
 import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
-import { Button } from "./button"
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "./button"
 
 export type ComposerProps = {
   placeholder: string
@@ -60,6 +68,21 @@ export const Composer = ({
     return options.asking.find((a) => a.isDefault) ?? options.asking[0]
   })
   const [defaultAskingIdSet, setDefaultAskingIdSet] = useState(false)
+  const [isScrollable, setIsScrollable] = useState(false)
+
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (!textarea) {
+      return
+    }
+
+    textarea.style.height = "auto"
+    const maxHeight = 264 - 48 // 264px total max - ~48px footer
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight)
+    textarea.style.height = `${newHeight}px`
+
+    setIsScrollable(textarea.scrollHeight > maxHeight)
+  }, [])
 
   useEffect(() => {
     if (defaultAskingId && !defaultAskingIdSet) {
@@ -75,12 +98,13 @@ export const Composer = ({
     const saved = sessionStorage.getItem(storageKey)
     if (saved && textareaRef.current) {
       textareaRef.current.value = saved
+      adjustTextareaHeight()
     }
-  }, [storageKey])
+  }, [storageKey, adjustTextareaHeight])
 
   return (
     <form
-      className="relative flex"
+      className="group flex flex-col bg-shade/10 outline-dotted outline-2 outline-muted -outline-offset-1 focus-within:bg-shade/30 focus-within:outline-dashed"
       onSubmit={(e) => {
         const form = e.currentTarget
         const value = form.message.value
@@ -96,6 +120,10 @@ export const Composer = ({
               .then(() => {
                 form.reset()
                 sessionStorage.removeItem(storageKey)
+                if (textareaRef.current) {
+                  textareaRef.current.style.height = "auto"
+                }
+                setIsScrollable(false)
               })
               .catch((e) => {
                 console.error(e)
@@ -113,7 +141,10 @@ export const Composer = ({
     >
       <textarea
         autoFocus={autoFocus}
-        className="no-focus min-h-composer-min-height w-full resize-none bg-shade/10 px-3 py-3 text-bright text-sm outline-dotted outline-2 outline-muted -outline-offset-1 focus:bg-shade/30 focus:outline-dashed"
+        className={cn(
+          "no-focus min-h-20 w-full resize-none bg-transparent p-3 text-bright text-sm outline-none",
+          isScrollable && "scroll-pb-3"
+        )}
         name="message"
         onChange={(e) => {
           const value = e.target.value
@@ -122,6 +153,7 @@ export const Composer = ({
           } else {
             sessionStorage.removeItem(storageKey)
           }
+          adjustTextareaHeight()
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -134,10 +166,21 @@ export const Composer = ({
         required
       />
 
-      <div className="pointer-events-none absolute bottom-0 left-0 flex w-full items-end justify-between px-3 py-3">
+      <div
+        className={cn(
+          "flex w-full items-end justify-between px-3 py-3",
+          isScrollable &&
+            "border-muted border-t-2 border-dotted group-focus-within:border-dashed"
+        )}
+      >
         <Suspense fallback={null}>
           <Menu.Root>
-            <Menu.Trigger className="pointer-events-auto">
+            <Menu.Trigger
+              className={cn(
+                buttonVariants({ variant: "tertiary" }),
+                "hover:text-label hover:no-underline active:text-label data-popup-open:text-label"
+              )}
+            >
               {selectedAsking.name}
             </Menu.Trigger>
             <Menu.Popup>
@@ -172,11 +215,7 @@ export const Composer = ({
             </Menu.Popup>
           </Menu.Root>
         </Suspense>
-        <Button
-          className="pointer-events-auto"
-          disabled={isPending}
-          type="submit"
-        >
+        <Button className="cursor-pointer" disabled={isPending} type="submit">
           {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In"}
         </Button>
       </div>
