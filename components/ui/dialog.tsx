@@ -27,7 +27,7 @@ function Portal({
 }: React.ComponentProps<typeof BaseDialog.Portal>) {
   return (
     <BaseDialog.Portal {...props}>
-      <BaseDialog.Viewport className="fixed inset-0 flex items-center justify-center">
+      <BaseDialog.Viewport className="fixed inset-0 flex items-start justify-center pt-[15vh]">
         {children}
       </BaseDialog.Viewport>
     </BaseDialog.Portal>
