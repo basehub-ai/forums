@@ -2,46 +2,36 @@
 
 import { useChat } from "@ai-sdk/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useRef, useTransition } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useTransition,
+  type ReactNode,
+} from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import { rerunLlmComment } from "@/lib/actions/posts"
 import { WorkflowChatTransport } from "@/lib/workflow-ai/workflow-chat-transport"
 import { CommentContent } from "./comment-content"
 
-function useStreamingStatus(commentId: string) {
-  const transport = useMemo(
-    () =>
-      new WorkflowChatTransport({
-        prepareReconnectToStreamRequest: (config) => ({
-          ...config,
-          api: "/api/stream",
-          headers: { "x-comment-id": commentId },
-        }),
-      }),
-    [commentId]
-  )
-
-  const { status } = useChat<AgentUIMessage>({
-    id: commentId,
-    transport,
-  })
-
-  return status === "streaming" || status === "submitted"
+type StreamingContextValue = {
+  isStreaming: boolean
+  messages: AgentUIMessage[]
+  isRetrying: boolean
+  onRetry: () => void
 }
 
-export function StreamingBadge({ commentId }: { commentId: string }) {
-  const isStreaming = useStreamingStatus(commentId)
+const StreamingContext = createContext<StreamingContextValue | null>(null)
 
-  if (!isStreaming) return null
-
-  return (
-    <span className="animate-pulse text-muted-foreground text-xs">
-      Streaming
-    </span>
-  )
-}
-
-export function StreamingContent({ commentId }: { commentId: string }) {
+export function StreamingCommentProvider({
+  commentId,
+  children,
+}: {
+  commentId: string
+  children: ReactNode
+}) {
   const started = useRef(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -64,15 +54,12 @@ export function StreamingContent({ commentId }: { commentId: string }) {
   })
 
   useEffect(() => {
-    if (started.current) {
-      return
-    }
+    if (started.current) return
     started.current = true
     resumeStream()
   }, [resumeStream])
 
   const isStreaming = status === "streaming" || status === "submitted"
-  const lastMessage = messages.at(-1)
 
   function handleRetry() {
     startTransition(async () => {
@@ -82,11 +69,38 @@ export function StreamingContent({ commentId }: { commentId: string }) {
   }
 
   return (
+    <StreamingContext.Provider
+      value={{ isStreaming, messages, isRetrying: isPending, onRetry: handleRetry }}
+    >
+      {children}
+    </StreamingContext.Provider>
+  )
+}
+
+export function StreamingBadge() {
+  const ctx = useContext(StreamingContext)
+
+  if (!ctx?.isStreaming) return null
+
+  return (
+    <span className="animate-pulse text-muted-foreground text-xs">
+      Streaming
+    </span>
+  )
+}
+
+export function StreamingContent() {
+  const ctx = useContext(StreamingContext)
+  if (!ctx) return null
+
+  const lastMessage = ctx.messages.at(-1)
+
+  return (
     <CommentContent
       content={lastMessage ? [lastMessage] : []}
-      isRetrying={isPending}
-      isStreaming={isStreaming}
-      onRetry={handleRetry}
+      isRetrying={ctx.isRetrying}
+      isStreaming={ctx.isStreaming}
+      onRetry={ctx.onRetry}
     />
   )
 }

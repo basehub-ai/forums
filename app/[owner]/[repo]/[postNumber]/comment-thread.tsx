@@ -15,7 +15,11 @@ import { cn } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
 import { MentionBanner } from "./mention-banner"
 import { PostComposer } from "./post-composer"
-import { StreamingBadge, StreamingContent } from "./streaming-content"
+import {
+  StreamingBadge,
+  StreamingCommentProvider,
+  StreamingContent,
+} from "./streaming-content"
 
 type Comment = InferSelectModel<typeof commentsSchema>
 type Mention = InferSelectModel<typeof mentionsSchema>
@@ -72,57 +76,72 @@ function CommentItem({
 
   const actionLabel = isRootComment ? "posted" : "commented"
 
+  const header = (
+    <div
+      className={cn(
+        "z-10 flex items-center justify-between bg-shade px-2 py-1",
+        depth === 0 ? "sticky top-0" : "sticky top-8"
+      )}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center">
+        <Link
+          className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline"
+          href={profileUrl}
+        >
+          <img
+            alt={`Avatar of ${author.name}`}
+            className="size-6 rounded-full"
+            src={author.image}
+          />
+
+          {author.name}
+        </Link>
+        <span className="hidden sm:inline">&nbsp;</span>
+        <span className="text-muted-foreground text-sm">
+          {actionLabel}{" "}
+          <Suspense>
+            <RelativeTime
+              className="underline decoration-dotted underline-offset-2"
+              timestamp={comment.createdAt}
+            />
+          </Suspense>
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        {comment.streamId && <StreamingBadge />}
+        <CopyLinkButton
+          commentNumber={commentNumber}
+          owner={owner}
+          postNumber={postNumber}
+          repo={repo}
+        />
+      </div>
+    </div>
+  )
+
+  const content = comment.streamId ? (
+    <StreamingContent />
+  ) : (
+    <CommentContent content={comment.content as AgentUIMessage[]} />
+  )
+
+  const body = (
+    <>
+      {header}
+      <div className="mt-3">{content}</div>
+    </>
+  )
+
   return (
     <div id={commentNumber}>
       <div className="group">
-        <div
-          className={cn(
-            "z-10 flex items-center justify-between bg-shade px-2 py-1",
-            depth === 0 ? "sticky top-0" : "sticky top-8"
-          )}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center">
-            <Link
-              className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline"
-              href={profileUrl}
-            >
-              <img
-                alt={`Avatar of ${author.name}`}
-                className="size-6 rounded-full"
-                src={author.image}
-              />
-
-              {author.name}
-            </Link>
-            <span className="hidden sm:inline">&nbsp;</span>
-            <span className="text-muted-foreground text-sm">
-              {actionLabel}{" "}
-              <Suspense>
-                <RelativeTime
-                  className="underline decoration-dotted underline-offset-2"
-                  timestamp={comment.createdAt}
-                />
-              </Suspense>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {comment.streamId && <StreamingBadge commentId={comment.id} />}
-            <CopyLinkButton
-              commentNumber={commentNumber}
-              owner={owner}
-              postNumber={postNumber}
-              repo={repo}
-            />
-          </div>
-        </div>
-
-        <div className="mt-3">
-          {comment.streamId ? (
-            <StreamingContent commentId={comment.id} />
-          ) : (
-            <CommentContent content={comment.content as AgentUIMessage[]} />
-          )}
-        </div>
+        {comment.streamId ? (
+          <StreamingCommentProvider commentId={comment.id}>
+            {body}
+          </StreamingCommentProvider>
+        ) : (
+          body
+        )}
       </div>
 
       {hasReplies && (
