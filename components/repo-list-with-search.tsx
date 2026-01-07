@@ -50,30 +50,6 @@ function parseRepoInput(input: string): { owner: string; repo: string } | null {
   return null
 }
 
-function HighlightedText({ text, query }: { text: string; query: string }) {
-  if (!query || query.length < 1) {
-    return <>{text}</>
-  }
-
-  const parts = text.split(
-    new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi")
-  )
-
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
-          <span className="bg-highlight-yellow text-background" key={i}>
-            {part}
-          </span>
-        ) : (
-          part
-        )
-      )}
-    </>
-  )
-}
-
 export function RepoListWithSearch({
   topRepos,
   now,
@@ -156,6 +132,7 @@ export function RepoListWithSearch({
           )
           .map((r) => ({
             name: r.name,
+            highlight: r.highlight,
             stars: 0,
             posts: r.posts,
             lastActive: r.lastActive,
@@ -233,12 +210,16 @@ export function RepoListWithSearch({
                     href={repo.name}
                   >
                     <AsteriskIcon className="mt-0.5 text-faint" size={16} />
-                    <span className="whitespace-nowrap leading-none group-hover:text-bright">
-                      <HighlightedText
-                        query={displayedQuery}
-                        text={repo.name}
+                    {"highlight" in repo && repo.highlight ? (
+                      <span
+                        className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-highlight-yellow [&_mark]:text-background"
+                        dangerouslySetInnerHTML={{ __html: repo.highlight }}
                       />
-                    </span>
+                    ) : (
+                      <span className="whitespace-nowrap leading-none group-hover:text-bright">
+                        {repo.name}
+                      </span>
+                    )}
                   </Link>
                   <div className="flex shrink-0">
                     {!displayedQuery && (

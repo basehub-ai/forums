@@ -257,8 +257,6 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
     return []
   }
 
-  await ensureCollectionsOnce()
-
   const results = await typesense
     .collections(REPOS_COLLECTION)
     .documents()
