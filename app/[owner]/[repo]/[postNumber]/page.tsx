@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
 import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
+import { githubFetch } from "@/lib/data/github"
 import { getModelsForPicker } from "@/lib/data/models"
 import { getPostByNumber, getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
@@ -38,16 +39,8 @@ async function getStaleInfo(
   cacheLife("minutes")
 
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/compare/${baseSha}...${branch}`,
-      {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          ...(process.env.GITHUB_TOKEN && {
-            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          }),
-        },
-      }
+    const res = await githubFetch(
+      `https://api.github.com/repos/${owner}/${repo}/compare/${baseSha}...${branch}`
     )
 
     if (!res.ok) {

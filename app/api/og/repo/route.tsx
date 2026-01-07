@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
+import { githubFetch } from "@/lib/data/github"
 
 const size = {
   width: 1200,
@@ -20,15 +21,8 @@ export async function GET(request: NextRequest) {
     return new Response("Missing parameters", { status: 400 })
   }
 
-  const repoData = (await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      headers: {
-        ...(process.env.GITHUB_TOKEN && {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        }),
-      },
-    }
+  const repoData = (await githubFetch(
+    `https://api.github.com/repos/${owner}/${repo}`
   ).then((res) => (res.ok ? res.json() : null))) as GitHubRepoData | null
 
   const description = repoData?.description || "Forum discussions"

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm"
 import { cacheLife } from "next/cache"
+import { githubFetch } from "@/lib/data/github"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 
@@ -16,13 +17,7 @@ async function fetchRepoStars(repos: string[]): Promise<Map<string, number>> {
   await Promise.all(
     repos.map(async (repo) => {
       try {
-        const res = await fetch(`https://api.github.com/repos/${repo}`, {
-          headers: {
-            Accept: "application/vnd.github.v3+json",
-            ...(process.env.GITHUB_TOKEN && {
-              Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-            }),
-          },
+        const res = await githubFetch(`https://api.github.com/repos/${repo}`, {
           next: { revalidate: 3600 },
         })
         if (res.ok) {
