@@ -1,6 +1,6 @@
 import { headers } from "next/headers"
 import { auth, isAdmin } from "@/lib/auth"
-import { indexAllRepos } from "@/lib/turbopuffer-index"
+import { indexAllRepos } from "@/lib/typesense-index"
 
 export async function POST() {
   const session = await auth.api.getSession({ headers: await headers() })

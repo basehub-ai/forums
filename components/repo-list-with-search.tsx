@@ -25,6 +25,7 @@ type SearchResult = {
   repo: string
   posts: number
   lastActive: number
+  highlight?: string
 }
 
 function parseRepoInput(input: string): { owner: string; repo: string } | null {
