@@ -279,7 +279,10 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
       posts: number
       lastActive: number
     }
-    const highlightedName = hit.highlight?.name?.snippet ?? doc.name
+    const highlight = hit.highlight as
+      | { name?: { snippet?: string } }
+      | undefined
+    const highlightedName = highlight?.name?.snippet ?? doc.name
     return {
       name: doc.name,
       owner: doc.owner,
