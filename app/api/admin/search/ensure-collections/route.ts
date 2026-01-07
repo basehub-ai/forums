@@ -1,6 +1,6 @@
 import { headers } from "next/headers"
 import { auth, isAdmin } from "@/lib/auth"
-import { indexAllRepos } from "@/lib/typesense-index"
+import { ensureCollections } from "@/lib/typesense-index"
 
 export async function POST() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -10,12 +10,12 @@ export async function POST() {
   }
 
   try {
-    const count = await indexAllRepos()
-    return Response.json({ success: true, indexed: count })
+    await ensureCollections()
+    return Response.json({ success: true })
   } catch (error) {
-    console.error("Indexing error:", error)
+    console.error("Ensure collections error:", error)
     return Response.json(
-      { success: false, error: "Indexing failed" },
+      { success: false, error: "Failed to ensure collections" },
       { status: 500 }
     )
   }

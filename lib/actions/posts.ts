@@ -23,8 +23,12 @@ import {
 import { resolvePostLinks } from "@/lib/post-links"
 import { extractPostLinks } from "@/lib/post-links-parser"
 import { checkMessageRateLimit, checkReactionRateLimit } from "@/lib/rate-limit"
-import { indexRepo } from "@/lib/turbopuffer-index"
-import { indexComment, indexPost, updatePostIndex } from "@/lib/typesense-index"
+import {
+  indexComment,
+  indexPost,
+  indexRepo,
+  updatePostIndex,
+} from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
 
