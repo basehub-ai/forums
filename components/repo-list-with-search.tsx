@@ -203,24 +203,27 @@ export function RepoListWithSearch({
 
           {displayRepos.length > 0 ? (
             <List className="mt-2 min-w-120 pb-2">
-              {displayRepos.map((repo) => (
-                <ListItem key={repo.name}>
-                  <Link
-                    className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
-                    href={repo.name}
-                  >
-                    <AsteriskIcon className="mt-0.5 text-faint" size={16} />
-                    {"highlight" in repo && repo.highlight ? (
-                      <span
-                        className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-highlight-yellow [&_mark]:text-background"
-                        dangerouslySetInnerHTML={{ __html: repo.highlight }}
-                      />
-                    ) : (
-                      <span className="whitespace-nowrap leading-none group-hover:text-bright">
-                        {repo.name}
-                      </span>
-                    )}
-                  </Link>
+              {displayRepos.map((repo) => {
+                const highlight =
+                  "highlight" in repo ? (repo.highlight as string) : null
+                return (
+                  <ListItem key={repo.name}>
+                    <Link
+                      className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
+                      href={repo.name}
+                    >
+                      <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                      {highlight ? (
+                        <span
+                          className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-highlight-yellow [&_mark]:text-background"
+                          dangerouslySetInnerHTML={{ __html: highlight }}
+                        />
+                      ) : (
+                        <span className="whitespace-nowrap leading-none group-hover:text-bright">
+                          {repo.name}
+                        </span>
+                      )}
+                    </Link>
                   <div className="flex shrink-0">
                     {!displayedQuery && (
                       <TableCellText className="w-(--col-w-1)">
@@ -234,8 +237,9 @@ export function RepoListWithSearch({
                       {formatRelativeTime(repo.lastActive, now)}
                     </TableCellText>
                   </div>
-                </ListItem>
-              ))}
+                  </ListItem>
+                )
+              })}
             </List>
           ) : displayedQuery ? (
             <p className="mt-4 text-muted">
