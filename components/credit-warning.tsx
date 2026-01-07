@@ -12,7 +12,7 @@ export function CreditWarning() {
   const lowStandard = standardBalance < 10
   const lowPremium = isPro && premiumBalance < 10
 
-  if (!(lowStandard || lowPremium)) {
+  if (!(standardBalance && (lowStandard || lowPremium))) {
     return null
   }
 

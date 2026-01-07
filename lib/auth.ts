@@ -4,6 +4,7 @@ import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { oAuthProxy } from "better-auth/plugins"
 import DataLoader from "dataloader"
+import { eq } from "drizzle-orm"
 import { cacheLife } from "next/cache"
 import { productionOrigin } from "./constants"
 import { db } from "./db/client"
@@ -49,6 +50,32 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       redirectURI: `${productionOrigin}/api/auth/callback/github`,
+      overrideUserInfoOnSignIn: true,
+      mapProfileToUser: (profile) => ({
+        username: profile.login,
+      }),
+    },
+  },
+  databaseHooks: {
+    user: {
+      update: {
+        after: async (user) => {
+          const username = user.username as string | null
+          if (!username) {
+            return
+          }
+          await Promise.all([
+            db
+              .update(schema.comments)
+              .set({ authorUsername: username })
+              .where(eq(schema.comments.authorId, user.id)),
+            db
+              .update(schema.mentions)
+              .set({ authorUsername: username })
+              .where(eq(schema.mentions.authorId, user.id)),
+          ])
+        },
+      },
     },
   },
 })
