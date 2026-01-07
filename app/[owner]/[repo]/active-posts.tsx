@@ -8,7 +8,7 @@ import {
   TableColumnTitle,
 } from "@/components/typography"
 import type { categories } from "@/lib/db/schema"
-import { formatRelativeTime } from "@/lib/utils"
+import { RelativeTime } from "@/components/relative-time"
 import { AuthorAvatar } from "./author-avatar"
 
 type PostListItem = {
@@ -77,7 +77,7 @@ export function ActivePosts({
                     )}
                   </TableCellText>
                   <TableCellText className="w-(--col-w-created) text-end">
-                    {formatRelativeTime(post.createdAt)}
+                    <RelativeTime timestamp={post.createdAt} />
                   </TableCellText>
                 </div>
               </ListItem>
