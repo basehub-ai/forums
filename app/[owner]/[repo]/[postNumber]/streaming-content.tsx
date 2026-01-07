@@ -8,6 +8,39 @@ import { rerunLlmComment } from "@/lib/actions/posts"
 import { WorkflowChatTransport } from "@/lib/workflow-ai/workflow-chat-transport"
 import { CommentContent } from "./comment-content"
 
+function useStreamingStatus(commentId: string) {
+  const transport = useMemo(
+    () =>
+      new WorkflowChatTransport({
+        prepareReconnectToStreamRequest: (config) => ({
+          ...config,
+          api: "/api/stream",
+          headers: { "x-comment-id": commentId },
+        }),
+      }),
+    [commentId]
+  )
+
+  const { status } = useChat<AgentUIMessage>({
+    id: commentId,
+    transport,
+  })
+
+  return status === "streaming" || status === "submitted"
+}
+
+export function StreamingBadge({ commentId }: { commentId: string }) {
+  const isStreaming = useStreamingStatus(commentId)
+
+  if (!isStreaming) return null
+
+  return (
+    <span className="animate-pulse text-muted-foreground text-xs">
+      Streaming
+    </span>
+  )
+}
+
 export function StreamingContent({ commentId }: { commentId: string }) {
   const started = useRef(false)
   const [isPending, startTransition] = useTransition()

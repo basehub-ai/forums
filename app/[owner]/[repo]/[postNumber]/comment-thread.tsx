@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
 import { MentionBanner } from "./mention-banner"
 import { PostComposer } from "./post-composer"
-import { StreamingContent } from "./streaming-content"
+import { StreamingBadge, StreamingContent } from "./streaming-content"
 
 type Comment = InferSelectModel<typeof commentsSchema>
 type Mention = InferSelectModel<typeof mentionsSchema>
@@ -106,11 +106,7 @@ function CommentItem({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {comment.streamId && (
-              <span className="animate-pulse text-muted-foreground text-xs">
-                Streaming
-              </span>
-            )}
+            {comment.streamId && <StreamingBadge commentId={comment.id} />}
             <CopyLinkButton
               commentNumber={commentNumber}
               owner={owner}
