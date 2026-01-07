@@ -101,7 +101,7 @@ export async function deletePostsWithoutTitle(): Promise<{
 
   try {
     const titlelessPosts = await db
-      .select({ id: posts.id })
+      .select({ id: posts.id, owner: posts.owner, repo: posts.repo })
       .from(posts)
       .where(or(isNull(posts.title), eq(posts.title, "")))
 
@@ -137,6 +137,14 @@ export async function deletePostsWithoutTitle(): Promise<{
     }
 
     await db.delete(posts).where(inArray(posts.id, postIds))
+
+    const repos = new Set(titlelessPosts.map((p) => `${p.owner}:${p.repo}`))
+    for (const repo of repos) {
+      revalidateTag(`repo:${repo}`, "max")
+    }
+    for (const post of titlelessPosts) {
+      revalidateTag(`post:${post.id}`, "max")
+    }
 
     return { success: true, deleted: postIds.length }
   } catch (err) {
