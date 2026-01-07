@@ -1,12 +1,12 @@
 "use server"
 
-import { eq, isNull, or, inArray } from "drizzle-orm"
+import { eq, inArray, isNull, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { headers } from "next/headers"
 import { auth, isAdmin } from "@/lib/auth"
 import { db } from "@/lib/db/client"
-import { llmUsers, posts, comments, reactions, mentions } from "@/lib/db/schema"
+import { comments, llmUsers, mentions, posts, reactions } from "@/lib/db/schema"
 import { deletePostFromIndex } from "@/lib/typesense-index"
 
 async function assertAdmin() {

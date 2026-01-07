@@ -24,6 +24,7 @@ export const auth = betterAuth({
   },
   session: {
     cookieCache: {
+      version: "2",
       maxAge: 5 * 60,
       refreshCache: false,
     },
@@ -35,6 +36,11 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       redirectURI: `${productionOrigin}/api/auth/callback/github`,
+      mapProfileToUser: (profile) => {
+        return {
+          id: `github_${profile.id}`,
+        }
+      },
     },
   },
 })
