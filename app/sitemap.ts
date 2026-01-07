@@ -65,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${origin}/${owner}/${repo}`,
       lastModified: repoLatest ? new Date(repoLatest) : new Date(),
       changeFrequency: "daily",
-      priority: 0.9,
+      priority: 0.8,
     })
   }
 
@@ -75,7 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${origin}/${p.owner}/${p.repo}/${p.number}`,
       lastModified: new Date(p.updatedAt),
       changeFrequency: "weekly",
-      priority: 0.8,
+      priority: 0.9,
     })
   }
 
