@@ -7,23 +7,14 @@ export default function AdminSearchPage() {
     <div className="space-y-4">
       <h1 className="text-bright text-lg">Search Administration</h1>
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <EnsureCollectionsButton />
-          <span className="text-muted text-sm">
-            — Create Typesense collections if missing
-          </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <RecreateReposButton />
-          <span className="text-muted text-sm">
-            — Drop and recreate repos collection (use if schema changed)
-          </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <IndexReposButton />
-          <span className="text-muted text-sm">
-            — Re-index all repositories for search
-          </span>
         </div>
       </div>
     </div>

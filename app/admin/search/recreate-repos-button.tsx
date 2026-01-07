@@ -4,7 +4,10 @@ import { useState } from "react"
 
 export function RecreateReposButton() {
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
+  const [result, setResult] = useState<{
+    ok: boolean
+    message: string
+  } | null>(null)
 
   async function handleClick() {
     setIsLoading(true)
@@ -20,12 +23,12 @@ export function RecreateReposButton() {
       }
 
       if (data.success) {
-        setResult("Done")
+        setResult({ ok: true, message: "Done" })
       } else {
-        setResult(data.error ?? "Failed")
+        setResult({ ok: false, message: data.error ?? "Failed" })
       }
-    } catch {
-      setResult("Network error")
+    } catch (e) {
+      setResult({ ok: false, message: String(e) })
     } finally {
       setIsLoading(false)
     }
@@ -33,16 +36,20 @@ export function RecreateReposButton() {
 
   return (
     <>
+      <span className="text-bright">Recreate Repos Collection</span>
+      {result && (
+        <span className={result.ok ? "text-muted text-sm" : "text-red-400 text-sm"}>
+          — {result.message}
+        </span>
+      )}
       <button
-        className="bg-highlight-yellow px-1.5 py-0.5 text-bright disabled:opacity-50"
+        className="ml-auto bg-highlight-yellow px-1 py-0.5 text-xs text-black disabled:opacity-50"
         disabled={isLoading}
         onClick={handleClick}
         type="button"
       >
-        {isLoading ? "Running..." : "Run"}
+        {isLoading ? "..." : "Run"}
       </button>
-      <span className="text-bright">Recreate Repos Collection</span>
-      {result && <span className="text-muted text-sm">({result})</span>}
     </>
   )
 }
