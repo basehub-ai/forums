@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { DeleteTitlelessPostsButton } from "./delete-titleless-posts-button"
 
 export default function AdminPage() {
   return (
@@ -21,6 +22,12 @@ export default function AdminPage() {
           — Manage Typesense collections and indexing
         </span>
       </Link>
+      <div className="flex items-center gap-3">
+        <DeleteTitlelessPostsButton />
+        <span className="text-muted text-sm">
+          — Delete all posts without a title
+        </span>
+      </div>
     </div>
   )
 }
