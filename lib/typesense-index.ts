@@ -262,11 +262,11 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
     .documents()
     .search({
       q: query,
-      query_by: "name",
+      query_by: "name,owner,repo",
       prefix: true,
       num_typos: 0,
       per_page: 20,
-      highlight_full_fields: "name",
+      highlight_full_fields: "name,owner,repo",
     })
 
   return (results.hits ?? []).map((hit) => {
@@ -278,14 +278,16 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
       lastActive: number
     }
     const highlight = hit.highlight as
-      | { name?: { snippet?: string } }
+      | { name?: { snippet?: string }; owner?: { snippet?: string }; repo?: { snippet?: string } }
       | undefined
-    const highlightedName = highlight?.name?.snippet ?? doc.name
+    const ownerSnippet = highlight?.owner?.snippet ?? doc.owner
+    const repoSnippet = highlight?.repo?.snippet ?? doc.repo
+    const highlightedName = `${ownerSnippet}/${repoSnippet}`
     return {
       name: doc.name,
       owner: doc.owner,
       repo: doc.repo,
-      posts: doc.posts,
+      posts: Number(doc.posts) || 0,
       lastActive: doc.lastActive,
       highlight: highlightedName,
     }
