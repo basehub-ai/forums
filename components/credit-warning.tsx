@@ -9,8 +9,8 @@ export function CreditWarning() {
   const standardBalance = customer?.features?.standard_credits?.balance ?? 0
   const premiumBalance = customer?.features?.premium_credits?.balance ?? 0
 
-  const lowStandard = standardBalance < 10 && standardBalance > 0
-  const lowPremium = isPro && premiumBalance < 10 && premiumBalance > 0
+  const lowStandard = standardBalance < 10
+  const lowPremium = isPro && premiumBalance < 10
 
   if (!(lowStandard || lowPremium)) {
     return null
@@ -24,6 +24,7 @@ export function CreditWarning() {
           left
         </span>
       )}
+      {lowStandard && lowPremium && " & "}
       {lowPremium && (
         <span className="text-red-500">
           {premiumBalance} premium credit{premiumBalance !== 1 ? "s" : ""} left
