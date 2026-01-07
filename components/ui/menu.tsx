@@ -14,7 +14,6 @@ function Trigger({
     <BaseMenu.Trigger
       className={cn(
         "inline-flex cursor-pointer items-center gap-1 text-faint text-sm transition-colors duration-300 hover:text-bright hover:underline hover:duration-100 active:text-bright data-popup-open:text-bright",
-        "hover:text-bright data-popup-open:text-bright",
         className
       )}
       {...props}
