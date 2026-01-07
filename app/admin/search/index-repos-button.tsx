@@ -37,12 +37,14 @@ export function IndexReposButton() {
     <>
       <span className="text-bright">Index Repos</span>
       {result && (
-        <span className={result.ok ? "text-muted text-sm" : "text-red-400 text-sm"}>
+        <span
+          className={result.ok ? "text-muted text-sm" : "text-red-400 text-sm"}
+        >
           — {result.message}
         </span>
       )}
       <button
-        className="ml-auto bg-highlight-yellow px-1 py-0.5 text-xs text-black disabled:opacity-50"
+        className="ml-auto bg-highlight-yellow px-1 py-0.5 text-black text-xs disabled:opacity-50"
         disabled={isLoading}
         onClick={handleClick}
         type="button"

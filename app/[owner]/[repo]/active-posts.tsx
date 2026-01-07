@@ -1,6 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import Link from "next/link"
+import { RelativeTime } from "@/components/relative-time"
 import {
   List,
   ListItem,
@@ -8,7 +9,6 @@ import {
   TableColumnTitle,
 } from "@/components/typography"
 import type { categories } from "@/lib/db/schema"
-import { RelativeTime } from "@/components/relative-time"
 import { AuthorAvatar } from "./author-avatar"
 
 type PostListItem = {

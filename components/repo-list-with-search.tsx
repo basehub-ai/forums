@@ -224,19 +224,19 @@ export function RepoListWithSearch({
                         </span>
                       )}
                     </Link>
-                  <div className="flex shrink-0">
-                    {!displayedQuery && (
-                      <TableCellText className="w-(--col-w-1)">
-                        {formatCompactNumber(repo.stars)}
+                    <div className="flex shrink-0">
+                      {!displayedQuery && (
+                        <TableCellText className="w-(--col-w-1)">
+                          {formatCompactNumber(repo.stars)}
+                        </TableCellText>
+                      )}
+                      <TableCellText className="w-(--col-w-2)">
+                        {formatCompactNumber(repo.posts)}
                       </TableCellText>
-                    )}
-                    <TableCellText className="w-(--col-w-2)">
-                      {formatCompactNumber(repo.posts)}
-                    </TableCellText>
-                    <TableCellText className="w-(--col-w-3) text-end">
-                      {formatRelativeTime(repo.lastActive, now)}
-                    </TableCellText>
-                  </div>
+                      <TableCellText className="w-(--col-w-3) text-end">
+                        {formatRelativeTime(repo.lastActive, now)}
+                      </TableCellText>
+                    </div>
                   </ListItem>
                 )
               })}

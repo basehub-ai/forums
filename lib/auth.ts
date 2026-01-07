@@ -39,6 +39,7 @@ export const auth = betterAuth({
       mapProfileToUser: (profile) => {
         return {
           id: `github_${profile.id}`,
+          userId: `github_${profile.id}`,
         }
       },
     },

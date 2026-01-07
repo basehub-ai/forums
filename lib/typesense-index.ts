@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm"
 import type { InferSelectModel } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import type { comments, posts } from "./db/schema"
 import { typesense } from "./typesense"
@@ -278,7 +278,11 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
       lastActive: number
     }
     const hl = hit.highlight as
-      | { name?: { snippet?: string }; owner?: { snippet?: string }; repo?: { snippet?: string } }
+      | {
+          name?: { snippet?: string }
+          owner?: { snippet?: string }
+          repo?: { snippet?: string }
+        }
       | undefined
     // Prefer name snippet if it has highlights, otherwise construct from owner/repo
     const nameSnippet = hl?.name?.snippet
