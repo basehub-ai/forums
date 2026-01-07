@@ -36,26 +36,9 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       redirectURI: `${productionOrigin}/api/auth/callback/github`,
-      getUserInfo: async (token) => {
-        const res = await fetch("https://api.github.com/user", {
-          headers: { Authorization: `Bearer ${token.accessToken}` },
-        })
-        const profile = (await res.json()) as {
-          id: number
-          login: string
-          name: string | null
-          email: string | null
-          avatar_url: string
-        }
+      mapProfileToUser: (profile) => {
         return {
-          user: {
-            id: `github_${profile.id}`,
-            name: profile.name || profile.login,
-            email: profile.email || `${profile.id}@github.user`,
-            image: profile.avatar_url,
-            emailVerified: !!profile.email,
-          },
-          data: profile,
+          id: `github_${profile.id}`,
         }
       },
     },
