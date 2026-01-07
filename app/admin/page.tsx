@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { DeleteTitlelessPostsButton } from "./delete-titleless-posts-button"
 import { IndexReposButton } from "./index-repos-button"
 
 export default function AdminPage() {
@@ -17,6 +18,12 @@ export default function AdminPage() {
         <IndexReposButton />
         <span className="text-muted text-sm">
           — Re-index all repositories for search
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
+        <DeleteTitlelessPostsButton />
+        <span className="text-muted text-sm">
+          — Delete all posts without a title
         </span>
       </div>
     </div>
