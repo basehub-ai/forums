@@ -39,22 +39,14 @@ function Popup({
           <BaseMenu.Popup
             className={cn(
               "peer relative z-50 min-w-[160px] border border-dim bg-background p-1 text-sm",
-              "transform-gpu transition-opacity duration-100",
-              "data-open:opacity-100",
-              "outline-none data-closed:pointer-events-none data-closed:opacity-0",
+              "outline-none data-closed:pointer-events-none",
               className
             )}
             {...props}
           >
             {children}
           </BaseMenu.Popup>
-          <DotsShadow
-            className={cn(
-              "transform-gpu transition-opacity duration-100",
-              "peer-data-open:opacity-100",
-              "peer-data-closed:opacity-0"
-            )}
-          />
+          <DotsShadow className="peer-data-closed:hidden" />
         </div>
       </BaseMenu.Positioner>
     </BaseMenu.Portal>
