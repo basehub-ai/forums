@@ -277,12 +277,14 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
       posts: number
       lastActive: number
     }
-    const highlight = hit.highlight as
+    const hl = hit.highlight as
       | { name?: { snippet?: string }; owner?: { snippet?: string }; repo?: { snippet?: string } }
       | undefined
-    const ownerSnippet = highlight?.owner?.snippet ?? doc.owner
-    const repoSnippet = highlight?.repo?.snippet ?? doc.repo
-    const highlightedName = `${ownerSnippet}/${repoSnippet}`
+    // Prefer name snippet if it has highlights, otherwise construct from owner/repo
+    const nameHasHighlight = hl?.name?.snippet?.includes("<mark>")
+    const highlightedName = nameHasHighlight
+      ? hl.name!.snippet!
+      : `${hl?.owner?.snippet ?? doc.owner}/${hl?.repo?.snippet ?? doc.repo}`
     return {
       name: doc.name,
       owner: doc.owner,
