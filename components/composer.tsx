@@ -166,8 +166,6 @@ export const Composer = ({
         required
       />
 
-      {isScrollable && <hr className="divider-sm mx-3 border-0" />}
-
       <div
         className={cn(
           "flex w-full items-end justify-between px-3 py-3",
