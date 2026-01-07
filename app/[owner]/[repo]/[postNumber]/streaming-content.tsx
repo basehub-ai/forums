@@ -4,12 +4,12 @@ import { useChat } from "@ai-sdk/react"
 import { useRouter } from "next/navigation"
 import {
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useTransition,
-  type ReactNode,
 } from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import { rerunLlmComment } from "@/lib/actions/posts"
@@ -70,7 +70,12 @@ export function StreamingCommentProvider({
 
   return (
     <StreamingContext.Provider
-      value={{ isStreaming, messages, isRetrying: isPending, onRetry: handleRetry }}
+      value={{
+        isStreaming,
+        messages,
+        isRetrying: isPending,
+        onRetry: handleRetry,
+      }}
     >
       {children}
     </StreamingContext.Provider>
