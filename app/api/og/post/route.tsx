@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm"
+import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
+import { join } from "path"
 import { getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
@@ -10,6 +12,19 @@ const size = {
   width: 1200,
   height: 630,
 }
+
+const geistMonoRegular = readFile(
+  join(
+    process.cwd(),
+    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
+  )
+)
+const geistMonoBold = readFile(
+  join(
+    process.cwd(),
+    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
+  )
+)
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -27,22 +42,26 @@ export async function GET(request: NextRequest) {
     return new Response("Invalid post number", { status: 400 })
   }
 
-  const post = await db
-    .select({
-      title: posts.title,
-      number: posts.number,
-      rootCommentId: posts.rootCommentId,
-    })
-    .from(posts)
-    .where(
-      and(
-        eq(posts.owner, owner),
-        eq(posts.repo, repo),
-        eq(posts.number, postNumber)
+  const [post, fontRegular, fontBold] = await Promise.all([
+    db
+      .select({
+        title: posts.title,
+        number: posts.number,
+        rootCommentId: posts.rootCommentId,
+      })
+      .from(posts)
+      .where(
+        and(
+          eq(posts.owner, owner),
+          eq(posts.repo, repo),
+          eq(posts.number, postNumber)
+        )
       )
-    )
-    .limit(1)
-    .then((r) => r[0])
+      .limit(1)
+      .then((r) => r[0]),
+    geistMonoRegular,
+    geistMonoBold,
+  ])
 
   const title = post?.title || `Post #${postNumber}`
   const body = post?.rootCommentId
@@ -61,6 +80,7 @@ export async function GET(request: NextRequest) {
         backgroundColor: "#fafafa",
         padding: 60,
         gap: 32,
+        fontFamily: "Geist Mono",
       }}
     >
       <div
@@ -83,7 +103,7 @@ export async function GET(request: NextRequest) {
             color: "#71717a",
           }}
         >
-          {owner}/{repo}
+          {`${owner}/${repo}`}
         </span>
       </div>
       <div
@@ -96,7 +116,7 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             fontSize: 64,
-            fontWeight: "bold",
+            fontWeight: 600,
             color: "#09090b",
             lineHeight: 1.2,
             maxWidth: 1080,
@@ -122,6 +142,18 @@ export async function GET(request: NextRequest) {
     </div>,
     {
       ...size,
+      fonts: [
+        {
+          name: "Geist Mono",
+          data: fontRegular,
+          weight: 400,
+        },
+        {
+          name: "Geist Mono",
+          data: fontBold,
+          weight: 700,
+        },
+      ],
     }
   )
 }

@@ -1,11 +1,30 @@
+import { and, eq, sql } from "drizzle-orm"
+import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
+import { join } from "path"
 import { githubFetch } from "@/lib/data/github"
+import { db } from "@/lib/db/client"
+import { posts } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 
 const size = {
   width: 1200,
   height: 630,
 }
+
+const geistMonoRegular = readFile(
+  join(
+    process.cwd(),
+    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
+  )
+)
+const geistMonoBold = readFile(
+  join(
+    process.cwd(),
+    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
+  )
+)
 
 interface GitHubRepoData {
   description: string | null
@@ -21,9 +40,18 @@ export async function GET(request: NextRequest) {
     return new Response("Missing parameters", { status: 400 })
   }
 
-  const repoData = (await githubFetch(
-    `https://api.github.com/repos/${owner}/${repo}`
-  ).then((res) => (res.ok ? res.json() : null))) as GitHubRepoData | null
+  const [repoData, postCount, fontRegular, fontBold] = await Promise.all([
+    githubFetch(`https://api.github.com/repos/${owner}/${repo}`).then((res) =>
+      res.ok ? res.json() : null
+    ) as Promise<GitHubRepoData | null>,
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(posts)
+      .where(and(eq(posts.owner, owner), eq(posts.repo, repo)))
+      .then((r) => r[0]?.count ?? 0),
+    geistMonoRegular,
+    geistMonoBold,
+  ])
 
   const description = repoData?.description || "Forum discussions"
 
@@ -36,10 +64,34 @@ export async function GET(request: NextRequest) {
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "space-between",
-        backgroundColor: "#09090b",
+        backgroundColor: "#fafafa",
         padding: 60,
+        fontFamily: "Geist Mono",
       }}
     >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <img
+          alt="Forums"
+          height={40}
+          src={`${getSiteOrigin()}/icon.svg`}
+          width={40}
+        />
+        <span
+          style={{
+            display: "flex",
+            fontSize: 36,
+          }}
+        >
+          <span style={{ color: "#040404", fontWeight: 500 }}>FORUMS</span>
+          <span style={{ color: "#71717a" }}>&nbsp;by BaseHub</span>
+        </span>
+      </div>
       <div
         style={{
           display: "flex",
@@ -51,17 +103,18 @@ export async function GET(request: NextRequest) {
           style={{
             fontSize: 72,
             fontWeight: "bold",
-            color: "#fafafa",
-            lineHeight: 1.2,
+            color: "#09090b",
+            lineHeight: 1.1,
           }}
         >
-          {owner}/{repo}
+          {`${owner}/${repo}`}
         </div>
         <div
           style={{
-            fontSize: 32,
-            color: "#a1a1aa",
+            fontSize: 48,
+            color: "#71717a",
             maxWidth: 1080,
+            lineHeight: 1.4,
           }}
         >
           {description}
@@ -69,15 +122,27 @@ export async function GET(request: NextRequest) {
       </div>
       <div
         style={{
-          fontSize: 28,
+          fontSize: 48,
           color: "#71717a",
         }}
       >
-        Forum
+        {`${postCount} posts`}
       </div>
     </div>,
     {
       ...size,
+      fonts: [
+        {
+          name: "Geist Mono",
+          data: fontRegular,
+          weight: 400,
+        },
+        {
+          name: "Geist Mono",
+          data: fontBold,
+          weight: 700,
+        },
+      ],
     }
   )
 }

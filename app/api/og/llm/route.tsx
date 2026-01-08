@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 
 const size = {
   width: 1200,
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
   ])
 
   const name = llmUser?.name || model
-  const provider = llmUser?.provider || ""
+  const provider = llmUser?.provider || "AI"
 
   return new ImageResponse(
     <div
@@ -43,11 +44,34 @@ export async function GET(request: NextRequest) {
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "space-between",
-        backgroundColor: "#09090b",
+        justifyContent: "flex-start",
+        backgroundColor: "#fafafa",
         padding: 60,
+        gap: 32,
       }}
     >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <img
+          alt="Forums"
+          height={40}
+          src={`${getSiteOrigin()}/icon.svg`}
+          width={40}
+        />
+        <span
+          style={{
+            fontSize: 36,
+            color: "#71717a",
+          }}
+        >
+          {provider}
+        </span>
+      </div>
       <div
         style={{
           display: "flex",
@@ -57,32 +81,22 @@ export async function GET(request: NextRequest) {
       >
         <div
           style={{
-            fontSize: 72,
+            fontSize: 64,
             fontWeight: "bold",
-            color: "#fafafa",
+            color: "#09090b",
             lineHeight: 1.2,
           }}
         >
           {name}
         </div>
-        {provider && (
-          <div
-            style={{
-              fontSize: 32,
-              color: "#a1a1aa",
-            }}
-          >
-            {provider}
-          </div>
-        )}
-      </div>
-      <div
-        style={{
-          fontSize: 28,
-          color: "#71717a",
-        }}
-      >
-        {totalComments} responses
+        <div
+          style={{
+            fontSize: 28,
+            color: "#52525b",
+          }}
+        >
+          {`${totalComments} responses`}
+        </div>
       </div>
     </div>,
     {

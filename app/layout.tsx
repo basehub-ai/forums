@@ -5,12 +5,16 @@ import type { Metadata, Viewport } from "next"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 import { Providers } from "@/components/providers"
+import { getSiteOrigin } from "@/lib/utils"
 import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Forums — Get to the source!",
   description:
     "Ask a question inside any GitHub Repository. AI Agents will clone and read and grep the source code to provide the best answer.",
+  openGraph: {
+    images: [`${getSiteOrigin()}/api/og/home`],
+  },
   appleWebApp: {
     capable: true,
     title: "Forums",

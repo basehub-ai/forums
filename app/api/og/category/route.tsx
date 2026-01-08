@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server"
 import slugify from "slugify"
 import { db } from "@/lib/db/client"
 import { categories } from "@/lib/db/schema"
+import { getSiteOrigin } from "@/lib/utils"
 
 const size = {
   width: 1200,
@@ -45,44 +46,43 @@ export async function GET(request: NextRequest) {
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "space-between",
-        backgroundColor: "#09090b",
+        justifyContent: "flex-start",
+        backgroundColor: "#fafafa",
         padding: 60,
+        gap: 32,
       }}
     >
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: 16,
+          alignItems: "center",
+          gap: 12,
         }}
       >
-        <div
+        <img
+          alt="Forums"
+          height={40}
+          src={`${getSiteOrigin()}/icon.svg`}
+          width={40}
+        />
+        <span
           style={{
-            fontSize: 28,
+            fontSize: 36,
             color: "#71717a",
           }}
         >
-          {owner}/{repo}
-        </div>
-        <div
-          style={{
-            fontSize: 72,
-            fontWeight: "bold",
-            color: "#fafafa",
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </div>
+          {`${owner}/${repo}`}
+        </span>
       </div>
       <div
         style={{
-          fontSize: 28,
-          color: "#a1a1aa",
+          fontSize: 64,
+          fontWeight: "bold",
+          color: "#09090b",
+          lineHeight: 1.2,
         }}
       >
-        Category
+        {title}
       </div>
     </div>,
     {

@@ -119,7 +119,7 @@ export function Header() {
                 />
               </g>
             </svg>
-            <span className="whitespace-nowrap font-semibold grou-hover:text-bright text-dim uppercase group-hover:underline">
+            <span className="whitespace-nowrap font-semibold text-dim uppercase group-hover:text-bright group-hover:underline">
               Forums
             </span>
           </Link>
