@@ -17,6 +17,14 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  user: {
+    additionalFields: {
+      username: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
   account: {
     accountLinking: {
       enabled: true,
@@ -51,29 +59,76 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       redirectURI: `${productionOrigin}/api/auth/callback/github`,
       overrideUserInfoOnSignIn: true,
-      mapProfileToUser: (profile) => ({
-        username: profile.login,
-      }),
     },
   },
   databaseHooks: {
     user: {
       update: {
         after: async (user) => {
-          const username = user.username as string | null
-          if (!username) {
+          const githubUserId = extractGitHubUserId(user.image)
+          if (!githubUserId) {
+            return
+          }
+          const res = await fetch(
+            `https://api.github.com/user/${githubUserId}`,
+            {
+              headers: {
+                Accept: "application/vnd.github.v3+json",
+                ...(process.env.GITHUB_TOKEN && {
+                  Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                }),
+              },
+            }
+          )
+          if (!res.ok) {
+            return
+          }
+          const data = (await res.json()) as { login: string }
+          if (user.username === data.login) {
             return
           }
           await Promise.all([
             db
+              .update(schema.user)
+              .set({ username: data.login })
+              .where(eq(schema.user.id, user.id)),
+            db
               .update(schema.comments)
-              .set({ authorUsername: username })
+              .set({ authorUsername: data.login })
               .where(eq(schema.comments.authorId, user.id)),
             db
               .update(schema.mentions)
-              .set({ authorUsername: username })
+              .set({ authorUsername: data.login })
               .where(eq(schema.mentions.authorId, user.id)),
           ])
+        },
+      },
+    },
+    account: {
+      create: {
+        after: async (account) => {
+          if (account.providerId !== "github") {
+            return
+          }
+          const res = await fetch(
+            `https://api.github.com/user/${account.accountId}`,
+            {
+              headers: {
+                Accept: "application/vnd.github.v3+json",
+                ...(process.env.GITHUB_TOKEN && {
+                  Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                }),
+              },
+            }
+          )
+          if (!res.ok) {
+            return
+          }
+          const data = (await res.json()) as { login: string }
+          await db
+            .update(schema.user)
+            .set({ username: data.login })
+            .where(eq(schema.user.id, account.userId))
         },
       },
     },
