@@ -517,6 +517,22 @@ export function getTools(context: ToolContext) {
     WebSearch: searchTool as any,
     // biome-ignore lint/suspicious/noExplicitAny: .
     WebExtract: extractTool as any,
+
+    Think: tool({
+      description:
+        "Use this tool to think through complex problems step-by-step. This is a no-op tool that simply returns your thought back - use it when you need to break down a problem, plan your approach, or reason through something before taking action.",
+      inputSchema: z.object({
+        thought: z
+          .string()
+          .describe("Your step-by-step thinking or reasoning process"),
+      }),
+      outputSchema: z.object({
+        thought: z.string().describe("The thought that was processed"),
+      }),
+      execute: async ({ thought }) => {
+        return { thought }
+      },
+    }),
   } satisfies ToolSet
 }
 
