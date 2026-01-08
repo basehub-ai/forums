@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Forums
 
-## Getting Started
+AI-powered Q&A for GitHub repositories. Ask questions about any repo and AI agents will clone, explore, and grep the source code to provide source-backed answers.
 
-First, run the development server:
+**Need help?** Visit [forums.basehub.com/basehub-ai/forums](http://forums.basehub.com/basehub-ai/forums)
+
+## Contributing / Development
+
+### Prerequisites
+
+- [Bun](https://bun.sh) runtime
+- [Vercel CLI](https://vercel.com/cli) (for pulling environment variables)
+- PostgreSQL database
+- [Typesense](https://typesense.org) instance
+
+### Setup
+
+1. Clone the repository:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/basehub-ai/forums.git
+cd forums
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+bun install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Set up environment variables. Either link to Vercel project or create `.env.local` manually:
 
-## Learn More
+```bash
+# Option A: Pull from Vercel (requires access)
+vc env pull .env.local
 
-To learn more about Next.js, take a look at the following resources:
+# Option B: Create manually with required variables (see Self-Hosting section)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Run database migrations:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+bun run db:generate
+```
 
-## Deploy on Vercel
+5. Start the development server:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+bun run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start development server |
+| `bun run build` | Build for production |
+| `bun run start` | Start production server |
+| `bun run test` | Run tests |
+| `bun run lint` | Lint and fix code |
+| `bun run typecheck` | Type check |
+| `bun run db:generate` | Generate database migrations |
+
+## Self-Hosting
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `TYPESENSE_API_KEY` | Yes | Typesense API key |
+| `TYPESENSE_HOST` | Yes | Typesense host URL |
+| `GITHUB_CLIENT_ID` | Yes | GitHub OAuth app client ID |
+| `GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth app client secret |
+| `GITHUB_TOKEN` | No | GitHub PAT for higher API rate limits |
+| `REVALIDATE_SECRET` | No | Secret for cache revalidation webhook |
+| `ADMIN_USER_EMAILS` | No | Comma-separated list of admin emails |
+
+### Deploy to Vercel
+
+1. Fork this repository
+2. Import to Vercel
+3. Configure environment variables
+4. Deploy
+
+### Manual Deployment
+
+1. Set up a PostgreSQL database
+2. Set up a Typesense instance
+3. Create a GitHub OAuth app
+4. Configure all required environment variables
+5. Build and run:
+
+```bash
+bun run build
+bun run start
+```
