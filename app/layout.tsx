@@ -1,7 +1,7 @@
 import { Analytics } from "@vercel/analytics/next"
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 import { Providers } from "@/components/providers"
@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     title: "Forums",
     statusBarStyle: "default",
   },
+}
+
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafafa" },
     { media: "(prefers-color-scheme: dark)", color: "#040404" },
