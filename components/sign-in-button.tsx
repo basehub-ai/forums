@@ -19,7 +19,7 @@ export const SignInButton = () => {
       type="button"
       variant="secondary"
     >
-      {isLoading ? "Loading…" : "Log In"}
+      {isLoading ? "Logging in…" : "Log In"}
     </Button>
   )
 }
