@@ -73,16 +73,24 @@ export default async function UserProfilePage({
 
   return (
     <Container>
-      <div className="mb-8 flex items-center gap-3">
+      <div className="mb-8 flex items-center gap-2.5">
         <img
           alt={user.name ?? username}
-          className="h-12 w-12 rounded-full"
+          className="h-14 w-14 rounded-full"
           src={user.image}
         />
-        <div>
+        <div className="flex flex-col gap-0.5">
           <Title>{user.name ?? username}</Title>
           <Subtitle className="text-dim">
-            @{username} &middot; {totalComments} comments
+            <a
+              className="hover:underline"
+              href={`https://github.com/${username}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              @{username}
+            </a>{" "}
+            - {totalComments} comments
           </Subtitle>
         </div>
       </div>
