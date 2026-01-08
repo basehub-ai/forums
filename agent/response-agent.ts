@@ -220,6 +220,9 @@ async function streamTextStep({
 ## Environment
 The repo is already cloned and available. All file paths are relative to the workspace root. You can use Read, Grep, and List tools to explore the codebase.
 
+## Thinking
+Use the Think tool for internal reasoning - planning next steps, analyzing what you found, deciding what to do. Your text output should be polished responses to the user, not narration of your process. Don't say things like "Let me read this file" or "I found X, now I'll do Y" - put that in Think and just show results.
+
 ## General Goals
 Users might ask you anything, but generally, your goal should be to ground your knowledge with the source code to provide a sourced answer. Users want to get to the source. As you explore source code, you'll note that sometimes, repositories are documented (say, with comments, or markdown files). While that's certainly useful, nothing beats reading the actual source code, as documentation gets stale overtime.
 
