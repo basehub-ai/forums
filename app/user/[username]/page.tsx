@@ -41,8 +41,30 @@ export async function generateMetadata({
   const { username } = await params
   const origin = getSiteOrigin()
 
+  const [githubUser, stats] = await Promise.all([
+    gitHubUserLoader.load(username),
+    db
+      .execute<{ commentCount: number; repoCount: number }>(sql`
+        SELECT
+          count(*) as "commentCount",
+          count(distinct p.owner || '/' || p.repo) as "repoCount"
+        FROM comments c
+        JOIN posts p ON p.id = c.post_id
+        WHERE c.author_username = ${username}
+      `)
+      .then((r) => r[0] ?? { commentCount: 0, repoCount: 0 }),
+  ])
+
+  const name = githubUser?.name ?? username
+  const title = `${name} — Forums`
+  const description = `${name} has ${stats.commentCount} comments in over ${stats.repoCount} repositories. Join Forums; get to the source!`
+
   return {
+    title,
+    description,
     openGraph: {
+      title,
+      description,
       images: [`${origin}/api/og/user?username=${username}`],
     },
   }
