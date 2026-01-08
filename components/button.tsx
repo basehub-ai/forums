@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 const buttonVariants = cva("flex items-center justify-center font-medium", {
   variants: {
     variant: {
-      primary: "bg-accent text-white",
+      primary:
+        "bg-accent text-white disabled:cursor-not-allowed disabled:opacity-50",
       secondary:
         "no-focus bg-accent/5 text-accent outline-dotted outline-2 outline-accent -outline-offset-1 hover:bg-accent/10 focus:outline-dashed focus:outline-2",
       tertiary: "bg-faint font-medium text-label uppercase",

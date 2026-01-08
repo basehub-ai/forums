@@ -56,12 +56,12 @@ export default async function LlmUsersPage() {
                 action={setBillingCategory.bind(
                   null,
                   user.id,
-                  user.billing_category === "premium" ? "standard" : "premium"
+                  user.billing_category === "pro" ? "standard" : "pro"
                 )}
               >
                 <button
                   className={`text-xs hover:underline ${
-                    user.billing_category === "premium"
+                    user.billing_category === "pro"
                       ? "text-purple-400"
                       : "text-dim"
                   }`}

@@ -25,7 +25,7 @@ export type ComposerProps = {
       name: string
       image?: string | null
       isDefault?: boolean
-      isPremium?: boolean
+      isProModel?: boolean
     }[]
   }
   onSubmit: (params: {
@@ -56,8 +56,9 @@ export const Composer = ({
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
-  const { check } = useCustomer()
-  const isPro = check({ productId: "pro_plan" }).data.allowed
+  const { customer, check } = useCustomer()
+  const isProUser = check({ productId: "pro_plan" }).data.allowed
+  const creditBalance = customer?.features?.standard_credits?.balance ?? 0
   const [selectedAsking, setSelectedAsking] = useState<AskingOption>(() => {
     if (defaultAskingId) {
       const found = options.asking.find((a) => a.id === defaultAskingId)
@@ -185,7 +186,7 @@ export const Composer = ({
             </Menu.Trigger>
             <Menu.Popup>
               {options.asking.map((asking) => {
-                const isDisabled = asking.isPremium && !isPro
+                const isDisabled = asking.isProModel && !isProUser
                 return (
                   <Menu.Item
                     className={
@@ -201,10 +202,8 @@ export const Composer = ({
                       onAskingChange?.(asking)
                     }}
                   >
-                    {asking.isPremium && isPro
-                      ? ` 💎 ${asking.name}`
-                      : asking.name}
-                    {asking.isPremium && !isPro && (
+                    {asking.name}
+                    {asking.isProModel && (
                       <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
                         PRO
                       </span>
@@ -215,9 +214,41 @@ export const Composer = ({
             </Menu.Popup>
           </Menu.Root>
         </Suspense>
-        <Button className="cursor-pointer" disabled={isPending} type="submit">
-          {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In"}
-        </Button>
+        <div className="flex items-center gap-3">
+          {isSignedIn &&
+            selectedAsking.id !== "human" &&
+            (() => {
+              const requiredCredits = selectedAsking.isProModel ? 5 : 1
+              const hasEnoughCredits = creditBalance >= requiredCredits
+              if (!hasEnoughCredits) {
+                if (creditBalance === 0) {
+                  return (
+                    <span className="text-red-500 text-xs">
+                      You have run out of credits
+                    </span>
+                  )
+                }
+                return (
+                  <span className="text-red-500 text-xs">
+                    You have less than the required 5 credits to use this model
+                  </span>
+                )
+              }
+              return null
+            })()}
+          <Button
+            className="cursor-pointer"
+            disabled={
+              isPending ||
+              (isSignedIn &&
+                selectedAsking.id !== "human" &&
+                creditBalance < (selectedAsking.isProModel ? 5 : 1))
+            }
+            type="submit"
+          >
+            {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In"}
+          </Button>
+        </div>
       </div>
     </form>
   )

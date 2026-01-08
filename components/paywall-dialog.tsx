@@ -17,7 +17,7 @@ function PaywallDialogContent() {
         <li className="flex items-start justify-start gap-2">
           <span className="h-5 text-2xl text-accent">*</span>
           <span>
-            <strong className="text-bright">Unlock premium models</strong>{" "}
+            <strong className="text-bright">Unlock Pro models</strong>{" "}
             <span className="text-muted">
               including Claude Opus, Gemini Pro, GPT Codex and more
             </span>
@@ -26,33 +26,19 @@ function PaywallDialogContent() {
         <li className="flex items-start gap-2">
           <span className="h-5 text-2xl text-accent">*</span>
           <span>
-            <strong className="text-bright">
-              100 premium credits per month
-            </strong>{" "}
-            <span className="text-muted">for premium models</span>
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="h-5 text-2xl text-accent">*</span>
-          <span>
-            <strong className="text-bright">
-              600 standard credits per month
-            </strong>
+            <strong className="text-bright">1500 credits per month*</strong>
           </span>
         </li>
       </ul>
+      <p className="text-muted text-xs">
+        *Regular models use 1 credit per message, Pro models use 5.
+      </p>
       <div className="flex items-center justify-between pt-2">
         <span className="text-muted text-sm">$10/month</span>
         <Button
           onClick={async () => {
             await checkout({
               productId: "pro_plan",
-              options: [
-                {
-                  featureId: "premium_credits",
-                  quantity: 0,
-                },
-              ],
               successUrl: window.location.href,
               checkoutSessionParams: {
                 cancel_url: window.location.href,

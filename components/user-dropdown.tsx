@@ -13,7 +13,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
   const router = useRouter()
   const { customer, check, openBillingPortal } = useCustomer()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
-  const isPro = check({ productId: "pro_plan" }).data.allowed
+  const isProUser = check({ productId: "pro_plan" }).data.allowed
   const hasCanceledPro =
     check({ productId: "pro_plan" }).data.status === "canceled"
   const initials = user.name
@@ -21,11 +21,8 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
     .map((n) => n[0])
     .join("")
 
-  const standardCredits = customer?.features?.standard_credits
-  const premiumCredits = customer?.features?.premium_credits
-
-  const standardMax = standardCredits?.included_usage
-  const premiumMax = premiumCredits?.included_usage
+  const credits = customer?.features?.standard_credits
+  const creditsMax = credits?.included_usage
 
   return (
     <Menu.Root>
@@ -53,65 +50,32 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
         </div>
         <Menu.Separator />
         <div className="space-y-2 px-2 py-1.5">
-          <Meter.Root
-            max={standardMax}
-            min={0}
-            value={standardCredits?.usage ?? 0}
-          >
+          <Meter.Root max={creditsMax} min={0} value={credits?.usage ?? 0}>
             <div className="flex items-center justify-between">
-              <Meter.Label>{isPro ? "Standard" : "Credits"}</Meter.Label>
+              <Meter.Label>Credits</Meter.Label>
               <span className="text-muted text-xs tabular-nums">
-                {standardCredits?.usage ?? 0}/{standardMax}
+                {credits?.usage ?? 0}/{creditsMax}
               </span>
             </div>
             <Meter.Track>
               <Meter.Indicator />
             </Meter.Track>
-            {isPro ? (
-              <span className="text-muted text-xs tabular-nums">
-                {standardCredits?.balance ?? 0} credits remaining
-              </span>
-            ) : (
-              <span className="text-muted text-xs tabular-nums">
-                Resets{" "}
-                {standardCredits?.next_reset_at
-                  ? formatRelativeTime(standardCredits?.next_reset_at)
-                  : "N/A"}
-              </span>
-            )}
+            <span className="text-muted text-xs tabular-nums">
+              {credits?.balance ?? 0} remaining
+            </span>
           </Meter.Root>
-          {isPro ? (
-            <>
-              <Meter.Root
-                max={premiumMax}
-                min={0}
-                value={premiumCredits?.usage ?? 0}
-              >
-                <div className="flex items-center justify-between">
-                  <Meter.Label>Premium</Meter.Label>
-                  <span className="text-muted text-xs tabular-nums">
-                    {premiumCredits?.usage ?? 0}/{premiumMax}
-                  </span>
-                </div>
-                <Meter.Track>
-                  <Meter.Indicator />
-                </Meter.Track>
-                <span className="text-muted text-xs tabular-nums">
-                  {premiumCredits?.balance ?? 0} credits remaining
-                </span>
-              </Meter.Root>
-              <span className="text-muted text-xs tabular-nums">
-                {hasCanceledPro ? "Ends " : "Resets "}
-                {new Date(
-                  premiumCredits?.next_reset_at ?? 0
-                ).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-            </>
-          ) : (
+          <span className="text-muted text-xs tabular-nums">
+            {hasCanceledPro ? "Ends " : "Resets "}
+            {isProUser
+              ? new Date(credits?.next_reset_at ?? 0).toLocaleDateString(
+                  "en-US",
+                  { month: "short", day: "numeric" }
+                )
+              : credits?.next_reset_at
+                ? formatRelativeTime(credits?.next_reset_at)
+                : "N/A"}
+          </span>
+          {!isProUser && (
             <button
               className="w-0 min-w-full cursor-pointer text-balance text-left text-accent text-xs hover:text-accent hover:underline active:text-accent"
               onClick={() => setPaywallOpen(true)}
@@ -122,7 +86,7 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
           )}
         </div>
         <Menu.Separator />
-        {isPro && (
+        {isProUser && (
           <Menu.Item
             onClick={async () => {
               await openBillingPortal({

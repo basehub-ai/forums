@@ -9,7 +9,7 @@ import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
 import type { AgentUIMessage } from "@/agent/types"
 import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
-import { autumn, type BillingCategory, FEATURE_IDS } from "@/lib/autumn"
+import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import {
   categories,
@@ -231,12 +231,11 @@ export async function createPost(data: {
   if (llm) {
     const billingCategory = (llm.billing_category ||
       "standard") as BillingCategory
-    const featureId = FEATURE_IDS[billingCategory]
 
     const { data: checkResult, error } = await autumn.check({
       customer_id: session.user.id,
-      feature_id: featureId,
-      required_balance: 3,
+      feature_id: "standard_credits",
+      required_balance: CREDIT_COSTS[billingCategory],
     })
 
     if (error || !checkResult) {
@@ -408,12 +407,11 @@ export async function createComment(data: {
   if (llm) {
     const billingCategory = (llm.billing_category ||
       "standard") as BillingCategory
-    const featureId = FEATURE_IDS[billingCategory]
 
     const { data: checkResult, error } = await autumn.check({
       customer_id: session.user.id,
-      feature_id: featureId,
-      required_balance: 3,
+      feature_id: "standard_credits",
+      required_balance: CREDIT_COSTS[billingCategory],
     })
 
     if (error || !checkResult) {
@@ -820,12 +818,11 @@ export async function rerunLlmComment(data: {
 
   const billingCategory = (llm.billing_category ||
     "standard") as BillingCategory
-  const featureId = FEATURE_IDS[billingCategory]
 
   const { data: checkResult, error } = await autumn.check({
     customer_id: session.user.id,
-    feature_id: featureId,
-    required_balance: 3,
+    feature_id: "standard_credits",
+    required_balance: CREDIT_COSTS[billingCategory],
   })
 
   if (error || !checkResult) {
@@ -921,15 +918,12 @@ export async function rerunLlmCommentsInPost(data: {
     throw new Error("No LLM comments to re-run")
   }
 
-  // Check credits for all comments (worst case: 3 credits per comment)
-  const billingCategory = (defaultLlm.billing_category ||
-    "standard") as BillingCategory
-  const featureId = FEATURE_IDS[billingCategory]
-  const requiredCredits = llmComments.length * 3
+  // Check credits for all comments (worst case: pro cost per comment)
+  const requiredCredits = llmComments.length * CREDIT_COSTS.pro
 
   const { data: checkResult } = await autumn.check({
     customer_id: session.user.id,
-    feature_id: featureId,
+    feature_id: "standard_credits",
     required_balance: requiredCredits,
   })
 
