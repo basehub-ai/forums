@@ -246,7 +246,13 @@ export const Composer = ({
             }
             type="submit"
           >
-            {isPending ? "Posting..." : isSignedIn ? "Post" : "Log In"}
+            {isSignedIn
+              ? isPending
+                ? "Posting..."
+                : "Post"
+              : isPending
+                ? "Logging in..."
+                : "Log In"}
           </Button>
         </div>
       </div>
