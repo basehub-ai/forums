@@ -224,13 +224,13 @@ export const Composer = ({
                 if (creditBalance === 0) {
                   return (
                     <span className="text-red-500 text-xs">
-                      You have run out of credits
+                      Out of credits
                     </span>
                   )
                 }
                 return (
                   <span className="text-red-500 text-xs">
-                    You have less than the required 5 credits to use this model
+                    Not enough credits for this model
                   </span>
                 )
               }
