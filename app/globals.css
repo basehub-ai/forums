@@ -36,6 +36,10 @@
   );
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   --accent: rgba(255, 108, 2, 1);
   --accent-transparent: rgba(255, 108, 2, 0.2);
