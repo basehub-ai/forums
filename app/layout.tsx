@@ -11,6 +11,15 @@ export const metadata: Metadata = {
   title: "Forums — Get to the source!",
   description:
     "Ask a question inside any GitHub Repository. AI Agents will clone and read and grep the source code to provide the best answer.",
+  appleWebApp: {
+    capable: true,
+    title: "Forums",
+    statusBarStyle: "default",
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#040404" },
+  ],
 }
 
 export default function RootLayout({
