@@ -2,6 +2,7 @@
 
 import { useCustomer } from "autumn-js/react"
 import type { Session, User } from "better-auth"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Menu } from "@/components/ui/menu"
 import { Meter } from "@/components/ui/meter"
@@ -9,7 +10,14 @@ import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { formatRelativeTime } from "@/lib/utils"
 
-export const UserDropdown = ({ user }: { user: User; session: Session }) => {
+export const UserDropdown = ({
+  user,
+  username,
+}: {
+  user: User
+  session: Session
+  username: string | null
+}) => {
   const router = useRouter()
   const { customer, check, openBillingPortal } = useCustomer()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
@@ -37,17 +45,38 @@ export const UserDropdown = ({ user }: { user: User; session: Session }) => {
         </span>
       </Menu.Trigger>
       <Menu.Popup align="end">
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <img
-            alt={user.name}
-            className="size-8 rounded-full"
-            src={user.image || ""}
-          />
-          <div className="flex flex-col">
-            <span className="font-semibold text-dim text-sm">{user.name}</span>
-            <span className="text-xs">{user.email}</span>
+        {username ? (
+          <Link
+            className="flex items-center gap-2 px-2 py-1.5 hover:bg-foreground/5"
+            href={`/user/${username}`}
+          >
+            <img
+              alt={user.name}
+              className="size-8 rounded-full"
+              src={user.image || ""}
+            />
+            <div className="flex flex-col">
+              <span className="font-semibold text-dim text-sm">
+                {user.name}
+              </span>
+              <span className="text-xs">@{username}</span>
+            </div>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <img
+              alt={user.name}
+              className="size-8 rounded-full"
+              src={user.image || ""}
+            />
+            <div className="flex flex-col">
+              <span className="font-semibold text-dim text-sm">
+                {user.name}
+              </span>
+              <span className="text-xs">{user.email}</span>
+            </div>
           </div>
-        </div>
+        )}
         <Menu.Separator />
         <div className="space-y-2 px-2 py-1.5">
           <Meter.Root max={creditsMax} min={0} value={credits?.usage ?? 0}>

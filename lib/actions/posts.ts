@@ -324,6 +324,9 @@ export async function createPost(data: {
 
   updateTag(`repo:${data.owner}:${data.repo}`)
   updateTag(`post:${postId}`)
+  if (authorUsername) {
+    updateTag(`user:${authorUsername}`)
+  }
 
   return {
     postId,
@@ -487,6 +490,9 @@ export async function createComment(data: {
 
   updateTag(`repo:${post.owner}:${post.repo}`)
   updateTag(`post:${post.id}`)
+  if (authorUsername) {
+    updateTag(`user:${authorUsername}`)
+  }
 
   return {
     commentId,
@@ -510,6 +516,7 @@ export async function addReaction({
 }) {
   const session = await getSessionOrThrow()
   await checkReactionRateLimit(session.user.id)
+  const authorUsername = await getGitHubUsername(session.user.image)
   await db
     .insert(reactions)
     .values({
@@ -522,6 +529,9 @@ export async function addReaction({
     .onConflictDoNothing()
   updateTag(`repo:${owner}:${repo}`)
   updateTag(`post:${postId}`)
+  if (authorUsername) {
+    updateTag(`user:${authorUsername}`)
+  }
 }
 
 export async function removeReaction({
@@ -539,6 +549,7 @@ export async function removeReaction({
 }) {
   const session = await getSessionOrThrow()
   await checkReactionRateLimit(session.user.id)
+  const authorUsername = await getGitHubUsername(session.user.image)
   await db
     .delete(reactions)
     .where(
@@ -550,6 +561,9 @@ export async function removeReaction({
     )
   updateTag(`repo:${owner}:${repo}`)
   updateTag(`post:${postId}`)
+  if (authorUsername) {
+    updateTag(`user:${authorUsername}`)
+  }
 }
 
 export async function getPostMetadata(postId: string) {
