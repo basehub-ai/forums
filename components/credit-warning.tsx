@@ -4,7 +4,12 @@ import { useCustomer } from "autumn-js/react"
 
 export function CreditWarning() {
   const { customer } = useCustomer()
-  const balance = customer?.features?.standard_credits?.balance ?? 0
+
+  if (!customer) {
+    return null
+  }
+
+  const balance = customer.features?.standard_credits?.balance ?? 0
 
   if (balance >= 5) {
     return null

@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { Suspense } from "react"
@@ -5,6 +6,8 @@ import BillingButton from "@/components/billing-button"
 import { CreditWarning } from "@/components/credit-warning"
 import { auth } from "@/lib/auth"
 import { checkIsPro } from "@/lib/autumn"
+import { db } from "@/lib/db/client"
+import { user } from "@/lib/db/schema"
 import { Button } from "./button"
 import { Container } from "./container"
 import { SignInButton } from "./sign-in-button"
@@ -141,17 +144,28 @@ export function Header() {
 const User = async () => {
   const data = await auth.api.getSession({ headers: await headers() })
 
+  // console.log(data)
+
   if (!data) {
     return <SignInButton />
   }
 
-  const isProUser = await checkIsPro(data.user.id)
+  const [isProUser, dbUser] = await Promise.all([
+    checkIsPro(data.user.id),
+    db
+      .select({ username: user.username })
+      .from(user)
+      .where(eq(user.id, data.user.id))
+      .then((rows) => rows[0]),
+  ])
+
+  // console.log(dbUser)
 
   return (
     <div className="flex items-center gap-x-2">
       <CreditWarning />
       <BillingButton isProUser={isProUser} />
-      <UserDropdown {...data} />
+      <UserDropdown {...data} username={dbUser?.username ?? null} />
     </div>
   )
 }

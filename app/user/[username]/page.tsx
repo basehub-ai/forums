@@ -1,15 +1,37 @@
 import { desc, eq, sql } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import type { Metadata } from "next"
-import { cacheLife } from "next/cache"
+import { cacheTag } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Container } from "@/components/container"
-import { List, ListItem, Subtitle, Title } from "@/components/typography"
+import {
+  List,
+  ListItem,
+  Subtitle,
+  TableCellText,
+  TableColumnTitle,
+  Title,
+} from "@/components/typography"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
-import { getSiteOrigin } from "@/lib/utils"
+import {
+  formatCompactNumber,
+  formatRelativeTime,
+  getSiteOrigin,
+} from "@/lib/utils"
+
+export async function generateStaticParams() {
+  const usernames = await db
+    .selectDistinct({ username: comments.authorUsername })
+    .from(comments)
+    .where(sql`${comments.authorUsername} IS NOT NULL`)
+
+  return usernames
+    .filter((u): u is { username: string } => u.username !== null)
+    .map((u) => ({ username: u.username }))
+}
 
 export async function generateMetadata({
   params,
@@ -32,14 +54,62 @@ export default async function UserProfilePage({
   params: Promise<{ username: string }>
 }) {
   "use cache"
-  cacheLife("minutes")
   const { username } = await params
+  cacheTag(`user:${username}`)
 
-  const user = await gitHubUserLoader.load(username)
+  const githubUser = await gitHubUserLoader.load(username)
 
-  if (!user) {
+  if (!githubUser) {
     notFound()
   }
+
+  const now = Date.now()
+
+  const recentRepositories = await db.execute<{
+    owner: string
+    repo: string
+    lastActive: number
+    postCount: number
+  }>(sql`
+      WITH user_repos AS (
+        SELECT DISTINCT p.owner, p.repo, MAX(c.created_at) as last_active
+        FROM comments c
+        JOIN posts p ON p.id = c.post_id
+        WHERE c.author_username = ${username}
+        GROUP BY p.owner, p.repo
+
+        UNION
+
+        SELECT DISTINCT p.owner, p.repo, MAX(p.created_at) as last_active
+        FROM posts p
+        JOIN "user" u ON u.id = p.author_id
+        WHERE u.username = ${username}
+        GROUP BY p.owner, p.repo
+
+        UNION
+
+        SELECT DISTINCT p.owner, p.repo, MAX(r.created_at) as last_active
+        FROM reactions r
+        JOIN comments c ON c.id = r.comment_id
+        JOIN posts p ON p.id = c.post_id
+        JOIN "user" u ON u.id = r.user_id
+        WHERE u.username = ${username}
+        GROUP BY p.owner, p.repo
+      ),
+      aggregated AS (
+        SELECT owner, repo, MAX(last_active) as last_active
+        FROM user_repos
+        GROUP BY owner, repo
+      )
+      SELECT
+        a.owner,
+        a.repo,
+        a.last_active as "lastActive",
+        (SELECT COUNT(*) FROM posts WHERE posts.owner = a.owner AND posts.repo = a.repo) as "postCount"
+      FROM aggregated a
+      ORDER BY a.last_active DESC
+      LIMIT 10
+    `)
 
   const recentComments = await db
     .select({
@@ -73,21 +143,78 @@ export default async function UserProfilePage({
 
   return (
     <Container>
-      <div className="mb-8 flex items-center gap-3">
+      <div className="mb-8 flex items-center gap-2.5">
         <img
-          alt={user.name ?? username}
-          className="h-12 w-12 rounded-full"
-          src={user.image}
+          alt={githubUser.name ?? username}
+          className="h-14 w-14 rounded-full"
+          src={githubUser.image}
         />
-        <div>
-          <Title>{user.name ?? username}</Title>
+        <div className="flex flex-col gap-0.5">
+          <Title>{githubUser.name ?? username}</Title>
           <Subtitle className="text-dim">
-            @{username} &middot; {totalComments} comments
+            <a
+              className="hover:underline"
+              href={`https://github.com/${username}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              @{username}
+            </a>{" "}
+            - {totalComments} comments
           </Subtitle>
         </div>
       </div>
 
-      <div className="relative mb-2">
+      <div className="-mx-4 overflow-x-auto [--col-w-1:67px] [--col-w-2:131px] sm:-mx-2 sm:px-2">
+        <div className="min-w-fit px-4 sm:px-0">
+          <div className="relative min-w-100">
+            <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+            <div className="relative z-10 flex w-full">
+              <div className="flex grow">
+                <TableColumnTitle className="px-0 pr-2">
+                  Recent Repositories
+                </TableColumnTitle>
+              </div>
+              <div className="flex shrink-0">
+                <TableColumnTitle className="mr-13.5">Posts</TableColumnTitle>
+                <TableColumnTitle className="px-0 pl-2">
+                  Last Active
+                </TableColumnTitle>
+              </div>
+            </div>
+          </div>
+
+          {recentRepositories.length > 0 ? (
+            <List className="mt-2 min-w-100 pb-2">
+              {recentRepositories.map((repo) => (
+                <ListItem key={`${repo.owner}/${repo.repo}`}>
+                  <Link
+                    className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
+                    href={`/${repo.owner}/${repo.repo}`}
+                  >
+                    <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                    <span className="whitespace-nowrap leading-none group-hover:text-bright">
+                      {repo.owner}/{repo.repo}
+                    </span>
+                  </Link>
+                  <div className="flex shrink-0">
+                    <TableCellText className="w-(--col-w-1)">
+                      {formatCompactNumber(Number(repo.postCount))}
+                    </TableCellText>
+                    <TableCellText className="w-(--col-w-2) text-end">
+                      {formatRelativeTime(Number(repo.lastActive), now)}
+                    </TableCellText>
+                  </div>
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <p className="mt-4 text-muted">No repositories yet.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="relative mt-10 mb-2">
         <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
         <h2 className="relative z-10 w-fit bg-background pr-2 font-medium text-sm uppercase">
           Recent Comments
