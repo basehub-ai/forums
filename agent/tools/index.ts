@@ -520,17 +520,15 @@ export function getTools(context: ToolContext) {
 
     Think: tool({
       description:
-        "Use this tool to think through complex problems step-by-step. This is a no-op tool that simply returns your thought back - use it when you need to break down a problem, plan your approach, or reason through something before taking action.",
+        "Use this tool to think through complex problems step-by-step. This is a no-op tool - use it when you need to break down a problem, plan your approach, or reason through something before taking action.",
       inputSchema: z.object({
         thought: z
           .string()
           .describe("Your step-by-step thinking or reasoning process"),
       }),
-      outputSchema: z.object({
-        thought: z.string().describe("The thought that was processed"),
-      }),
-      execute: async ({ thought }) => {
-        return { thought }
+      outputSchema: z.object({}),
+      execute: async () => {
+        return {}
       },
     }),
   } satisfies ToolSet
