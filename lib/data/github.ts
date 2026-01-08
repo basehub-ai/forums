@@ -32,6 +32,10 @@ export async function githubFetch(
 
       return res
     } catch (error) {
+      // Prerender rejections will keep failing - don't retry
+      if (error instanceof Error && error.message.includes("prerendering")) {
+        throw error
+      }
       lastError = error
       if (attempt < maxRetries - 1) {
         const delay = 2 ** attempt * 1000
