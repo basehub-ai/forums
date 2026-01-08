@@ -4,6 +4,7 @@ import { useCustomer } from "autumn-js/react"
 import type { Session, User } from "better-auth"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Menu } from "@/components/ui/menu"
 import { Meter } from "@/components/ui/meter"
 import { authClient } from "@/lib/auth-client"
@@ -19,6 +20,7 @@ export const UserDropdown = ({
   username: string | null
 }) => {
   const router = useRouter()
+  const [open, setOpen] = useState(false)
   const { customer, check, openBillingPortal } = useCustomer()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
   const isProUser = check({ productId: "pro_plan" }).data.allowed
@@ -33,7 +35,7 @@ export const UserDropdown = ({
   const creditsMax = credits?.included_usage
 
   return (
-    <Menu.Root>
+    <Menu.Root open={open} onOpenChange={setOpen}>
       <Menu.Trigger className="group flex cursor-pointer items-center gap-1 px-1">
         <img
           alt={user.name}
@@ -49,6 +51,7 @@ export const UserDropdown = ({
           <Link
             className="flex items-center gap-2 px-2 py-1.5 hover:bg-foreground/5"
             href={`/user/${username}`}
+            onClick={() => setOpen(false)}
           >
             <img
               alt={user.name}
