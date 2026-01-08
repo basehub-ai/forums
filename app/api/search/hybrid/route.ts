@@ -5,7 +5,12 @@ import { searchPostsHybrid } from "@/lib/typesense-index"
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const { query, owner, repo, perPage = 20 } = body as {
+  const {
+    query,
+    owner,
+    repo,
+    perPage = 20,
+  } = body as {
     query: string
     owner: string
     repo: string

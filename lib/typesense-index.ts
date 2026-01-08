@@ -1,9 +1,10 @@
+import { embed } from "ai"
+import { openai } from "@ai-sdk/openai"
 import type { InferSelectModel } from "drizzle-orm"
 import { sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import type { comments, posts } from "./db/schema"
 import { typesense } from "./typesense"
-import { generateEmbedding, EMBEDDING_DIMENSIONS } from "./embeddings"
 
 type Post = InferSelectModel<typeof posts>
 type Comment = InferSelectModel<typeof comments>
@@ -11,6 +12,7 @@ type Comment = InferSelectModel<typeof comments>
 const POSTS_COLLECTION = "posts"
 const COMMENTS_COLLECTION = "comments"
 const REPOS_COLLECTION = "repos"
+const EMBEDDING_DIMENSIONS = 1536
 
 let collectionsEnsured: Promise<void> | null = null
 
@@ -60,7 +62,7 @@ export async function ensureCollections() {
         { name: "createdAt", type: "int64" },
         {
           name: "embedding",
-          type: `float[]`,
+          type: "float[]",
           num_dim: EMBEDDING_DIMENSIONS,
           optional: true,
         },
@@ -163,7 +165,10 @@ export async function indexComment(
 
   if (!options?.skipEmbedding) {
     try {
-      const embedding = await generateEmbedding(text.slice(0, 8000))
+      const { embedding } = await embed({
+        model: openai.embedding("text-embedding-3-small"),
+        value: text.slice(0, 8000),
+      })
       doc.embedding = embedding
     } catch (err) {
       console.error("Failed to generate embedding:", err)
@@ -344,7 +349,11 @@ export async function searchPostsHybrid(
 
   let embedding: number[] | null = null
   try {
-    embedding = await generateEmbedding(query)
+    const result = await embed({
+      model: openai.embedding("text-embedding-3-small"),
+      value: query,
+    })
+    embedding = result.embedding
   } catch (err) {
     console.error("Failed to generate query embedding:", err)
   }

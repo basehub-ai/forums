@@ -105,16 +105,16 @@ export function RepoPostsSection({
   if (hasSearchQuery) {
     return (
       <SearchResultsList
-        results={searchResults}
         isLoading={isSearching}
         owner={owner}
-        repo={repo}
         query={searchQuery}
+        repo={repo}
+        results={searchResults}
       />
     )
   }
 
-  return <LatestPosts posts={posts} owner={owner} repo={repo} />
+  return <LatestPosts owner={owner} posts={posts} repo={repo} />
 }
 
 function LatestPosts({
@@ -154,7 +154,10 @@ function LatestPosts({
                 className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                 href={`/${owner}/${repo}/${post.number}`}
               >
-                <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                <AsteriskIcon
+                  className="mt-0.5 shrink-0 text-faint"
+                  size={16}
+                />
                 <span className="truncate leading-none group-hover:text-bright">
                   {post.title || `Post #${post.number}`}
                 </span>
@@ -196,9 +199,7 @@ function SearchResultsList({
 
   if (!isLoading && results.length === 0) {
     return (
-      <p className="text-dim text-sm">
-        No results for &ldquo;{query}&rdquo;
-      </p>
+      <p className="text-dim text-sm">No results for &ldquo;{query}&rdquo;</p>
     )
   }
 
@@ -221,13 +222,16 @@ function SearchResultsList({
         </div>
         <List className="mt-2 min-w-120 pb-2">
           {results.map((post) => (
-            <ListItem key={post.id} className="flex-col gap-0.5">
+            <ListItem className="flex-col gap-0.5" key={post.id}>
               <div className="flex w-full">
                 <Link
                   className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                   href={`/${owner}/${repo}/${post.number}`}
                 >
-                  <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                  <AsteriskIcon
+                    className="mt-0.5 shrink-0 text-faint"
+                    size={16}
+                  />
                   <span className="truncate leading-none group-hover:text-bright">
                     {post.title || `Post #${post.number}`}
                   </span>

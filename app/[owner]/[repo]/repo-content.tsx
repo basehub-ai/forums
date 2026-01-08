@@ -59,10 +59,10 @@ export function RepoContent({
         <Composer
           autoFocus
           defaultAskingId={defaultLlmId}
-          onChange={setSearchQuery}
           onAskingChange={(asking) => {
             localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
           }}
+          onChange={setSearchQuery}
           onSubmit={async ({ value, options }) => {
             const result = await createPost({
               owner,
