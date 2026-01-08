@@ -21,7 +21,7 @@ export const freePlan = product({
   items: [
     featureItem({
       feature_id: standardCredits.id,
-      included_usage: 20,
+      included_usage: 5,
       interval: "day",
     }),
   ],
