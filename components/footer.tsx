@@ -5,8 +5,7 @@ export function Footer() {
   return (
     <footer className="mt-auto py-8">
       <Container>
-        {/* <div className="relative border-4 border-faint border-double px-6 py-4"> */}
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6">
           <Link
             className="font-medium text-dim text-sm hover:text-bright hover:underline"
             href="http://x.com/basehub_ai"
@@ -14,15 +13,14 @@ export function Footer() {
           >
             About Us
           </Link>
-          <span className="text-border-solid">|</span>
+          <span className="hidden text-border-solid sm:inline">|</span>
           <Link
             className="font-medium text-dim text-sm hover:text-bright hover:underline"
-            href="/basehub-ai/forums"
-            target="_blank"
+            href="https://forums.basehub.com/basehub-ai/forums/9"
           >
-            Help
+            Pricing
           </Link>
-          <span className="text-border-solid">|</span>
+          <span className="hidden text-border-solid sm:inline">|</span>
           <Link
             className="font-medium text-dim text-sm hover:text-bright hover:underline"
             href="https://github.com/basehub-ai/forums"
@@ -30,8 +28,14 @@ export function Footer() {
           >
             GitHub
           </Link>
+          <span className="hidden text-border-solid sm:inline">|</span>
+          <Link
+            className="font-medium text-dim text-sm hover:text-bright hover:underline"
+            href="/basehub-ai/forums"
+          >
+            Help
+          </Link>
         </nav>
-        {/* </div> */}
       </Container>
     </footer>
   )
