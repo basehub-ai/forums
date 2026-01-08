@@ -25,6 +25,9 @@ export async function POST(request: Request) {
     return Response.json({ posts: [], totalFound: 0 })
   }
 
+  // Truncate query to avoid Typesense 400 error (max URL length)
+  const truncatedQuery = query.slice(0, 500)
+
   let filterBy = `owner:=${owner} && repo:=${repo}`
   if (categoryId) {
     filterBy += ` && categoryId:=${categoryId}`
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
     .collections("comments")
     .documents()
     .search({
-      q: query,
+      q: truncatedQuery,
       query_by: "text",
       filter_by: filterBy,
       group_by: ["postId"],

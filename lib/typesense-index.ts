@@ -299,3 +299,179 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
     }
   })
 }
+
+export async function reindexMissingContent(): Promise<{
+  posts: { indexed: number; total: number }
+  comments: { indexed: number; total: number }
+}> {
+  await ensureCollectionsOnce()
+
+  const { posts, comments } = await import("./db/schema")
+
+  // Get all posts from DB
+  const allPosts = await db
+    .select({
+      id: posts.id,
+      number: posts.number,
+      owner: posts.owner,
+      repo: posts.repo,
+      title: posts.title,
+      categoryId: posts.categoryId,
+      authorId: posts.authorId,
+      createdAt: posts.createdAt,
+      commentCount: sql<number>`(
+        SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
+      )::int`,
+    })
+    .from(posts)
+
+  // Get all comments from DB
+  const allComments = await db
+    .select({
+      comment: comments,
+      owner: posts.owner,
+      repo: posts.repo,
+      isRoot: sql<boolean>`${comments.id} = ${posts.rootCommentId}`,
+    })
+    .from(comments)
+    .innerJoin(posts, sql`${posts.id} = ${comments.postId}`)
+
+  // Check which posts are already indexed
+  const indexedPostIds = new Set<string>()
+  try {
+    const existingPosts = await typesense
+      .collections(POSTS_COLLECTION)
+      .documents()
+      .search({
+        q: "*",
+        query_by: "owner",
+        per_page: 250,
+        page: 1,
+        include_fields: "id",
+      })
+    let page = 1
+    let totalFetched = existingPosts.hits?.length ?? 0
+    existingPosts.hits?.forEach((h) => {
+      const doc = h.document as { id: string }
+      indexedPostIds.add(doc.id)
+    })
+    while (totalFetched < (existingPosts.found ?? 0)) {
+      page++
+      const more = await typesense
+        .collections(POSTS_COLLECTION)
+        .documents()
+        .search({
+          q: "*",
+          query_by: "owner",
+          per_page: 250,
+          page,
+          include_fields: "id",
+        })
+      more.hits?.forEach((h) => {
+        const doc = h.document as { id: string }
+        indexedPostIds.add(doc.id)
+      })
+      totalFetched += more.hits?.length ?? 0
+    }
+  } catch {
+    // Collection might be empty
+  }
+
+  // Check which comments are already indexed
+  const indexedCommentIds = new Set<string>()
+  try {
+    const existingComments = await typesense
+      .collections(COMMENTS_COLLECTION)
+      .documents()
+      .search({
+        q: "*",
+        query_by: "text",
+        per_page: 250,
+        page: 1,
+        include_fields: "id",
+      })
+    let page = 1
+    let totalFetched = existingComments.hits?.length ?? 0
+    existingComments.hits?.forEach((h) => {
+      const doc = h.document as { id: string }
+      indexedCommentIds.add(doc.id)
+    })
+    while (totalFetched < (existingComments.found ?? 0)) {
+      page++
+      const more = await typesense
+        .collections(COMMENTS_COLLECTION)
+        .documents()
+        .search({
+          q: "*",
+          query_by: "text",
+          per_page: 250,
+          page,
+          include_fields: "id",
+        })
+      more.hits?.forEach((h) => {
+        const doc = h.document as { id: string }
+        indexedCommentIds.add(doc.id)
+      })
+      totalFetched += more.hits?.length ?? 0
+    }
+  } catch {
+    // Collection might be empty
+  }
+
+  // Index missing posts
+  let postsIndexed = 0
+  for (const post of allPosts) {
+    if (!indexedPostIds.has(post.id)) {
+      await typesense
+        .collections(POSTS_COLLECTION)
+        .documents()
+        .upsert({
+          id: post.id,
+          number: post.number,
+          owner: post.owner,
+          repo: post.repo,
+          title: post.title ?? "",
+          categoryId: post.categoryId ?? "",
+          authorId: post.authorId,
+          commentCount: post.commentCount,
+          createdAt: post.createdAt,
+        })
+      postsIndexed++
+    }
+  }
+
+  // Index missing comments
+  let commentsIndexed = 0
+  for (const { comment, owner, repo, isRoot } of allComments) {
+    if (!indexedCommentIds.has(comment.id)) {
+      const text = comment.content
+        .flatMap((msg) =>
+          msg.parts
+            .filter(
+              (p): p is { type: "text"; text: string } => p.type === "text"
+            )
+            .map((p) => p.text)
+        )
+        .join("\n\n")
+
+      if (text.trim()) {
+        await typesense.collections(COMMENTS_COLLECTION).documents().upsert({
+          id: comment.id,
+          postId: comment.postId,
+          owner,
+          repo,
+          authorId: comment.authorId,
+          text,
+          isRootComment: isRoot,
+          createdAt: comment.createdAt,
+        })
+        commentsIndexed++
+      }
+    }
+  }
+
+  return {
+    posts: { indexed: postsIndexed, total: allPosts.length },
+    comments: { indexed: commentsIndexed, total: allComments.length },
+  }
+}
