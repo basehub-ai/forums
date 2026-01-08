@@ -432,6 +432,14 @@ function ToolGroup({
           </Collapsible.Panel>
         </Collapsible.Root>
       )}
+      {completedTools.length === 1 && inProgressTool && (
+        <Tool
+          gitContext={gitContext}
+          owner={owner}
+          repo={repo}
+          toolPart={completedTools[0]}
+        />
+      )}
       {inProgressTool && (
         <div className={completedTools.length > 1 ? "mt-2" : ""}>
           <Tool
