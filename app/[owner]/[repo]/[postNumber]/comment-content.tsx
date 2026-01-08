@@ -162,45 +162,40 @@ function ToolInputDisplay({
   // List tool: show directory path with results if done
   if (lowerName === "list" && typeof input === "object" && input !== null) {
     const obj = input as Record<string, unknown>
-    const dirPath = obj.path ?? obj.directory ?? obj.dir
-    if (typeof dirPath === "string") {
-      // If output exists, try to extract file/dir counts from summary
-      if (
-        output !== undefined &&
-        typeof output === "object" &&
-        output !== null
-      ) {
-        const out = output as Record<string, unknown>
-        let totalFiles = 0
-        let totalDirs = 0
+    const dirPath = (obj.path ?? obj.directory ?? obj.dir ?? ".") as string
 
-        if (typeof out.summary === "object" && out.summary !== null) {
-          const summary = out.summary as Record<string, unknown>
-          if (typeof summary.totalFiles === "number") {
-            totalFiles = summary.totalFiles
-          }
-          if (typeof summary.totalDirs === "number") {
-            totalDirs = summary.totalDirs
-          }
+    // If output exists, try to extract file/dir counts from summary
+    if (output !== undefined && typeof output === "object" && output !== null) {
+      const out = output as Record<string, unknown>
+      let totalFiles = 0
+      let totalDirs = 0
+
+      if (typeof out.summary === "object" && out.summary !== null) {
+        const summary = out.summary as Record<string, unknown>
+        if (typeof summary.totalFiles === "number") {
+          totalFiles = summary.totalFiles
         }
-
-        if (totalFiles > 0 || totalDirs > 0) {
-          const parts: string[] = []
-          if (totalFiles > 0) {
-            parts.push(`${totalFiles} ${totalFiles === 1 ? "file" : "files"}`)
-          }
-          if (totalDirs > 0) {
-            parts.push(`${totalDirs} ${totalDirs === 1 ? "dir" : "dirs"}`)
-          }
-          return (
-            <span>
-              {dirPath} → {parts.join(", ")}
-            </span>
-          )
+        if (typeof summary.totalDirs === "number") {
+          totalDirs = summary.totalDirs
         }
       }
-      return <span>{dirPath}</span>
+
+      if (totalFiles > 0 || totalDirs > 0) {
+        const parts: string[] = []
+        if (totalFiles > 0) {
+          parts.push(`${totalFiles} ${totalFiles === 1 ? "file" : "files"}`)
+        }
+        if (totalDirs > 0) {
+          parts.push(`${totalDirs} ${totalDirs === 1 ? "dir" : "dirs"}`)
+        }
+        return (
+          <span>
+            {dirPath} → {parts.join(", ")}
+          </span>
+        )
+      }
     }
+    return <span>{dirPath}</span>
   }
 
   // Grep tool: show pattern in quotes, with results if done
