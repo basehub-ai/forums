@@ -37,6 +37,7 @@ export type ComposerProps = {
   autoFocus?: boolean
   defaultAskingId?: string
   onAskingChange?: (asking: ComposerProps["options"]["asking"][number]) => void
+  onChange?: (value: string) => void
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -49,6 +50,7 @@ export const Composer = ({
   autoFocus,
   defaultAskingId,
   onAskingChange,
+  onChange,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth } = authClient.useSession()
@@ -155,6 +157,7 @@ export const Composer = ({
             sessionStorage.removeItem(storageKey)
           }
           adjustTextareaHeight()
+          onChange?.(value)
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import type { comments, posts } from "./db/schema"
 import { typesense } from "./typesense"
+import { generateEmbedding, EMBEDDING_DIMENSIONS } from "./embeddings"
 
 type Post = InferSelectModel<typeof posts>
 type Comment = InferSelectModel<typeof comments>
@@ -57,6 +58,12 @@ export async function ensureCollections() {
         { name: "text", type: "string" },
         { name: "isRootComment", type: "bool", facet: true },
         { name: "createdAt", type: "int64" },
+        {
+          name: "embedding",
+          type: `float[]`,
+          num_dim: EMBEDDING_DIMENSIONS,
+          optional: true,
+        },
       ],
       default_sorting_field: "createdAt",
     })
@@ -133,7 +140,8 @@ export async function indexComment(
   comment: Comment,
   owner: string,
   repo: string,
-  isRootComment: boolean
+  isRootComment: boolean,
+  options?: { skipEmbedding?: boolean }
 ) {
   const text = extractText(comment)
   if (!text.trim()) {
@@ -141,7 +149,8 @@ export async function indexComment(
   }
 
   await ensureCollectionsOnce()
-  await typesense.collections(COMMENTS_COLLECTION).documents().upsert({
+
+  const doc: Record<string, unknown> = {
     id: comment.id,
     postId: comment.postId,
     owner,
@@ -150,7 +159,18 @@ export async function indexComment(
     text,
     isRootComment,
     createdAt: comment.createdAt,
-  })
+  }
+
+  if (!options?.skipEmbedding) {
+    try {
+      const embedding = await generateEmbedding(text.slice(0, 8000))
+      doc.embedding = embedding
+    } catch (err) {
+      console.error("Failed to generate embedding:", err)
+    }
+  }
+
+  await typesense.collections(COMMENTS_COLLECTION).documents().upsert(doc)
 }
 
 export async function deleteCommentFromIndex(commentId: string) {
@@ -298,4 +318,80 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
       highlight: highlightedName,
     }
   })
+}
+
+export type PostSearchResult = {
+  postId: string
+  text: string
+  highlight: string
+  isRootComment: boolean
+  score: number
+}
+
+export async function searchPostsHybrid(
+  query: string,
+  owner: string,
+  repo: string,
+  options?: { perPage?: number }
+): Promise<PostSearchResult[]> {
+  if (!query?.trim()) {
+    return []
+  }
+
+  await ensureCollectionsOnce()
+  const perPage = options?.perPage ?? 20
+  const filterBy = `owner:=${owner} && repo:=${repo}`
+
+  let embedding: number[] | null = null
+  try {
+    embedding = await generateEmbedding(query)
+  } catch (err) {
+    console.error("Failed to generate query embedding:", err)
+  }
+
+  const searchParams: Record<string, unknown> = {
+    q: query,
+    query_by: "text",
+    filter_by: filterBy,
+    per_page: perPage,
+    highlight_full_fields: "text",
+    highlight_start_tag: "<mark>",
+    highlight_end_tag: "</mark>",
+  }
+
+  if (embedding) {
+    searchParams.vector_query = `embedding:([${embedding.join(",")}], k:${perPage})`
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const results = await typesense
+    .collections(COMMENTS_COLLECTION)
+    .documents()
+    .search(searchParams as any)
+
+  const seen = new Set<string>()
+  const dedupedHits: PostSearchResult[] = []
+
+  for (const hit of results.hits ?? []) {
+    const doc = hit.document as {
+      id: string
+      postId: string
+      text: string
+      isRootComment: boolean
+    }
+    if (seen.has(doc.postId)) continue
+    seen.add(doc.postId)
+
+    const hl = hit.highlight as { text?: { snippet?: string } } | undefined
+    const vectorDistance = (hit as { vector_distance?: number }).vector_distance
+    dedupedHits.push({
+      postId: doc.postId,
+      text: doc.text,
+      highlight: hl?.text?.snippet ?? doc.text.slice(0, 200),
+      isRootComment: doc.isRootComment,
+      score: Number(hit.text_match_info?.score ?? 0) + (vectorDistance ?? 0),
+    })
+  }
+
+  return dedupedHits
 }

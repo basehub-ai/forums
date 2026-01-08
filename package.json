@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=./lib/db/schema.ts --out=./lib/db/migrations"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.6",
     "@ai-sdk/react": "^3.0.6",
     "@base-ui-components/react": "^1.0.0-rc.0",
     "@base-ui/react": "^1.0.0",
