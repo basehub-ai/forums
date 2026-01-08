@@ -271,6 +271,7 @@ export async function createPost(data: {
       authorUsername: llm.model,
       content: [],
       streamId,
+      streamStatus: "streaming",
       runId,
       createdAt: now + 1,
       updatedAt: now + 1,
@@ -448,6 +449,7 @@ export async function createComment(data: {
       authorUsername: llm.model,
       content: [],
       streamId,
+      streamStatus: "streaming",
       runId,
       createdAt: now + 1,
       updatedAt: now + 1,
@@ -733,6 +735,7 @@ async function startLlmCommentRerun({
     authorUsername: llm.model,
     content: [],
     streamId,
+    streamStatus: "streaming",
     createdAt: oldComment.createdAt,
     updatedAt: now,
   })
@@ -796,7 +799,7 @@ export async function rerunLlmComment(data: {
       .where(
         and(
           eq(comments.postId, oldComment.postId),
-          sql`${comments.streamId} IS NOT NULL`
+          eq(comments.streamStatus, "streaming")
         )
       )
       .limit(1)
@@ -879,7 +882,7 @@ export async function rerunLlmCommentsInPost(data: {
       .where(
         and(
           eq(comments.postId, data.postId),
-          sql`${comments.streamId} IS NOT NULL`
+          eq(comments.streamStatus, "streaming")
         )
       )
       .limit(1)

@@ -108,7 +108,7 @@ function CommentItem({
         </span>
       </div>
       <div className="flex items-center gap-2">
-        {comment.streamId && <StreamingBadge />}
+        {comment.streamStatus === "streaming" && <StreamingBadge />}
         <CopyLinkButton
           commentNumber={commentNumber}
           owner={owner}
@@ -119,11 +119,12 @@ function CommentItem({
     </div>
   )
 
-  const content = comment.streamId ? (
-    <StreamingContent />
-  ) : (
-    <CommentContent content={comment.content as AgentUIMessage[]} />
-  )
+  const content =
+    comment.streamStatus === "streaming" ? (
+      <StreamingContent />
+    ) : (
+      <CommentContent content={comment.content as AgentUIMessage[]} />
+    )
 
   const body = (
     <>
@@ -135,7 +136,7 @@ function CommentItem({
   return (
     <div id={commentNumber}>
       <div className="group">
-        {comment.streamId ? (
+        {comment.streamStatus === "streaming" ? (
           <StreamingCommentProvider commentId={comment.id}>
             {body}
           </StreamingCommentProvider>
