@@ -6,6 +6,10 @@ your goal when writing tests shouldn't be to make them pass. on the contrary, it
 
 if the thing you want to comment takes just one line to explain, then omit the comment. there's no need: i'd rather read the line of code directly. so, if leaving a comment at all, make sure it's worth (meaning, it takes you more than a line to explain).
 
+## design
+
+sharp borders, simple typography, instant interactions. no animations on dropdowns or popups.
+
 ## stack
 
 - next.js 16 app router with cache components enabled

@@ -21,7 +21,6 @@ function Popup({
         <BaseTooltip.Popup
           className={cn(
             "z-50 max-w-[280px] bg-bright px-2 py-1 text-background text-sm shadow-sm",
-            "transition-[opacity,transform] duration-100",
             className
           )}
           {...props}

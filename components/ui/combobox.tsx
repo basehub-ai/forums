@@ -37,9 +37,7 @@ function Popup({
         <BaseCombobox.Popup
           className={cn(
             "z-50 max-h-[240px] min-w-[160px] overflow-y-auto border border-border-solid bg-background p-1 text-sm shadow-md",
-            "origin-(--transform-origin) transition-[opacity,transform] duration-150",
-            "data-open:translate-y-0 data-open:scale-100 data-open:opacity-100",
-            "data-closed:pointer-events-none data-closed:-translate-y-1 data-closed:scale-95 data-closed:opacity-0",
+            "data-closed:pointer-events-none data-closed:hidden",
             className
           )}
           {...props}
