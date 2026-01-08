@@ -294,7 +294,7 @@ async function closeStreamStep({
     writable.close(),
     db
       .update(comments)
-      .set({ streamId: null, content, gitRef })
+      .set({ streamStatus: "completed", content, gitRef })
       .where(eq(comments.id, commentId)),
   ])
 
