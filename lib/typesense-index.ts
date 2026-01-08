@@ -1,5 +1,4 @@
 import { embed } from "ai"
-import { openai } from "@ai-sdk/openai"
 import type { InferSelectModel } from "drizzle-orm"
 import { sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
@@ -166,7 +165,7 @@ export async function indexComment(
   if (!options?.skipEmbedding) {
     try {
       const { embedding } = await embed({
-        model: openai.embedding("text-embedding-3-small"),
+        model: "openai/text-embedding-3-small",
         value: text.slice(0, 8000),
       })
       doc.embedding = embedding
@@ -350,7 +349,7 @@ export async function searchPostsHybrid(
   let embedding: number[] | null = null
   try {
     const result = await embed({
-      model: openai.embedding("text-embedding-3-small"),
+      model: "openai/text-embedding-3-small",
       value: query,
     })
     embedding = result.embedding
