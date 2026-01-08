@@ -11,12 +11,7 @@ import { revalidateTag } from "next/cache"
 import { getWritable } from "workflow"
 import { z } from "zod"
 import { createMentions } from "@/lib/actions/posts"
-import {
-  autumn,
-  type BillingCategory,
-  calculateCredits,
-  FEATURE_IDS,
-} from "@/lib/autumn"
+import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
@@ -328,12 +323,11 @@ async function closeStreamStep({
   revalidateTag(`repo:${owner}:${repo}`, "max")
   revalidateTag(`post:${postId}`, "max")
 
-  const credits = calculateCredits(totalTokens)
-  const featureId = FEATURE_IDS[billingCategory]
+  const credits = CREDIT_COSTS[billingCategory]
   try {
     await autumn.track({
       customer_id: userId,
-      feature_id: featureId,
+      feature_id: "standard_credits",
       value: credits,
     })
   } catch (err) {

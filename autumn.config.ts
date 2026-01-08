@@ -1,10 +1,4 @@
-import {
-  feature,
-  featureItem,
-  pricedFeatureItem,
-  priceItem,
-  product,
-} from "atmn"
+import { feature, featureItem, priceItem, product } from "atmn"
 
 // Features
 export const standardCredits = feature({
@@ -16,12 +10,6 @@ export const standardCredits = feature({
 export const boosts = feature({
   id: "boosts",
   name: "Repo Boost",
-  type: "single_use",
-})
-
-export const premiumCredits = feature({
-  id: "premium_credits",
-  name: "Premium Credits",
   type: "single_use",
 })
 
@@ -48,19 +36,10 @@ export const proPlan = product({
       interval: "month",
     }),
 
-    pricedFeatureItem({
-      feature_id: premiumCredits.id,
-      price: 5,
-      interval: "month",
-      included_usage: 100,
-      billing_units: 50,
-      usage_model: "prepaid",
-    }),
-
     featureItem({
       feature_id: standardCredits.id,
-      included_usage: 200,
-      interval: "day",
+      included_usage: 1500,
+      interval: "month",
     }),
   ],
 })

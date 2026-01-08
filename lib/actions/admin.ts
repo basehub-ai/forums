@@ -79,7 +79,7 @@ export async function deleteLlmUser(id: string) {
 
 export async function setBillingCategory(
   id: string,
-  category: "standard" | "premium"
+  category: "standard" | "pro"
 ) {
   await assertAdmin()
 

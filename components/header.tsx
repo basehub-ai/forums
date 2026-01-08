@@ -145,12 +145,12 @@ const User = async () => {
     return <SignInButton />
   }
 
-  const isPro = await checkIsPro(data.user.id)
+  const isProUser = await checkIsPro(data.user.id)
 
   return (
     <div className="flex items-center gap-x-2">
       <CreditWarning />
-      <BillingButton isPro={isPro} />
+      <BillingButton isProUser={isProUser} />
       <UserDropdown {...data} />
     </div>
   )

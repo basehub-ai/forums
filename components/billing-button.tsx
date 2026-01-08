@@ -4,11 +4,11 @@ import { useCustomer } from "autumn-js/react"
 import { Button } from "@/components/button"
 import { useDialogStore } from "@/lib/stores/dialogs"
 
-export default function BillingButton({ isPro }: { isPro: boolean }) {
+export default function BillingButton({ isProUser }: { isProUser: boolean }) {
   const { openBillingPortal } = useCustomer()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
 
-  if (isPro) {
+  if (isProUser) {
     return (
       <Button
         className="cursor-pointer"
