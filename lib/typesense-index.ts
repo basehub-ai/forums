@@ -371,11 +371,13 @@ export async function searchPostsHybrid(
     searchParams.vector_query = `embedding:([${embedding.join(",")}], k:${perPage})`
   }
 
+  // Use multiSearch to avoid query string length limits with vector embeddings
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const results = await typesense
-    .collections(COMMENTS_COLLECTION)
-    .documents()
-    .search(searchParams as any)
+  const multiResults = await typesense.multiSearch.perform(
+    { searches: [{ collection: COMMENTS_COLLECTION, ...searchParams }] },
+    {}
+  )
+  const results = multiResults.results[0] as any
 
   const seen = new Set<string>()
   const dedupedHits: PostSearchResult[] = []
