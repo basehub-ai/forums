@@ -87,6 +87,7 @@ export function RepoContent({
 
       <RepoPostsSection
         categoriesById={categoriesById}
+        categoryId={categoryId}
         owner={owner}
         posts={posts}
         repo={repo}

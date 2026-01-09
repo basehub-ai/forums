@@ -74,11 +74,12 @@ async function enrichPosts(
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const { query, owner, repo, type } = body as {
+  const { query, owner, repo, type, categoryId } = body as {
     query: string
     owner: string
     repo: string
     type: "text" | "semantic"
+    categoryId?: string
   }
 
   if (!query?.trim()) {
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
   if (type === "text") {
     const textResults = await searchPostsText(query, owner, repo, {
       perPage: 20,
+      categoryId,
     })
     const textPosts = await enrichPosts(textResults, owner, repo)
     return Response.json({ posts: textPosts })
@@ -96,6 +98,7 @@ export async function POST(request: Request) {
   if (type === "semantic") {
     const semanticResults = await searchPostsSemantic(query, owner, repo, {
       perPage: 5,
+      categoryId,
     })
     const semanticPosts = await enrichPosts(semanticResults, owner, repo)
     return Response.json({ posts: semanticPosts })

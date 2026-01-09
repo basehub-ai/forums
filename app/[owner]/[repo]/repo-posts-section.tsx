@@ -38,6 +38,7 @@ type RepoPostsSectionProps = {
   owner: string
   repo: string
   categoriesById: Record<string, Category>
+  categoryId?: string
   searchQuery: string
 }
 
@@ -45,6 +46,7 @@ export function RepoPostsSection({
   posts,
   owner,
   repo,
+  categoryId,
   searchQuery,
 }: RepoPostsSectionProps) {
   const [textResults, setTextResults] = useState<SearchResult[]>([])
@@ -75,7 +77,7 @@ export function RepoPostsSection({
         const res = await fetch("/api/search/hybrid", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, owner, repo, type: "text" }),
+          body: JSON.stringify({ query, owner, repo, type: "text", categoryId }),
           signal: controller.signal,
         })
         const data = (await res.json()) as { posts?: SearchResult[] }
@@ -90,7 +92,7 @@ export function RepoPostsSection({
         }
       }
     },
-    [owner, repo]
+    [owner, repo, categoryId]
   )
 
   const searchSemantic = useCallback(
@@ -113,7 +115,7 @@ export function RepoPostsSection({
         const res = await fetch("/api/search/hybrid", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, owner, repo, type: "semantic" }),
+          body: JSON.stringify({ query, owner, repo, type: "semantic", categoryId }),
           signal: controller.signal,
         })
         const data = (await res.json()) as { posts?: SearchResult[] }
@@ -128,7 +130,7 @@ export function RepoPostsSection({
         }
       }
     },
-    [owner, repo]
+    [owner, repo, categoryId]
   )
 
   useEffect(() => {

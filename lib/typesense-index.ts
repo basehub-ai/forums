@@ -54,6 +54,7 @@ export async function ensureCollections() {
         { name: "id", type: "string" },
         { name: "postId", type: "string", facet: true },
         { name: "postNumber", type: "int32" },
+        { name: "categoryId", type: "string", optional: true, facet: true },
         { name: "owner", type: "string", facet: true },
         { name: "repo", type: "string", facet: true },
         { name: "authorId", type: "string", facet: true },
@@ -143,6 +144,7 @@ export async function indexComment(
   owner: string,
   repo: string,
   postNumber: number,
+  categoryId: string | null,
   isRootComment: boolean,
   options?: { skipEmbedding?: boolean }
 ) {
@@ -157,6 +159,7 @@ export async function indexComment(
     id: comment.id,
     postId: comment.postId,
     postNumber,
+    categoryId: categoryId ?? "",
     owner,
     repo,
     authorId: comment.authorId,
@@ -339,7 +342,7 @@ export async function searchPostsText(
   query: string,
   owner: string,
   repo: string,
-  options?: { perPage?: number }
+  options?: { perPage?: number; categoryId?: string }
 ): Promise<PostSearchResult[]> {
   if (!query?.trim()) {
     return []
@@ -347,7 +350,10 @@ export async function searchPostsText(
 
   await ensureCollectionsOnce()
   const perPage = options?.perPage ?? 20
-  const filterBy = `owner:=${owner} && repo:=${repo}`
+  let filterBy = `owner:=${owner} && repo:=${repo}`
+  if (options?.categoryId) {
+    filterBy += ` && categoryId:=${options.categoryId}`
+  }
 
   const results = await typesense
     .collections(COMMENTS_COLLECTION)
@@ -369,7 +375,7 @@ export async function searchPostsSemantic(
   query: string,
   owner: string,
   repo: string,
-  options?: { perPage?: number; excludePostIds?: string[] }
+  options?: { perPage?: number; excludePostIds?: string[]; categoryId?: string }
 ): Promise<PostSearchResult[]> {
   if (!query?.trim()) {
     return []
@@ -377,7 +383,10 @@ export async function searchPostsSemantic(
 
   await ensureCollectionsOnce()
   const perPage = options?.perPage ?? 5
-  const filterBy = `owner:=${owner} && repo:=${repo}`
+  let filterBy = `owner:=${owner} && repo:=${repo}`
+  if (options?.categoryId) {
+    filterBy += ` && categoryId:=${options.categoryId}`
+  }
 
   let embedding: number[]
   try {
@@ -555,6 +564,7 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
         const [post] = await db
           .select({
             number: posts.number,
+            categoryId: posts.categoryId,
             owner: posts.owner,
             repo: posts.repo,
             rootCommentId: posts.rootCommentId,
@@ -569,6 +579,7 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
             post.owner,
             post.repo,
             post.number,
+            post.categoryId,
             comment.id === post.rootCommentId
           )
           reindexed++
@@ -610,6 +621,7 @@ export async function indexAllComments(): Promise<{
       const [post] = await db
         .select({
           number: posts.number,
+          categoryId: posts.categoryId,
           owner: posts.owner,
           repo: posts.repo,
           rootCommentId: posts.rootCommentId,
@@ -624,6 +636,7 @@ export async function indexAllComments(): Promise<{
           post.owner,
           post.repo,
           post.number,
+          post.categoryId,
           comment.id === post.rootCommentId
         )
         indexed++

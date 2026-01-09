@@ -24,6 +24,7 @@ export async function POST() {
         { name: "id", type: "string" },
         { name: "postId", type: "string", facet: true },
         { name: "postNumber", type: "int32" },
+        { name: "categoryId", type: "string", optional: true, facet: true },
         { name: "owner", type: "string", facet: true },
         { name: "repo", type: "string", facet: true },
         { name: "authorId", type: "string", facet: true },
