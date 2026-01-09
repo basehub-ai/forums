@@ -159,11 +159,7 @@ export function RepoPostsSection({
           results={semanticResults}
           textResultIds={new Set(textResults.map((r) => r.id))}
         />
-        <TextSearchResults
-          owner={owner}
-          repo={repo}
-          results={textResults}
-        />
+        <TextSearchResults owner={owner} repo={repo} results={textResults} />
       </div>
     )
   }
@@ -252,7 +248,7 @@ function RelatedPostsSection({
     .slice(0, 2)
 
   return (
-    <div className="h-[88px] border-muted border-l-2 border-dotted pl-4">
+    <div className="h-[104px] border-muted border-l-2 border-dotted pl-4">
       <div className="mb-2 flex items-center gap-1.5 text-faint text-xs uppercase">
         <SparklesIcon className="h-3 w-3" />
         Related Posts
