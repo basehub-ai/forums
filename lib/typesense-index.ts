@@ -1,6 +1,6 @@
 import { embed } from "ai"
 import type { InferSelectModel } from "drizzle-orm"
-import { sql } from "drizzle-orm"
+import { eq, inArray, sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import type { comments, posts } from "./db/schema"
 import { typesense } from "./typesense"
@@ -404,4 +404,80 @@ export async function searchPostsHybrid(
   }
 
   return dedupedHits
+}
+
+export async function reindexCommentsWithoutEmbeddings(): Promise<{
+  total: number
+  reindexed: number
+}> {
+  await ensureCollectionsOnce()
+
+  // Find comments in Typesense that don't have embeddings
+  // We search for all docs and filter client-side since Typesense doesn't support "field is null"
+  const { comments } = await import("./db/schema")
+  let page = 1
+  const perPage = 100
+  let reindexed = 0
+  let total = 0
+
+  while (true) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const results = await typesense
+      .collections(COMMENTS_COLLECTION)
+      .documents()
+      .search({
+        q: "*",
+        query_by: "text",
+        per_page: perPage,
+        page,
+        include_fields: "id,embedding",
+      })
+
+    const hits = results.hits ?? []
+    if (hits.length === 0) break
+
+    const idsWithoutEmbedding = hits
+      .filter((hit) => {
+        const doc = hit.document as { id: string; embedding?: number[] }
+        return !doc.embedding || doc.embedding.length === 0
+      })
+      .map((hit) => (hit.document as { id: string }).id)
+
+    total += hits.length
+
+    if (idsWithoutEmbedding.length > 0) {
+      const dbComments = await db
+        .select()
+        .from(comments)
+        .where(inArray(comments.id, idsWithoutEmbedding))
+
+      for (const comment of dbComments) {
+        const { posts } = await import("./db/schema")
+        const [post] = await db
+          .select({
+            owner: posts.owner,
+            repo: posts.repo,
+            rootCommentId: posts.rootCommentId,
+          })
+          .from(posts)
+          .where(eq(posts.id, comment.postId))
+          .limit(1)
+
+        if (post) {
+          await indexComment(
+            comment,
+            post.owner,
+            post.repo,
+            comment.id === post.rootCommentId
+          )
+          reindexed++
+        }
+      }
+    }
+
+    if (hits.length < perPage) break
+    page++
+  }
+
+  return { total, reindexed }
 }
