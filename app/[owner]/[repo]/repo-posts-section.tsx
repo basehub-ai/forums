@@ -375,7 +375,7 @@ function HighlightedText({ html }: { html: string }) {
   const cleaned = html.replace(/\n/g, " ")
   return (
     <span
-      className="[&_mark]:bg-transparent [&_mark]:font-medium [&_mark]:text-dim"
+      className="[&_mark]:bg-highlight-yellow [&_mark]:text-black"
       dangerouslySetInnerHTML={{ __html: cleaned }}
     />
   )
