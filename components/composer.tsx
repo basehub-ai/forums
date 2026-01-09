@@ -107,37 +107,27 @@ export const Composer = ({
     <form
       className="group flex flex-col bg-shade/10 outline-dotted outline-2 outline-muted -outline-offset-1 focus-within:bg-shade/30 focus-within:outline-dashed"
       onSubmit={(e) => {
+        e.preventDefault()
         const form = e.currentTarget
         const value = form.message.value
-        e.preventDefault()
-
-        if (isSignedIn) {
-          if (typeof value !== "string" || value.trim() === "") {
-            console.error("Cannot submit empty message", value)
-            return
-          }
-          startTransition(async () => {
-            await onSubmit({ value, options: { asking: selectedAsking } })
-              .then(() => {
-                form.reset()
-                sessionStorage.removeItem(storageKey)
-                if (textareaRef.current) {
-                  textareaRef.current.style.height = "auto"
-                }
-                setIsScrollable(false)
-              })
-              .catch((e) => {
-                console.error(e)
-              })
-          })
-        } else {
-          startTransition(async () => {
-            await authClient.signIn.social({
-              provider: "github",
-              callbackURL: pathname,
-            })
-          })
+        if (typeof value !== "string" || value.trim() === "") {
+          console.error("Cannot submit empty message", value)
+          return
         }
+        startTransition(async () => {
+          await onSubmit({ value, options: { asking: selectedAsking } })
+            .then(() => {
+              form.reset()
+              sessionStorage.removeItem(storageKey)
+              if (textareaRef.current) {
+                textareaRef.current.style.height = "auto"
+              }
+              setIsScrollable(false)
+            })
+            .catch((e) => {
+              console.error(e)
+            })
+        })
       }}
     >
       <textarea
@@ -159,7 +149,16 @@ export const Composer = ({
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault()
-            e.currentTarget.form?.requestSubmit()
+            if (isSignedIn) {
+              e.currentTarget.form?.requestSubmit()
+            } else {
+              startTransition(async () => {
+                await authClient.signIn.social({
+                  provider: "github",
+                  callbackURL: pathname,
+                })
+              })
+            }
           }
         }}
         placeholder={placeholder}
@@ -175,44 +174,55 @@ export const Composer = ({
         )}
       >
         <Suspense fallback={null}>
-          <Menu.Root>
-            <Menu.Trigger
+          {isSignedIn ? (
+            <Menu.Root>
+              <Menu.Trigger
+                className={cn(
+                  buttonVariants({ variant: "tertiary" }),
+                  "hover:text-label hover:no-underline active:text-label data-popup-open:text-label"
+                )}
+              >
+                {selectedAsking.name}
+              </Menu.Trigger>
+              <Menu.Popup>
+                {options.asking.map((asking) => {
+                  const isDisabled = asking.isProModel && !isProUser
+                  return (
+                    <Menu.Item
+                      className={
+                        isDisabled ? "cursor-not-allowed opacity-50" : undefined
+                      }
+                      key={asking.id}
+                      onClick={() => {
+                        if (isDisabled) {
+                          setPaywallOpen(true)
+                          return
+                        }
+                        setSelectedAsking(asking)
+                        onAskingChange?.(asking)
+                      }}
+                    >
+                      {asking.name}
+                      {asking.isProModel && (
+                        <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
+                          PRO
+                        </span>
+                      )}
+                    </Menu.Item>
+                  )
+                })}
+              </Menu.Popup>
+            </Menu.Root>
+          ) : (
+            <span
               className={cn(
                 buttonVariants({ variant: "tertiary" }),
-                "hover:text-label hover:no-underline active:text-label data-popup-open:text-label"
+                "cursor-not-allowed opacity-50"
               )}
             >
               {selectedAsking.name}
-            </Menu.Trigger>
-            <Menu.Popup>
-              {options.asking.map((asking) => {
-                const isDisabled = asking.isProModel && !isProUser
-                return (
-                  <Menu.Item
-                    className={
-                      isDisabled ? "cursor-not-allowed opacity-50" : undefined
-                    }
-                    key={asking.id}
-                    onClick={() => {
-                      if (isDisabled) {
-                        setPaywallOpen(true)
-                        return
-                      }
-                      setSelectedAsking(asking)
-                      onAskingChange?.(asking)
-                    }}
-                  >
-                    {asking.name}
-                    {asking.isProModel && (
-                      <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
-                        PRO
-                      </span>
-                    )}
-                  </Menu.Item>
-                )
-              })}
-            </Menu.Popup>
-          </Menu.Root>
+            </span>
+          )}
         </Suspense>
         <div className="flex items-center gap-3">
           {isSignedIn &&
@@ -242,7 +252,19 @@ export const Composer = ({
                 selectedAsking.id !== "human" &&
                 creditBalance < (selectedAsking.isProModel ? 5 : 1))
             }
-            type="submit"
+            onClick={
+              isSignedIn
+                ? undefined
+                : () => {
+                    startTransition(async () => {
+                      await authClient.signIn.social({
+                        provider: "github",
+                        callbackURL: pathname,
+                      })
+                    })
+                  }
+            }
+            type={isSignedIn ? "submit" : "button"}
           >
             {isSignedIn
               ? isPending
