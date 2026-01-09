@@ -10,7 +10,7 @@ import { usePostMetadata } from "./post-metadata-context"
 export function DeletePostButton() {
   const { postId, authorId, owner, repo } = usePostMetadata()
   const session = authClient.useSession()
-  const userId = session.data?.session?.user?.id
+  const userId = session.data?.user.id
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
