@@ -146,11 +146,12 @@ export function RepoPostsSection({
     }
   }, [searchQuery, searchText, searchSemantic])
 
-  const hasSearchQuery = searchQuery.trim().length > 0
+  const hasSearchQuery =
+    searchQuery.trim().length > 0 && searchQuery.trim().length <= 150
 
   if (hasSearchQuery) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-8">
         <RelatedPostsSection
           isLoading={isSemanticSearching}
           owner={owner}
@@ -160,7 +161,6 @@ export function RepoPostsSection({
         />
         <TextSearchResults
           owner={owner}
-          query={searchQuery}
           repo={repo}
           results={textResults}
         />
@@ -252,7 +252,7 @@ function RelatedPostsSection({
     .slice(0, 2)
 
   return (
-    <div className="h-[88px] border-faint/50 border-l border-dotted pl-4">
+    <div className="h-[88px] border-muted border-l-2 border-dotted pl-4">
       <div className="mb-2 flex items-center gap-1.5 text-faint text-xs uppercase">
         <SparklesIcon className="h-3 w-3" />
         Related Posts
@@ -289,17 +289,13 @@ function TextSearchResults({
   results,
   owner,
   repo,
-  query,
 }: {
   results: SearchResult[]
   owner: string
   repo: string
-  query: string
 }) {
   if (results.length === 0) {
-    return (
-      <p className="text-dim text-sm">No results for &ldquo;{query}&rdquo;</p>
-    )
+    return <p className="text-dim text-sm">No results.</p>
   }
 
   return (
@@ -363,7 +359,7 @@ function HighlightedText({ html }: { html: string }) {
   const cleaned = html.replace(/\n/g, " ")
   return (
     <span
-      className="[&_mark]:bg-highlight-yellow [&_mark]:text-bright"
+      className="[&_mark]:bg-highlight-yellow [&_mark]:text-background"
       dangerouslySetInnerHTML={{ __html: cleaned }}
     />
   )
