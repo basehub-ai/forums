@@ -243,7 +243,7 @@ export function RepoListWithSearch({
             </List>
           ) : displayedQuery ? (
             <p className="mt-4 text-muted">
-              No repositories found for "{displayedQuery}".
+              No forum found for this repo. Press Enter to go there!
             </p>
           ) : (
             <p className="mt-4 text-muted">
