@@ -1,7 +1,7 @@
 "use client"
 
 import type { InferSelectModel } from "drizzle-orm"
-import { AsteriskIcon } from "lucide-react"
+import { AsteriskIcon, SparklesIcon } from "lucide-react"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { RelativeTime } from "@/components/relative-time"
@@ -47,43 +47,84 @@ export function RepoPostsSection({
   repo,
   searchQuery,
 }: RepoPostsSectionProps) {
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const [textResults, setTextResults] = useState<SearchResult[]>([])
+  const [semanticResults, setSemanticResults] = useState<SearchResult[]>([])
+  const [isTextSearching, setIsTextSearching] = useState(false)
+  const [isSemanticSearching, setIsSemanticSearching] = useState(false)
+  const textAbortRef = useRef<AbortController | null>(null)
+  const semanticAbortRef = useRef<AbortController | null>(null)
   const prevQueryRef = useRef("")
 
-  const search = useCallback(
+  const searchText = useCallback(
     async (query: string) => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
+      if (textAbortRef.current) {
+        textAbortRef.current.abort()
       }
 
       if (!query.trim()) {
-        setSearchResults([])
-        setIsSearching(false)
+        setTextResults([])
+        setIsTextSearching(false)
         return
       }
 
       const controller = new AbortController()
-      abortControllerRef.current = controller
-      setIsSearching(true)
+      textAbortRef.current = controller
+      setIsTextSearching(true)
 
       try {
         const res = await fetch("/api/search/hybrid", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, owner, repo }),
+          body: JSON.stringify({ query, owner, repo, type: "text" }),
           signal: controller.signal,
         })
         const data = (await res.json()) as { posts?: SearchResult[] }
         if (!controller.signal.aborted) {
-          setSearchResults(data.posts ?? [])
-          setIsSearching(false)
+          setTextResults(data.posts ?? [])
+          setIsTextSearching(false)
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          console.error("Search failed:", err)
-          setIsSearching(false)
+          console.error("Text search failed:", err)
+          setIsTextSearching(false)
+        }
+      }
+    },
+    [owner, repo]
+  )
+
+  const searchSemantic = useCallback(
+    async (query: string) => {
+      if (semanticAbortRef.current) {
+        semanticAbortRef.current.abort()
+      }
+
+      if (!query.trim()) {
+        setSemanticResults([])
+        setIsSemanticSearching(false)
+        return
+      }
+
+      const controller = new AbortController()
+      semanticAbortRef.current = controller
+      setIsSemanticSearching(true)
+
+      try {
+        const res = await fetch("/api/search/hybrid", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, owner, repo, type: "semantic" }),
+          signal: controller.signal,
+        })
+        const data = (await res.json()) as { posts?: SearchResult[] }
+        if (!controller.signal.aborted) {
+          setSemanticResults(data.posts ?? [])
+          setIsSemanticSearching(false)
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.error("Semantic search failed:", err)
+          setIsSemanticSearching(false)
         }
       }
     },
@@ -94,23 +135,40 @@ export function RepoPostsSection({
     if (searchQuery === prevQueryRef.current) return
     prevQueryRef.current = searchQuery
 
-    const timer = setTimeout(() => {
-      search(searchQuery)
-    }, 200)
-    return () => clearTimeout(timer)
-  }, [searchQuery, search])
+    const textTimer = setTimeout(() => {
+      searchText(searchQuery)
+    }, 150)
+
+    const semanticTimer = setTimeout(() => {
+      searchSemantic(searchQuery)
+    }, 300)
+
+    return () => {
+      clearTimeout(textTimer)
+      clearTimeout(semanticTimer)
+    }
+  }, [searchQuery, searchText, searchSemantic])
 
   const hasSearchQuery = searchQuery.trim().length > 0
 
   if (hasSearchQuery) {
     return (
-      <SearchResultsList
-        isLoading={isSearching}
-        owner={owner}
-        query={searchQuery}
-        repo={repo}
-        results={searchResults}
-      />
+      <div className="flex flex-col gap-6">
+        <RelatedPostsSection
+          isLoading={isSemanticSearching}
+          owner={owner}
+          repo={repo}
+          results={semanticResults}
+          textResultIds={new Set(textResults.map((r) => r.id))}
+        />
+        <TextSearchResults
+          isLoading={isTextSearching}
+          owner={owner}
+          query={searchQuery}
+          repo={repo}
+          results={textResults}
+        />
+      </div>
     )
   }
 
@@ -180,7 +238,63 @@ function LatestPosts({
   )
 }
 
-function SearchResultsList({
+function RelatedPostsSection({
+  results,
+  isLoading,
+  owner,
+  repo,
+  textResultIds,
+}: {
+  results: SearchResult[]
+  isLoading: boolean
+  owner: string
+  repo: string
+  textResultIds: Set<string>
+}) {
+  const filteredResults = results.filter((r) => !textResultIds.has(r.id))
+
+  if (isLoading && filteredResults.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-faint text-sm">
+        <SparklesIcon className="h-4 w-4" />
+        <span>Finding related posts...</span>
+      </div>
+    )
+  }
+
+  if (filteredResults.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="border-muted border-l-2 border-dashed pl-4">
+      <div className="mb-2 flex items-center gap-1.5 text-faint text-xs uppercase">
+        <SparklesIcon className="h-3 w-3" />
+        Related Posts
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {filteredResults.map((post) => (
+          <Link
+            className="group flex flex-col gap-0.5"
+            href={`/${owner}/${repo}/${post.number}`}
+            key={post.id}
+          >
+            <span className="text-dim text-sm group-hover:text-bright group-hover:underline">
+              {post.title || `Post #${post.number}`}
+            </span>
+            {post.highlight && (
+              <span className="line-clamp-1 text-faint text-xs">
+                <HighlightedText html={post.highlight} />
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TextSearchResults({
   results,
   isLoading,
   owner,

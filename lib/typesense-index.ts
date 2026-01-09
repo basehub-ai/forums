@@ -332,6 +332,125 @@ export type PostSearchResult = {
   score: number
 }
 
+export async function searchPostsText(
+  query: string,
+  owner: string,
+  repo: string,
+  options?: { perPage?: number }
+): Promise<PostSearchResult[]> {
+  if (!query?.trim()) {
+    return []
+  }
+
+  await ensureCollectionsOnce()
+  const perPage = options?.perPage ?? 20
+  const filterBy = `owner:=${owner} && repo:=${repo}`
+
+  const results = await typesense
+    .collections(COMMENTS_COLLECTION)
+    .documents()
+    .search({
+      q: query,
+      query_by: "text",
+      filter_by: filterBy,
+      per_page: perPage,
+      highlight_full_fields: "text",
+      highlight_start_tag: "<mark>",
+      highlight_end_tag: "</mark>",
+    })
+
+  return dedupeHits(results.hits ?? [])
+}
+
+export async function searchPostsSemantic(
+  query: string,
+  owner: string,
+  repo: string,
+  options?: { perPage?: number; excludePostIds?: string[] }
+): Promise<PostSearchResult[]> {
+  if (!query?.trim()) {
+    return []
+  }
+
+  await ensureCollectionsOnce()
+  const perPage = options?.perPage ?? 5
+  const filterBy = `owner:=${owner} && repo:=${repo}`
+
+  let embedding: number[]
+  try {
+    const result = await embed({
+      model: "openai/text-embedding-3-small",
+      value: query,
+    })
+    embedding = result.embedding
+  } catch (err) {
+    console.error("Failed to generate query embedding:", err)
+    return []
+  }
+
+  const searchParams: Record<string, unknown> = {
+    q: "*",
+    filter_by: filterBy,
+    per_page: perPage,
+    vector_query: `embedding:([${embedding.join(",")}], k:${perPage * 2})`,
+    highlight_full_fields: "text",
+    highlight_start_tag: "<mark>",
+    highlight_end_tag: "</mark>",
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const multiResults = await typesense.multiSearch.perform(
+    { searches: [{ collection: COMMENTS_COLLECTION, ...searchParams }] },
+    {}
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const results = multiResults.results[0] as any
+
+  const hits = dedupeHits(results.hits ?? [])
+
+  if (options?.excludePostIds?.length) {
+    const excluded = new Set(options.excludePostIds)
+    return hits.filter((h) => !excluded.has(h.postId)).slice(0, perPage)
+  }
+
+  return hits.slice(0, perPage)
+}
+
+function dedupeHits(
+  hits: Array<{
+    document: unknown
+    highlight?: unknown
+    text_match_info?: { score?: string | number }
+    vector_distance?: number
+  }>
+): PostSearchResult[] {
+  const seen = new Set<string>()
+  const dedupedHits: PostSearchResult[] = []
+
+  for (const hit of hits) {
+    const doc = hit.document as {
+      id: string
+      postId: string
+      text: string
+      isRootComment: boolean
+    }
+    if (seen.has(doc.postId)) continue
+    seen.add(doc.postId)
+
+    const hl = hit.highlight as { text?: { snippet?: string } } | undefined
+    const vectorDistance = (hit as { vector_distance?: number }).vector_distance
+    dedupedHits.push({
+      postId: doc.postId,
+      text: doc.text,
+      highlight: hl?.text?.snippet ?? doc.text.slice(0, 200),
+      isRootComment: doc.isRootComment,
+      score: Number(hit.text_match_info?.score ?? 0) + (vectorDistance ?? 0),
+    })
+  }
+
+  return dedupedHits
+}
+
 export async function searchPostsHybrid(
   query: string,
   owner: string,
@@ -377,33 +496,10 @@ export async function searchPostsHybrid(
     { searches: [{ collection: COMMENTS_COLLECTION, ...searchParams }] },
     {}
   )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const results = multiResults.results[0] as any
 
-  const seen = new Set<string>()
-  const dedupedHits: PostSearchResult[] = []
-
-  for (const hit of results.hits ?? []) {
-    const doc = hit.document as {
-      id: string
-      postId: string
-      text: string
-      isRootComment: boolean
-    }
-    if (seen.has(doc.postId)) continue
-    seen.add(doc.postId)
-
-    const hl = hit.highlight as { text?: { snippet?: string } } | undefined
-    const vectorDistance = (hit as { vector_distance?: number }).vector_distance
-    dedupedHits.push({
-      postId: doc.postId,
-      text: doc.text,
-      highlight: hl?.text?.snippet ?? doc.text.slice(0, 200),
-      isRootComment: doc.isRootComment,
-      score: Number(hit.text_match_info?.score ?? 0) + (vectorDistance ?? 0),
-    })
-  }
-
-  return dedupedHits
+  return dedupeHits(results.hits ?? [])
 }
 
 export async function reindexCommentsWithoutEmbeddings(): Promise<{

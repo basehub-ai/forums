@@ -1,31 +1,32 @@
 import { and, eq, inArray, sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
-import { searchPostsHybrid } from "@/lib/typesense-index"
+import {
+  searchPostsSemantic,
+  searchPostsText,
+  type PostSearchResult,
+} from "@/lib/typesense-index"
 
-export async function POST(request: Request) {
-  const body = await request.json()
-  const {
-    query,
-    owner,
-    repo,
-    perPage = 20,
-  } = body as {
-    query: string
-    owner: string
-    repo: string
-    perPage?: number
-  }
+type PostWithHighlight = {
+  id: string
+  number: number
+  title: string | null
+  categoryId: string | null
+  authorId: string
+  authorUsername: string | null
+  rootCommentId: string | null
+  createdAt: number
+  commentCount: number
+  reactionCount: number
+  highlight: string | null
+}
 
-  if (!query?.trim()) {
-    return Response.json({ posts: [], totalFound: 0 })
-  }
-
-  const searchResults = await searchPostsHybrid(query, owner, repo, { perPage })
-
-  if (searchResults.length === 0) {
-    return Response.json({ posts: [], totalFound: 0 })
-  }
+async function enrichPosts(
+  searchResults: PostSearchResult[],
+  owner: string,
+  repo: string
+): Promise<PostWithHighlight[]> {
+  if (searchResults.length === 0) return []
 
   const postIds = searchResults.map((r) => r.postId)
 
@@ -50,11 +51,7 @@ export async function POST(request: Request) {
     .from(posts)
     .leftJoin(comments, eq(posts.rootCommentId, comments.id))
     .where(
-      and(
-        eq(posts.owner, owner),
-        eq(posts.repo, repo),
-        inArray(posts.id, postIds)
-      )
+      and(eq(posts.owner, owner), eq(posts.repo, repo), inArray(posts.id, postIds))
     )
 
   const postsById = Object.fromEntries(matchedPosts.map((p) => [p.id, p]))
@@ -62,16 +59,41 @@ export async function POST(request: Request) {
     searchResults.map((r) => [r.postId, r.highlight])
   )
 
-  const orderedPosts = postIds
+  return postIds
     .map((id) => postsById[id])
     .filter(Boolean)
     .map((post) => ({
       ...post,
       highlight: highlightsByPostId[post.id] ?? null,
     }))
+}
 
-  return Response.json({
-    posts: orderedPosts,
-    totalFound: searchResults.length,
-  })
+export async function POST(request: Request) {
+  const body = await request.json()
+  const { query, owner, repo, type } = body as {
+    query: string
+    owner: string
+    repo: string
+    type: "text" | "semantic"
+  }
+
+  if (!query?.trim()) {
+    return Response.json({ posts: [] })
+  }
+
+  if (type === "text") {
+    const textResults = await searchPostsText(query, owner, repo, { perPage: 20 })
+    const textPosts = await enrichPosts(textResults, owner, repo)
+    return Response.json({ posts: textPosts })
+  }
+
+  if (type === "semantic") {
+    const semanticResults = await searchPostsSemantic(query, owner, repo, {
+      perPage: 5,
+    })
+    const semanticPosts = await enrichPosts(semanticResults, owner, repo)
+    return Response.json({ posts: semanticPosts })
+  }
+
+  return Response.json({ posts: [] })
 }
