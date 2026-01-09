@@ -62,7 +62,7 @@ const streamdownComponents: ComponentProps<typeof Streamdown>["components"] = {
   hr: () => <hr className="my-4 border-border-solid" />,
   code: (props) => (
     <code
-      className="bg-dim/10 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
+      className="bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
       {...props}
     />
   ),

@@ -215,7 +215,7 @@ export function RepoListWithSearch({
                       <AsteriskIcon className="mt-0.5 text-faint" size={16} />
                       {highlight ? (
                         <span
-                          className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-highlight-yellow [&_mark]:text-background"
+                          className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-transparent [&_mark]:font-bold [&_mark]:text-bright"
                           dangerouslySetInnerHTML={{ __html: highlight }}
                         />
                       ) : (
