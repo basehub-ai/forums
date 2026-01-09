@@ -303,7 +303,14 @@ export async function createPost(data: {
         .where(eq(comments.id, commentId))
         .limit(1)
       if (comment) {
-        await indexComment(comment, data.owner, data.repo, newPost.number, newPost.categoryId, true)
+        await indexComment(
+          comment,
+          data.owner,
+          data.repo,
+          newPost.number,
+          newPost.categoryId,
+          true
+        )
       }
     })()
   )
@@ -465,7 +472,14 @@ export async function createComment(data: {
         .where(eq(comments.id, commentId))
         .limit(1)
       if (comment) {
-        await indexComment(comment, post.owner, post.repo, post.number, post.categoryId, false)
+        await indexComment(
+          comment,
+          post.owner,
+          post.repo,
+          post.number,
+          post.categoryId,
+          false
+        )
       }
       const commentCount = await db
         .select({ count: sql<number>`count(*)` })

@@ -77,7 +77,13 @@ export function RepoPostsSection({
         const res = await fetch("/api/search/hybrid", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, owner, repo, type: "text", categoryId }),
+          body: JSON.stringify({
+            query,
+            owner,
+            repo,
+            type: "text",
+            categoryId,
+          }),
           signal: controller.signal,
         })
         const data = (await res.json()) as { posts?: SearchResult[] }
@@ -115,7 +121,13 @@ export function RepoPostsSection({
         const res = await fetch("/api/search/hybrid", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, owner, repo, type: "semantic", categoryId }),
+          body: JSON.stringify({
+            query,
+            owner,
+            repo,
+            type: "semantic",
+            categoryId,
+          }),
           signal: controller.signal,
         })
         const data = (await res.json()) as { posts?: SearchResult[] }
@@ -134,7 +146,9 @@ export function RepoPostsSection({
   )
 
   useEffect(() => {
-    if (searchQuery === prevQueryRef.current) return
+    if (searchQuery === prevQueryRef.current) {
+      return
+    }
     prevQueryRef.current = searchQuery
 
     searchText(searchQuery)
@@ -161,7 +175,12 @@ export function RepoPostsSection({
           results={semanticResults}
           textResultIds={new Set(textResults.map((r) => r.id))}
         />
-        <TextSearchResults owner={owner} repo={repo} results={textResults} />
+        <TextSearchResults
+          isLoading={isTextSearching}
+          owner={owner}
+          repo={repo}
+          results={textResults}
+        />
       </div>
     )
   }
@@ -285,13 +304,19 @@ function RelatedPostsSection({
 
 function TextSearchResults({
   results,
+  isLoading,
   owner,
   repo,
 }: {
   results: SearchResult[]
+  isLoading: boolean
   owner: string
   repo: string
 }) {
+  if (isLoading && results.length === 0) {
+    return <p className="text-dim text-sm">Searching...</p>
+  }
+
   if (results.length === 0) {
     return <p className="text-dim text-sm">No results.</p>
   }
