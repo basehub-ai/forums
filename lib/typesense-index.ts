@@ -53,6 +53,7 @@ export async function ensureCollections() {
       fields: [
         { name: "id", type: "string" },
         { name: "postId", type: "string", facet: true },
+        { name: "postNumber", type: "int32" },
         { name: "owner", type: "string", facet: true },
         { name: "repo", type: "string", facet: true },
         { name: "authorId", type: "string", facet: true },
@@ -141,6 +142,7 @@ export async function indexComment(
   comment: Comment,
   owner: string,
   repo: string,
+  postNumber: number,
   isRootComment: boolean,
   options?: { skipEmbedding?: boolean }
 ) {
@@ -154,6 +156,7 @@ export async function indexComment(
   const doc: Record<string, unknown> = {
     id: comment.id,
     postId: comment.postId,
+    postNumber,
     owner,
     repo,
     authorId: comment.authorId,
@@ -551,6 +554,7 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
         const { posts } = await import("./db/schema")
         const [post] = await db
           .select({
+            number: posts.number,
             owner: posts.owner,
             repo: posts.repo,
             rootCommentId: posts.rootCommentId,
@@ -564,6 +568,7 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
             comment,
             post.owner,
             post.repo,
+            post.number,
             comment.id === post.rootCommentId
           )
           reindexed++

@@ -303,7 +303,7 @@ export async function createPost(data: {
         .where(eq(comments.id, commentId))
         .limit(1)
       if (comment) {
-        await indexComment(comment, data.owner, data.repo, true)
+        await indexComment(comment, data.owner, data.repo, newPost.number, true)
       }
     })()
   )
@@ -465,7 +465,7 @@ export async function createComment(data: {
         .where(eq(comments.id, commentId))
         .limit(1)
       if (comment) {
-        await indexComment(comment, post.owner, post.repo, false)
+        await indexComment(comment, post.owner, post.repo, post.number, false)
       }
       const commentCount = await db
         .select({ count: sql<number>`count(*)` })
