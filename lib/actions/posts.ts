@@ -1,6 +1,6 @@
 "use server"
 import { waitUntil } from "@vercel/functions"
-import { and, asc, eq, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { headers } from "next/headers"
 import slugify from "slugify"
@@ -8,7 +8,7 @@ import { start } from "workflow/api"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
 import type { AgentUIMessage } from "@/agent/types"
-import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
+import { auth, extractGitHubUserId, gitHubUserByIdLoader, isAdmin } from "@/lib/auth"
 import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import {
@@ -24,6 +24,7 @@ import { resolvePostLinks } from "@/lib/post-links"
 import { extractPostLinks } from "@/lib/post-links-parser"
 import { checkMessageRateLimit, checkReactionRateLimit } from "@/lib/rate-limit"
 import {
+  deletePostFromIndex,
   indexComment,
   indexPost,
   indexRepo,
@@ -992,4 +993,53 @@ export async function rerunLlmCommentsInPost(data: {
   updateTag(`post:${data.postId}`)
 
   return { commentId: lastCommentId }
+}
+
+export async function deletePost(postId: string) {
+  const session = await getSessionOrThrow()
+
+  const [post] = await db
+    .select({
+      id: posts.id,
+      owner: posts.owner,
+      repo: posts.repo,
+      authorId: posts.authorId,
+    })
+    .from(posts)
+    .where(eq(posts.id, postId))
+    .limit(1)
+
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  const userIsAdmin = isAdmin(session.user)
+  if (post.authorId !== session.user.id && !userIsAdmin) {
+    throw new Error("Unauthorized: only the post author or admin can delete this post")
+  }
+
+  const postComments = await db
+    .select({ id: comments.id })
+    .from(comments)
+    .where(eq(comments.postId, postId))
+
+  const commentIds = postComments.map((c) => c.id)
+
+  if (commentIds.length > 0) {
+    await db.delete(reactions).where(inArray(reactions.commentId, commentIds))
+    await db.delete(comments).where(inArray(comments.id, commentIds))
+  }
+
+  await db
+    .delete(mentions)
+    .where(or(eq(mentions.targetPostId, postId), eq(mentions.sourcePostId, postId)))
+
+  await deletePostFromIndex(postId)
+
+  await db.delete(posts).where(eq(posts.id, postId))
+
+  updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${postId}`)
+
+  return { success: true }
 }
