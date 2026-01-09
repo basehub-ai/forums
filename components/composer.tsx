@@ -145,7 +145,7 @@ export const Composer = ({
       <textarea
         autoFocus={autoFocus}
         className={cn(
-          "no-focus min-h-20 w-full resize-none bg-transparent p-3 text-bright text-sm outline-none",
+          "no-focus min-h-20 w-full resize-none bg-transparent p-3 text-bright text-base outline-none sm:text-sm",
           isScrollable && "scroll-pb-3"
         )}
         name="message"

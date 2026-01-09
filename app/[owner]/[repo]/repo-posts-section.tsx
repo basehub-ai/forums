@@ -159,7 +159,6 @@ export function RepoPostsSection({
           textResultIds={new Set(textResults.map((r) => r.id))}
         />
         <TextSearchResults
-          isLoading={isTextSearching}
           owner={owner}
           query={searchQuery}
           repo={repo}
@@ -248,44 +247,39 @@ function RelatedPostsSection({
   repo: string
   textResultIds: Set<string>
 }) {
-  const filteredResults = results.filter((r) => !textResultIds.has(r.id))
-
-  if (isLoading && filteredResults.length === 0) {
-    return (
-      <div className="flex items-center gap-2 text-faint text-sm">
-        <SparklesIcon className="h-4 w-4" />
-        <span>Finding related posts...</span>
-      </div>
-    )
-  }
-
-  if (filteredResults.length === 0) {
-    return null
-  }
+  const filteredResults = results
+    .filter((r) => !textResultIds.has(r.id))
+    .slice(0, 2)
 
   return (
-    <div className="border-muted border-l-2 border-dashed pl-4">
+    <div className="h-[88px] border-faint/50 border-l border-dotted pl-4">
       <div className="mb-2 flex items-center gap-1.5 text-faint text-xs uppercase">
         <SparklesIcon className="h-3 w-3" />
         Related Posts
       </div>
       <div className="flex flex-col gap-1.5">
-        {filteredResults.map((post) => (
-          <Link
-            className="group flex flex-col gap-0.5"
-            href={`/${owner}/${repo}/${post.number}`}
-            key={post.id}
-          >
-            <span className="text-dim text-sm group-hover:text-bright group-hover:underline">
-              {post.title || `Post #${post.number}`}
-            </span>
-            {post.highlight && (
-              <span className="line-clamp-1 text-faint text-xs">
-                <HighlightedText html={post.highlight} />
+        {isLoading && filteredResults.length === 0 ? (
+          <span className="text-faint text-sm">Finding related posts...</span>
+        ) : filteredResults.length === 0 ? (
+          <span className="text-faint text-sm">No related posts found</span>
+        ) : (
+          filteredResults.map((post) => (
+            <Link
+              className="group flex flex-col gap-0.5"
+              href={`/${owner}/${repo}/${post.number}`}
+              key={post.id}
+            >
+              <span className="text-dim text-sm group-hover:text-bright group-hover:underline">
+                {post.title || `Post #${post.number}`}
               </span>
-            )}
-          </Link>
-        ))}
+              {post.highlight && (
+                <span className="line-clamp-1 text-faint text-xs">
+                  <HighlightedText html={post.highlight} />
+                </span>
+              )}
+            </Link>
+          ))
+        )}
       </div>
     </div>
   )
@@ -293,22 +287,16 @@ function RelatedPostsSection({
 
 function TextSearchResults({
   results,
-  isLoading,
   owner,
   repo,
   query,
 }: {
   results: SearchResult[]
-  isLoading: boolean
   owner: string
   repo: string
   query: string
 }) {
-  if (isLoading && results.length === 0) {
-    return <p className="text-dim text-sm">Searching...</p>
-  }
-
-  if (!isLoading && results.length === 0) {
+  if (results.length === 0) {
     return (
       <p className="text-dim text-sm">No results for &ldquo;{query}&rdquo;</p>
     )
@@ -375,7 +363,7 @@ function HighlightedText({ html }: { html: string }) {
   const cleaned = html.replace(/\n/g, " ")
   return (
     <span
-      className="[&_mark]:bg-highlight-yellow [&_mark]:text-black"
+      className="[&_mark]:bg-highlight-yellow [&_mark]:text-bright"
       dangerouslySetInnerHTML={{ __html: cleaned }}
     />
   )
