@@ -3,8 +3,8 @@
 import { Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import { authClient } from "@/lib/auth-client"
 import { deletePost } from "@/lib/actions/posts"
+import { authClient } from "@/lib/auth-client"
 import { usePostMetadata } from "./post-metadata-context"
 
 export function DeletePostButton() {
@@ -17,12 +17,16 @@ export function DeletePostButton() {
 
   const isAuthor = userId === authorId
 
-  if (!userId || !isAuthor) {
+  if (!(userId && isAuthor)) {
     return null
   }
 
   function handleDelete() {
-    if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this post? This action cannot be undone."
+      )
+    ) {
       return
     }
 

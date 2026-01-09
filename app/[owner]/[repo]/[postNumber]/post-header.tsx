@@ -8,7 +8,6 @@ import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
 import { Tooltip } from "@/components/ui/tooltip"
 import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
-import { DeletePostButton } from "./delete-post-button"
 import { usePostMetadata } from "./post-metadata-context"
 
 function categorySlugify(title: string) {
@@ -110,9 +109,6 @@ export function PostHeader({
 
       <StaleBanner />
       {hasArchivedRefs && <RefSelector />}
-      <div className="mt-4">
-        <DeletePostButton />
-      </div>
     </header>
   )
 }

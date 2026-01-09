@@ -35,7 +35,7 @@ export const UserDropdown = ({
   const creditsMax = credits?.included_usage
 
   return (
-    <Menu.Root open={open} onOpenChange={setOpen}>
+    <Menu.Root onOpenChange={setOpen} open={open}>
       <Menu.Trigger className="group flex cursor-pointer items-center gap-1 px-1">
         <img
           alt={user.name}

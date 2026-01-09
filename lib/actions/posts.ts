@@ -4,11 +4,16 @@ import { and, asc, eq, inArray, or, sql } from "drizzle-orm"
 import { updateTag } from "next/cache"
 import { headers } from "next/headers"
 import slugify from "slugify"
-import { start } from "workflow/api"
+import { getRun, start } from "workflow/api"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
 import type { AgentUIMessage } from "@/agent/types"
-import { auth, extractGitHubUserId, gitHubUserByIdLoader, isAdmin } from "@/lib/auth"
+import {
+  auth,
+  extractGitHubUserId,
+  gitHubUserByIdLoader,
+  isAdmin,
+} from "@/lib/auth"
 import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import {
@@ -20,10 +25,12 @@ import {
   posts,
   reactions,
 } from "@/lib/db/schema"
+import { parsePostUrl } from "@/lib/parse-post-url"
 import { resolvePostLinks } from "@/lib/post-links"
 import { extractPostLinks } from "@/lib/post-links-parser"
 import { checkMessageRateLimit, checkReactionRateLimit } from "@/lib/rate-limit"
 import {
+  deleteCommentFromIndex,
   deletePostFromIndex,
   indexComment,
   indexPost,
@@ -995,6 +1002,35 @@ export async function rerunLlmCommentsInPost(data: {
   return { commentId: lastCommentId }
 }
 
+export async function deletePostByUrl(url: string) {
+  const parsed = parsePostUrl(url)
+  if (!parsed) {
+    throw new Error("Invalid URL format. Expected: /owner/repo/postNumber")
+  }
+
+  const { owner, repo, postNumber } = parsed
+
+  const [post] = await db
+    .select({ id: posts.id })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.owner, owner),
+        eq(posts.repo, repo),
+        eq(posts.number, postNumber)
+      )
+    )
+    .limit(1)
+
+  if (!post) {
+    throw new Error(`Post not found: ${owner}/${repo}#${postNumber}`)
+  }
+
+  await deletePost(post.id)
+
+  return { success: true, deleted: `${owner}/${repo}#${postNumber}` }
+}
+
 export async function deletePost(postId: string) {
   const session = await getSessionOrThrow()
 
@@ -1015,13 +1051,30 @@ export async function deletePost(postId: string) {
 
   const userIsAdmin = isAdmin(session.user)
   if (post.authorId !== session.user.id && !userIsAdmin) {
-    throw new Error("Unauthorized: only the post author or admin can delete this post")
+    throw new Error(
+      "Unauthorized: only the post author or admin can delete this post"
+    )
   }
 
   const postComments = await db
-    .select({ id: comments.id })
+    .select({
+      id: comments.id,
+      runId: comments.runId,
+      streamStatus: comments.streamStatus,
+    })
     .from(comments)
     .where(eq(comments.postId, postId))
+
+  // Cancel any streaming workflows before deleting
+  for (const comment of postComments) {
+    if (comment.streamStatus === "streaming" && comment.runId) {
+      try {
+        await getRun(comment.runId).cancel()
+      } catch {
+        // Ignore errors if workflow already completed or not found
+      }
+    }
+  }
 
   const commentIds = postComments.map((c) => c.id)
 
@@ -1032,7 +1085,9 @@ export async function deletePost(postId: string) {
 
   await db
     .delete(mentions)
-    .where(or(eq(mentions.targetPostId, postId), eq(mentions.sourcePostId, postId)))
+    .where(
+      or(eq(mentions.targetPostId, postId), eq(mentions.sourcePostId, postId))
+    )
 
   await deletePostFromIndex(postId)
 
@@ -1042,4 +1097,118 @@ export async function deletePost(postId: string) {
   updateTag(`post:${postId}`)
 
   return { success: true }
+}
+
+export async function deleteComment(commentId: string) {
+  const session = await getSessionOrThrow()
+
+  const [comment] = await db
+    .select({
+      id: comments.id,
+      postId: comments.postId,
+      authorId: comments.authorId,
+      seekingAnswerFrom: comments.seekingAnswerFrom,
+      createdAt: comments.createdAt,
+      threadCommentId: comments.threadCommentId,
+    })
+    .from(comments)
+    .where(eq(comments.id, commentId))
+    .limit(1)
+
+  if (!comment) {
+    throw new Error("Comment not found")
+  }
+
+  const userIsAdmin = isAdmin(session.user)
+  if (comment.authorId !== session.user.id && !userIsAdmin) {
+    throw new Error(
+      "Unauthorized: only the comment author or admin can delete this comment"
+    )
+  }
+
+  const [post] = await db
+    .select({
+      id: posts.id,
+      owner: posts.owner,
+      repo: posts.repo,
+      rootCommentId: posts.rootCommentId,
+    })
+    .from(posts)
+    .where(eq(posts.id, comment.postId))
+    .limit(1)
+
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  // If this is the root comment, delete the entire post
+  if (comment.id === post.rootCommentId) {
+    await deletePost(post.id)
+    return { success: true, deletedPost: true }
+  }
+
+  const commentsToDelete = [comment.id]
+
+  // If comment was seeking answer from an LLM, find and delete the LLM response
+  if (comment.seekingAnswerFrom?.startsWith("llm_")) {
+    const [llmResponse] = await db
+      .select({
+        id: comments.id,
+        runId: comments.runId,
+        streamStatus: comments.streamStatus,
+      })
+      .from(comments)
+      .where(
+        and(
+          eq(comments.postId, comment.postId),
+          eq(comments.authorId, comment.seekingAnswerFrom),
+          sql`${comments.createdAt} > ${comment.createdAt}`
+        )
+      )
+      .orderBy(asc(comments.createdAt))
+      .limit(1)
+
+    if (llmResponse) {
+      // Cancel the workflow if it's still streaming
+      if (llmResponse.streamStatus === "streaming" && llmResponse.runId) {
+        try {
+          await getRun(llmResponse.runId).cancel()
+        } catch {
+          // Ignore errors if workflow already completed or not found
+        }
+      }
+      commentsToDelete.push(llmResponse.id)
+    }
+  }
+
+  // Delete reactions for all comments being deleted
+  await db
+    .delete(reactions)
+    .where(inArray(reactions.commentId, commentsToDelete))
+
+  // Delete mentions where these comments are the source
+  await db
+    .delete(mentions)
+    .where(inArray(mentions.sourceCommentId, commentsToDelete))
+
+  // Delete the comments
+  await db.delete(comments).where(inArray(comments.id, commentsToDelete))
+
+  // Delete from search index
+  for (const id of commentsToDelete) {
+    await deleteCommentFromIndex(id)
+  }
+
+  // Update comment count in post index
+  const commentCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(comments)
+    .where(eq(comments.postId, post.id))
+    .then((r) => Number(r[0]?.count ?? 0))
+  await updatePostIndex(post.id, { commentCount })
+
+  updateTag(`repo:${post.owner}:${post.repo}`)
+  updateTag(`post:${post.id}`)
+
+  return { success: true, deletedPost: false }
 }

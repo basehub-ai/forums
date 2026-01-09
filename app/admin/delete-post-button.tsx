@@ -1,18 +1,19 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { deletePost } from "@/lib/actions/posts"
+import { useState } from "react"
+import { deletePostByUrl } from "@/lib/actions/posts"
 
 export function DeletePostButton() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
-  const [postId, setPostId] = useState("")
+  const [postUrl, setPostUrl] = useState("")
   const router = useRouter()
 
   async function handleClick() {
-    if (!postId.trim()) {
-      setResult("Post ID required")
+    const trimmed = postUrl.trim()
+    if (!trimmed) {
+      setResult("Post URL required")
       return
     }
 
@@ -28,9 +29,9 @@ export function DeletePostButton() {
     setResult(null)
 
     try {
-      await deletePost(postId.trim())
-      setResult("Post deleted successfully")
-      setPostId("")
+      const res = await deletePostByUrl(trimmed)
+      setResult(`Deleted: ${res.deleted}`)
+      setPostUrl("")
       router.refresh()
     } catch (err) {
       setResult(err instanceof Error ? err.message : "Failed to delete post")
@@ -44,10 +45,10 @@ export function DeletePostButton() {
       <div className="flex items-center gap-2">
         <input
           className="border border-faint bg-shade px-2 py-0.5 text-bright"
-          onChange={(e) => setPostId(e.target.value)}
-          placeholder="Post ID"
+          onChange={(e) => setPostUrl(e.target.value)}
+          placeholder="/owner/repo/123"
           type="text"
-          value={postId}
+          value={postUrl}
         />
         <button
           className="bg-highlight-yellow px-1.5 py-0.5 text-bright disabled:opacity-50"

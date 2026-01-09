@@ -223,9 +223,7 @@ export const Composer = ({
               if (!hasEnoughCredits) {
                 if (creditBalance === 0) {
                   return (
-                    <span className="text-red-500 text-xs">
-                      Out of credits
-                    </span>
+                    <span className="text-red-500 text-xs">Out of credits</span>
                   )
                 }
                 return (

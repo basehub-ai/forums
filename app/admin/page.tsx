@@ -32,7 +32,7 @@ export default function AdminPage() {
       <div className="flex items-center gap-3">
         <DeletePostButton />
         <span className="text-muted text-sm">
-          — Delete a specific post by ID
+          — Delete a specific post by URL
         </span>
       </div>
     </div>
