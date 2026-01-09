@@ -2,9 +2,9 @@ import { and, eq, inArray, sql } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import {
+  type PostSearchResult,
   searchPostsSemantic,
   searchPostsText,
-  type PostSearchResult,
 } from "@/lib/typesense-index"
 
 type PostWithHighlight = {
@@ -51,7 +51,11 @@ async function enrichPosts(
     .from(posts)
     .leftJoin(comments, eq(posts.rootCommentId, comments.id))
     .where(
-      and(eq(posts.owner, owner), eq(posts.repo, repo), inArray(posts.id, postIds))
+      and(
+        eq(posts.owner, owner),
+        eq(posts.repo, repo),
+        inArray(posts.id, postIds)
+      )
     )
 
   const postsById = Object.fromEntries(matchedPosts.map((p) => [p.id, p]))
@@ -82,7 +86,9 @@ export async function POST(request: Request) {
   }
 
   if (type === "text") {
-    const textResults = await searchPostsText(query, owner, repo, { perPage: 20 })
+    const textResults = await searchPostsText(query, owner, repo, {
+      perPage: 20,
+    })
     const textPosts = await enrichPosts(textResults, owner, repo)
     return Response.json({ posts: textPosts })
   }

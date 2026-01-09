@@ -135,16 +135,13 @@ export function RepoPostsSection({
     if (searchQuery === prevQueryRef.current) return
     prevQueryRef.current = searchQuery
 
-    const textTimer = setTimeout(() => {
-      searchText(searchQuery)
-    }, 150)
+    searchText(searchQuery)
 
     const semanticTimer = setTimeout(() => {
       searchSemantic(searchQuery)
     }, 300)
 
     return () => {
-      clearTimeout(textTimer)
       clearTimeout(semanticTimer)
     }
   }, [searchQuery, searchText, searchSemantic])
