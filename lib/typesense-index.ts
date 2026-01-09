@@ -582,3 +582,56 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
 
   return { total, reindexed }
 }
+
+export async function indexAllComments(): Promise<{
+  total: number
+  indexed: number
+}> {
+  await ensureCollectionsOnce()
+
+  const { comments, posts } = await import("./db/schema")
+  let offset = 0
+  const batchSize = 100
+  let indexed = 0
+  let total = 0
+
+  while (true) {
+    const dbComments = await db
+      .select()
+      .from(comments)
+      .orderBy(comments.createdAt)
+      .limit(batchSize)
+      .offset(offset)
+
+    if (dbComments.length === 0) break
+    total += dbComments.length
+
+    for (const comment of dbComments) {
+      const [post] = await db
+        .select({
+          number: posts.number,
+          owner: posts.owner,
+          repo: posts.repo,
+          rootCommentId: posts.rootCommentId,
+        })
+        .from(posts)
+        .where(eq(posts.id, comment.postId))
+        .limit(1)
+
+      if (post) {
+        await indexComment(
+          comment,
+          post.owner,
+          post.repo,
+          post.number,
+          comment.id === post.rootCommentId
+        )
+        indexed++
+      }
+    }
+
+    offset += batchSize
+  }
+
+  return { total, indexed }
+}
