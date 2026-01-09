@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { DeletePostButton } from "./delete-post-button"
 import { DeleteTitlelessPostsButton } from "./delete-titleless-posts-button"
 
 export default function AdminPage() {
@@ -26,6 +27,12 @@ export default function AdminPage() {
         <DeleteTitlelessPostsButton />
         <span className="text-muted text-sm">
           — Delete all posts without a title
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
+        <DeletePostButton />
+        <span className="text-muted text-sm">
+          — Delete a specific post by URL
         </span>
       </div>
     </div>

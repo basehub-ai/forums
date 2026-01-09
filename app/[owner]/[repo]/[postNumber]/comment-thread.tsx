@@ -5,7 +5,9 @@ import { Suspense } from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import type { ComposerProps } from "@/components/composer"
 import { CopyLinkButton } from "@/components/copy-link-button"
+import { DeleteCommentButton } from "@/components/delete-comment-button"
 import { RelativeTime } from "@/components/relative-time"
+import { Tooltip } from "@/components/ui/tooltip"
 import type {
   comments as commentsSchema,
   mentions as mentionsSchema,
@@ -107,14 +109,24 @@ function CommentItem({
           </Suspense>
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         {comment.streamStatus === "streaming" && <StreamingBadge />}
-        <CopyLinkButton
-          commentNumber={commentNumber}
-          owner={owner}
-          postNumber={postNumber}
-          repo={repo}
-        />
+        <Tooltip.Provider>
+          <DeleteCommentButton
+            authorId={comment.authorId}
+            commentId={commentId}
+            hasLlmResponse={
+              comment.seekingAnswerFrom?.startsWith("llm_") ?? false
+            }
+            isRootComment={isRootComment}
+          />
+          <CopyLinkButton
+            commentNumber={commentNumber}
+            owner={owner}
+            postNumber={postNumber}
+            repo={repo}
+          />
+        </Tooltip.Provider>
       </div>
     </div>
   )
