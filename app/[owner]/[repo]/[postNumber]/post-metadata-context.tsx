@@ -30,6 +30,7 @@ type PostMetadata = {
   categories: Category[]
   gitContext: GitContextData | null
   staleInfo: StaleInfo
+  visibility: "private" | null
   isPolling: boolean
   archivedRefs: string[]
   selectedRef: string | null
@@ -51,6 +52,7 @@ export function PostMetadataProvider({
   initialCategory,
   initialGitContext,
   staleInfo,
+  visibility,
   archivedRefs,
   categories,
   children,
@@ -63,6 +65,7 @@ export function PostMetadataProvider({
   initialCategory: Category | null
   initialGitContext: GitContextData | null
   staleInfo: StaleInfo
+  visibility: "private" | null
   archivedRefs: string[]
   categories: Category[]
   children: React.ReactNode
@@ -139,6 +142,7 @@ export function PostMetadataProvider({
         categories,
         gitContext,
         staleInfo,
+        visibility,
         isPolling,
         archivedRefs,
         selectedRef,

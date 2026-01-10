@@ -22,6 +22,7 @@ import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
 import { PostHeader } from "./post-header"
 import { PostMetadataProvider } from "./post-metadata-context"
+import { PrivatePostGate } from "./private-post-gate"
 
 const githubCompareSchema = z.object({
   ahead_by: z.number(),
@@ -156,6 +157,7 @@ export default async function PostPage({
         authorId: posts.authorId,
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
+        visibility: posts.visibility,
         gitContexts: posts.gitContexts,
         category: {
           id: categories.id,
@@ -322,48 +324,51 @@ export default async function PostPage({
     .find((c) => c.authorId.startsWith("llm_"))?.authorId
 
   return (
-    <PostMetadataProvider
-      archivedRefs={archivedRefs}
-      authorId={post.authorId}
-      categories={repoCategories}
-      initialCategory={category?.id ? category : null}
-      initialGitContext={gitContext}
-      initialTitle={post.title}
-      owner={owner}
-      postId={post.id}
-      repo={repo}
-      staleInfo={staleInfo}
-    >
-      <Container>
-        <div className="min-h-body-min-height">
-          <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
+    <PrivatePostGate authorId={post.authorId} visibility={post.visibility}>
+      <PostMetadataProvider
+        archivedRefs={archivedRefs}
+        authorId={post.authorId}
+        categories={repoCategories}
+        initialCategory={category?.id ? category : null}
+        initialGitContext={gitContext}
+        initialTitle={post.title}
+        owner={owner}
+        postId={post.id}
+        repo={repo}
+        staleInfo={staleInfo}
+        visibility={post.visibility}
+      >
+        <Container>
+          <div className="min-h-body-min-height">
+            <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
 
-          <div className="mt-8 space-y-4">
-            <CommentThreadClient
-              askingOptions={askingOptions}
-              authorsById={authorsById}
-              commentNumbers={commentNumbers}
-              comments={postComments}
-              mentions={postMentions}
-              owner={owner}
-              reactions={postReactions}
-              repo={repo}
-              rootCommentId={post.rootCommentId}
-            />
+            <div className="mt-8 space-y-4">
+              <CommentThreadClient
+                askingOptions={askingOptions}
+                authorsById={authorsById}
+                commentNumbers={commentNumbers}
+                comments={postComments}
+                mentions={postMentions}
+                owner={owner}
+                reactions={postReactions}
+                repo={repo}
+                rootCommentId={post.rootCommentId}
+              />
+            </div>
           </div>
-        </div>
 
-        <hr className="divider-md my-14 h-px border-0" />
-        <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm">
-          END OF POST
-        </p>
+          <hr className="divider-md my-14 h-px border-0" />
+          <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm">
+            END OF POST
+          </p>
 
-        <PostComposer
-          askingOptions={askingOptions}
-          defaultLlmId={lastLlmAuthorId}
-          postId={post.id}
-        />
-      </Container>
-    </PostMetadataProvider>
+          <PostComposer
+            askingOptions={askingOptions}
+            defaultLlmId={lastLlmAuthorId}
+            postId={post.id}
+          />
+        </Container>
+      </PostMetadataProvider>
+    </PrivatePostGate>
   )
 }

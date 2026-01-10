@@ -1,4 +1,6 @@
-import { and, eq, inArray, sql } from "drizzle-orm"
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import {
@@ -16,6 +18,7 @@ type PostWithHighlight = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  visibility: "private" | null
   commentCount: number
   reactionCount: number
   highlight: string | null
@@ -24,7 +27,8 @@ type PostWithHighlight = {
 async function enrichPosts(
   searchResults: PostSearchResult[],
   owner: string,
-  repo: string
+  repo: string,
+  userId?: string
 ): Promise<PostWithHighlight[]> {
   if (searchResults.length === 0) return []
 
@@ -40,6 +44,7 @@ async function enrichPosts(
       authorUsername: comments.authorUsername,
       rootCommentId: posts.rootCommentId,
       createdAt: posts.createdAt,
+      visibility: posts.visibility,
       commentCount: sql<number>`(
         SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
       )`.as("comment_count"),
@@ -66,6 +71,10 @@ async function enrichPosts(
   return postIds
     .map((id) => postsById[id])
     .filter(Boolean)
+    .filter((post) => {
+      if (post.visibility !== "private") return true
+      return userId && post.authorId === userId
+    })
     .map((post) => ({
       ...post,
       highlight: highlightsByPostId[post.id] ?? null,
@@ -73,7 +82,10 @@ async function enrichPosts(
 }
 
 export async function POST(request: Request) {
-  const body = await request.json()
+  const [body, session] = await Promise.all([
+    request.json(),
+    auth.api.getSession({ headers: await headers() }),
+  ])
   const { query, owner, repo, type, categoryId } = body as {
     query: string
     owner: string
@@ -81,6 +93,7 @@ export async function POST(request: Request) {
     type: "text" | "semantic"
     categoryId?: string
   }
+  const userId = session?.user?.id
 
   if (!query?.trim()) {
     return Response.json({ posts: [] })
@@ -91,7 +104,7 @@ export async function POST(request: Request) {
       perPage: 20,
       categoryId,
     })
-    const textPosts = await enrichPosts(textResults, owner, repo)
+    const textPosts = await enrichPosts(textResults, owner, repo, userId)
     return Response.json({ posts: textPosts })
   }
 
@@ -100,7 +113,7 @@ export async function POST(request: Request) {
       perPage: 5,
       categoryId,
     })
-    const semanticPosts = await enrichPosts(semanticResults, owner, repo)
+    const semanticPosts = await enrichPosts(semanticResults, owner, repo, userId)
     return Response.json({ posts: semanticPosts })
   }
 
