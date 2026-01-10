@@ -92,6 +92,15 @@ export async function setBillingCategory(
   revalidateTag("models-list", "max")
 }
 
+export async function toggleModelPicker(id: string, isInModelPicker: boolean) {
+  await assertAdmin()
+
+  await db.update(llmUsers).set({ isInModelPicker }).where(eq(llmUsers.id, id))
+
+  revalidatePath("/admin/llm-users")
+  revalidateTag("models-list", "max")
+}
+
 export async function deletePostsWithoutTitle(): Promise<{
   success: boolean
   deleted?: number
