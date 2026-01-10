@@ -22,7 +22,7 @@ function Heading({
       className="relative mt-6 mb-2 font-semibold text-dim first:mt-0"
       {...props}
     >
-      <span className="absolute right-full mr-1.5 select-none font-mono text-faint">
+      <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
         {prefix}
       </span>
       {children}
@@ -62,7 +62,7 @@ const streamdownComponents: ComponentProps<typeof Streamdown>["components"] = {
   hr: () => <hr className="my-4 border-border-solid" />,
   code: (props) => (
     <code
-      className="bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
+      className="break-all bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
       {...props}
     />
   ),
@@ -328,12 +328,12 @@ function Tool({
   return (
     <div className="py-1">
       <button
-        className="flex items-start gap-2 text-left"
+        className="flex min-w-0 items-start gap-2 text-left"
         onClick={toggle}
         type="button"
       >
         <span
-          className={`border px-1.5 py-0.5 font-medium text-xs uppercase ${
+          className={`shrink-0 border px-1.5 py-0.5 font-medium text-xs uppercase ${
             expanded
               ? "border-highlight-gray bg-highlight-gray text-background"
               : "border-highlight-gray/30 bg-highlight-gray/10 text-highlight-gray"
@@ -341,7 +341,7 @@ function Tool({
         >
           {name}
         </span>
-        <span className="line-clamp-1 w-full font-mono text-muted text-sm">
+        <span className="line-clamp-1 min-w-0 break-all font-mono text-muted text-sm">
           <ToolInputDisplay
             gitContext={gitContext}
             input={toolPart.input}

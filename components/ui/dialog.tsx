@@ -63,7 +63,7 @@ function Popup({
   return (
     <BaseDialog.Popup
       className={cn(
-        "w-full max-w-lg",
+        "mx-4 w-full max-w-lg",
         "outline-none",
         "data-open:scale-100 data-open:opacity-100",
         "data-closed:scale-95 data-closed:opacity-0",
