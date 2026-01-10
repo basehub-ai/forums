@@ -926,6 +926,10 @@ export async function rerunLlmCommentsInPost(data: {
     throw new Error("Post not found")
   }
 
+  if (post.authorId !== session.user.id) {
+    throw new Error("Unauthorized: only the post author can re-run responses")
+  }
+
   if (!defaultLlm) {
     throw new Error("No default LLM user found")
   }

@@ -8,6 +8,7 @@ import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
 import { Tooltip } from "@/components/ui/tooltip"
 import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
+import { authClient } from "@/lib/auth-client"
 import { usePostMetadata } from "./post-metadata-context"
 
 function categorySlugify(title: string) {
@@ -145,7 +146,11 @@ function RefSelector() {
 }
 
 function StaleBanner() {
-  const { staleInfo, gitContext, owner, repo, postId } = usePostMetadata()
+  const { staleInfo, gitContext, owner, repo, postId, authorId } =
+    usePostMetadata()
+  const session = authClient.useSession()
+  const userId = session.data?.user.id
+  const isAuthor = userId === authorId
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -182,14 +187,16 @@ function StaleBanner() {
         </Link>
         .
       </span>
-      <button
-        className="shrink-0 bg-highlight-yellow px-1.5 py-0.5 text-white disabled:opacity-50 dark:text-black"
-        disabled={isPending}
-        onClick={handleRerun}
-        type="button"
-      >
-        {isPending ? "Re-running..." : "Re-run"}
-      </button>
+      {isAuthor && (
+        <button
+          className="shrink-0 bg-highlight-yellow px-1.5 py-0.5 text-white disabled:opacity-50 dark:text-black"
+          disabled={isPending}
+          onClick={handleRerun}
+          type="button"
+        >
+          {isPending ? "Re-running..." : "Re-run"}
+        </button>
+      )}
     </div>
   )
 }
