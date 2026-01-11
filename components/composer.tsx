@@ -107,6 +107,12 @@ export const Composer = ({
     onChange?.(saved || "")
   }, [storageKey, adjustTextareaHeight, onChange])
 
+  useEffect(() => {
+    if (autoFocus) {
+      textareaRef.current?.focus()
+    }
+  }, [autoFocus])
+
   return (
     <form
       className="group flex flex-col bg-shade/10 outline-dotted outline-2 outline-muted -outline-offset-1 focus-within:bg-shade/30 focus-within:outline-dashed"

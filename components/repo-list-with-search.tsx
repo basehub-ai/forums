@@ -68,11 +68,16 @@ export function RepoListWithSearch({
   const [minHeight, setMinHeight] = useState<number | undefined>(undefined)
   const abortControllerRef = useRef<AbortController | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (containerRef.current && minHeight === undefined) {
       setMinHeight(containerRef.current.offsetHeight)
     }
+  }, [])
+
+  useEffect(() => {
+    inputRef.current?.focus()
   }, [])
 
   useEffect(() => {
@@ -160,6 +165,7 @@ export function RepoListWithSearch({
             maxLength={56}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Search or paste a repo URL"
+            ref={inputRef}
             value={value}
           />
         </div>
