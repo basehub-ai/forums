@@ -104,7 +104,8 @@ export const Composer = ({
       textareaRef.current.value = saved
       adjustTextareaHeight()
     }
-  }, [storageKey, adjustTextareaHeight])
+    onChange?.(saved || "")
+  }, [storageKey, adjustTextareaHeight, onChange])
 
   return (
     <form
