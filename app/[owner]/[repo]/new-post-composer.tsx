@@ -35,7 +35,7 @@ export function NewPostComposer({
       onAskingChange={(asking) => {
         localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
       }}
-      onSubmit={async ({ value, options }) => {
+      onSubmit={async ({ value, visibility, options }) => {
         const result = await createPost({
           owner,
           repo,
@@ -46,6 +46,7 @@ export function NewPostComposer({
           },
           seekingAnswerFrom: options.asking.id,
           categoryId,
+          visibility: visibility === "private" ? "private" : null,
         })
         router.push(`/${owner}/${repo}/${result.postNumber}`)
       }}
@@ -53,6 +54,7 @@ export function NewPostComposer({
         asking: askingOptions,
       }}
       placeholder="Ask or search"
+      showVisibility
       storageKey={`new-post-composer:${owner}:${repo}`}
     />
   )

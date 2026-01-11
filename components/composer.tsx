@@ -12,6 +12,10 @@ import {
   useTransition,
 } from "react"
 import { Menu } from "@/components/ui/menu"
+import {
+  type Visibility,
+  VisibilitySelector,
+} from "@/components/visibility-selector"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
@@ -31,6 +35,7 @@ export type ComposerProps = {
   }
   onSubmit: (params: {
     value: string
+    visibility: Visibility
     options: {
       [K in keyof ComposerProps["options"]]: ComposerProps["options"][K][number]
     }
@@ -39,6 +44,7 @@ export type ComposerProps = {
   defaultAskingId?: string
   onAskingChange?: (asking: ComposerProps["options"]["asking"][number]) => void
   onChange?: (value: string) => void
+  showVisibility?: boolean
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -52,6 +58,7 @@ export const Composer = ({
   defaultAskingId,
   onAskingChange,
   onChange,
+  showVisibility = false,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth } = authClient.useSession()
@@ -73,6 +80,7 @@ export const Composer = ({
   })
   const [defaultAskingIdSet, setDefaultAskingIdSet] = useState(false)
   const [isScrollable, setIsScrollable] = useState(false)
+  const [visibility, setVisibility] = useState<Visibility>("public")
 
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
@@ -118,7 +126,7 @@ export const Composer = ({
           return
         }
         startTransition(async () => {
-          await onSubmit({ value, options: { asking: selectedAsking } })
+          await onSubmit({ value, visibility, options: { asking: selectedAsking } })
             .then(() => {
               form.reset()
               sessionStorage.removeItem(storageKey)
@@ -126,6 +134,7 @@ export const Composer = ({
                 textareaRef.current.style.height = "auto"
               }
               setIsScrollable(false)
+              setVisibility("public")
             })
             .catch((e) => {
               console.error(e)
@@ -258,36 +267,45 @@ export const Composer = ({
             )}
           </Suspense>
         </div>
-        <Button
-          className="cursor-pointer"
-          disabled={
-            isPending ||
-            (isSignedIn &&
-              selectedAsking.id !== "human" &&
-              creditBalance < (selectedAsking.isProModel ? 5 : 1))
-          }
-          onClick={
-            isSignedIn
-              ? undefined
-              : () => {
-                  startTransition(async () => {
-                    await authClient.signIn.social({
-                      provider: "github",
-                      callbackURL: pathname,
+        <div className="flex items-center gap-2">
+          {showVisibility && isSignedIn && (
+            <VisibilitySelector
+              disabled={isPending}
+              onChange={setVisibility}
+              value={visibility}
+            />
+          )}
+          <Button
+            className="cursor-pointer"
+            disabled={
+              isPending ||
+              (isSignedIn &&
+                selectedAsking.id !== "human" &&
+                creditBalance < (selectedAsking.isProModel ? 5 : 1))
+            }
+            onClick={
+              isSignedIn
+                ? undefined
+                : () => {
+                    startTransition(async () => {
+                      await authClient.signIn.social({
+                        provider: "github",
+                        callbackURL: pathname,
+                      })
                     })
-                  })
-                }
-          }
-          type={isSignedIn ? "submit" : "button"}
-        >
-          {isSignedIn
-            ? isPending
-              ? "Posting..."
-              : "Post"
-            : isPending
-              ? "Logging in..."
-              : "Log In"}
-        </Button>
+                  }
+            }
+            type={isSignedIn ? "submit" : "button"}
+          >
+            {isSignedIn
+              ? isPending
+                ? "Posting..."
+                : "Post"
+              : isPending
+                ? "Logging in..."
+                : "Log In"}
+          </Button>
+        </div>
       </div>
     </form>
   )

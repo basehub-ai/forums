@@ -67,6 +67,7 @@ export function PostComposer({
         }}
         options={{ asking: askingOptions }}
         placeholder="Follow up"
+        showVisibility={false}
         storageKey={`post-composer:${postId}:${threadCommentId ?? "main"}`}
       />
     </div>

@@ -74,6 +74,7 @@ export default async function RepoPage({
         authorUsername: comments.authorUsername,
         rootCommentId: posts.rootCommentId,
         createdAt: posts.createdAt,
+        visibility: posts.visibility,
         commentCount: sql<number>`(
           SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
         )`.as("comment_count"),

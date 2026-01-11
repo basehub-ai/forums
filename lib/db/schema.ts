@@ -18,6 +18,8 @@ export const posts = p.pgTable(
 
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: p.bigint("updated_at", { mode: "number" }).notNull(),
+
+    visibility: p.varchar({ length: 32 }).$type<"private" | null>(),
   },
   (table) => [
     p
@@ -27,6 +29,7 @@ export const posts = p.pgTable(
       .index("idx_posts_owner_repo")
       .on(table.owner, table.repo, table.id.desc()),
     p.index("idx_posts_author").on(table.authorId),
+    p.index("idx_posts_visibility").on(table.visibility),
   ]
 )
 

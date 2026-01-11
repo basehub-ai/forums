@@ -1,7 +1,7 @@
 "use client"
 
 import type { InferSelectModel } from "drizzle-orm"
-import { AsteriskIcon, SparklesIcon } from "lucide-react"
+import { AsteriskIcon, LockIcon, SparklesIcon } from "lucide-react"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { RelativeTime } from "@/components/relative-time"
@@ -23,6 +23,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  visibility: "private" | null
   commentCount: number
   reactionCount: number
 }
@@ -225,10 +226,17 @@ function LatestPosts({
                 className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                 href={`/${owner}/${repo}/${post.number}`}
               >
-                <AsteriskIcon
-                  className="mt-0.5 shrink-0 text-faint"
-                  size={16}
-                />
+                {post.visibility === "private" ? (
+                  <LockIcon
+                    className="mt-0.5 shrink-0 text-faint"
+                    size={16}
+                  />
+                ) : (
+                  <AsteriskIcon
+                    className="mt-0.5 shrink-0 text-faint"
+                    size={16}
+                  />
+                )}
                 <span className="truncate leading-none group-hover:text-bright">
                   {post.title || `Post #${post.number}`}
                 </span>

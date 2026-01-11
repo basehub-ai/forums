@@ -165,6 +165,7 @@ export async function createPost(data: {
   content: AgentUIMessage
   seekingAnswerFrom?: string | null
   categoryId?: string
+  visibility?: "private" | null
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
@@ -215,6 +216,7 @@ export async function createPost(data: {
             authorId: session.user.id,
             rootCommentId: commentId,
             categoryId: data.categoryId,
+            visibility: data.visibility,
             createdAt: now,
             updatedAt: now,
           })
@@ -290,8 +292,12 @@ export async function createPost(data: {
     .map((p) => p.text)
     .join("\n\n")
 
-  // Index post first so category agent can update it
-  await indexPost(newPost, 1)
+  const isPrivate = data.visibility === "private"
+
+  // Index post first so category agent can update it (skip for private posts)
+  if (!isPrivate) {
+    await indexPost(newPost, 1)
+  }
 
   if (contentText) {
     await runCategoryAgent({
@@ -303,25 +309,28 @@ export async function createPost(data: {
     })
   }
 
-  waitUntil(
-    (async () => {
-      const [comment] = await db
-        .select()
-        .from(comments)
-        .where(eq(comments.id, commentId))
-        .limit(1)
-      if (comment) {
-        await indexComment(
-          comment,
-          data.owner,
-          data.repo,
-          newPost.number,
-          newPost.categoryId,
-          true
-        )
-      }
-    })()
-  )
+  // Skip indexing comments for private posts
+  if (!isPrivate) {
+    waitUntil(
+      (async () => {
+        const [comment] = await db
+          .select()
+          .from(comments)
+          .where(eq(comments.id, commentId))
+          .limit(1)
+        if (comment) {
+          await indexComment(
+            comment,
+            data.owner,
+            data.repo,
+            newPost.number,
+            newPost.categoryId,
+            true
+          )
+        }
+      })()
+    )
+  }
 
   waitUntil(
     createMentions({

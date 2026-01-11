@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, TagIcon } from "lucide-react"
+import { ChevronRight, LockIcon, TagIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { type ReactNode, useTransition } from "react"
@@ -24,7 +24,8 @@ export function PostHeader({
   repo: string
   postNumber: number
 }) {
-  const { title, category, gitContext, archivedRefs } = usePostMetadata()
+  const { title, category, gitContext, archivedRefs, visibility } =
+    usePostMetadata()
   const hasArchivedRefs = archivedRefs.length > 0
 
   return (
@@ -50,14 +51,22 @@ export function PostHeader({
         )}
       </div>
 
-      {typeof title === "string" ? (
-        <Title className="mt-1">{title || `Post #${postNumber}`}</Title>
-      ) : (
-        <h1 className="relative mt-1 overflow-hidden font-medium text-2xl text-muted-foreground">
-          <span>Generating title...</span>
-          <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent" />
-        </h1>
-      )}
+      <div className="mt-1 flex items-center gap-2">
+        {typeof title === "string" ? (
+          <Title>{title || `Post #${postNumber}`}</Title>
+        ) : (
+          <h1 className="relative overflow-hidden font-medium text-2xl text-muted-foreground">
+            <span>Generating title...</span>
+            <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent" />
+          </h1>
+        )}
+        {visibility === "private" && (
+          <span className="flex items-center gap-1 bg-faint px-1.5 py-0.5 font-medium text-background text-xs uppercase">
+            <LockIcon className="size-3" />
+            Private
+          </span>
+        )}
+      </div>
 
       {gitContext ? (
         <div className="mt-2 flex items-center gap-4 text-sm">

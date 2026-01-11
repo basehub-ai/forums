@@ -2,9 +2,10 @@
 
 import type { InferSelectModel } from "drizzle-orm"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Composer, type ComposerProps } from "@/components/composer"
 import { createPost } from "@/lib/actions/posts"
+import { authClient } from "@/lib/auth-client"
 import type { categories } from "@/lib/db/schema"
 import { RepoPostsSection } from "./repo-posts-section"
 
@@ -19,6 +20,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  visibility: "private" | null
   commentCount: number
   reactionCount: number
 }
@@ -45,6 +47,8 @@ export function RepoContent({
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [defaultLlmId, setDefaultLlmId] = useState<string | undefined>()
+  const { data: auth } = authClient.useSession()
+  const userId = auth?.user?.id
 
   useEffect(() => {
     const saved = localStorage.getItem(PREFERRED_LLM_KEY)
@@ -52,6 +56,13 @@ export function RepoContent({
       setDefaultLlmId(saved)
     }
   }, [askingOptions])
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      if (post.visibility !== "private") return true
+      return userId && post.authorId === userId
+    })
+  }, [posts, userId])
 
   return (
     <>
@@ -63,7 +74,7 @@ export function RepoContent({
             localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
           }}
           onChange={setSearchQuery}
-          onSubmit={async ({ value, options }) => {
+          onSubmit={async ({ value, visibility, options }) => {
             const result = await createPost({
               owner,
               repo,
@@ -74,6 +85,7 @@ export function RepoContent({
               },
               seekingAnswerFrom: options.asking.id,
               categoryId,
+              visibility: visibility === "private" ? "private" : null,
             })
             router.push(`/${owner}/${repo}/${result.postNumber}`)
           }}
@@ -81,6 +93,7 @@ export function RepoContent({
             asking: askingOptions,
           }}
           placeholder="Ask or search"
+          showVisibility
           storageKey={`new-post-composer:${owner}:${repo}`}
         />
       </div>
@@ -89,7 +102,7 @@ export function RepoContent({
         categoriesById={categoriesById}
         categoryId={categoryId}
         owner={owner}
-        posts={posts}
+        posts={filteredPosts}
         repo={repo}
         searchQuery={searchQuery}
       />
