@@ -3,6 +3,7 @@ import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
 import { join } from "path"
+import { gitHubUserLoader } from "@/lib/auth"
 import { getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
         title: posts.title,
         number: posts.number,
         rootCommentId: posts.rootCommentId,
+        authorId: posts.authorId,
       })
       .from(posts)
       .where(
@@ -63,6 +65,10 @@ export async function GET(request: NextRequest) {
     geistMonoBold,
   ])
 
+  const author = post?.authorId
+    ? await gitHubUserLoader.load(post.authorId)
+    : null
+
   const title = post?.title || `Post #${postNumber}`
   const body = post?.rootCommentId
     ? await getRootCommentText(post.rootCommentId)
@@ -76,69 +82,103 @@ export async function GET(request: NextRequest) {
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "flex-start",
+        justifyContent: "space-between",
         backgroundColor: "#fafafa",
         padding: 60,
-        gap: 32,
         fontFamily: "Geist Mono",
       }}
     >
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt="Forums"
-          height={40}
-          src={`${getSiteOrigin()}/icon.svg`}
-          width={40}
-        />
-        <span
-          style={{
-            fontSize: 36,
-            color: "#71717a",
-          }}
-        >
-          {`${owner}/${repo}`}
-        </span>
-      </div>
-      <div
-        style={{
-          display: "flex",
           flexDirection: "column",
-          gap: 24,
+          gap: 32,
         }}
       >
         <div
           style={{
-            fontSize: 64,
-            fontWeight: 600,
-            color: "#09090b",
-            lineHeight: 1.2,
-            maxWidth: 1080,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
           }}
         >
-          {title}
-        </div>
-        {body && (
-          <div
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt="Forums"
+            height={40}
+            src={`${getSiteOrigin()}/icon.svg`}
+            width={40}
+          />
+          <span
             style={{
               fontSize: 36,
-              color: "#52525b",
-              lineHeight: 1.5,
-              maxWidth: 1080,
-              display: "block",
-              lineClamp: 3,
+              color: "#71717a",
             }}
           >
-            {body}
+            {`${owner}/${repo}`}
+          </span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 64,
+              fontWeight: 600,
+              color: "#09090b",
+              lineHeight: 1.2,
+              maxWidth: 1080,
+            }}
+          >
+            {title}
           </div>
-        )}
+          {body && (
+            <div
+              style={{
+                fontSize: 36,
+                color: "#52525b",
+                lineHeight: 1.5,
+                maxWidth: 1080,
+                display: "block",
+                lineClamp: 2,
+              }}
+            >
+              {body}
+            </div>
+          )}
+        </div>
       </div>
+      {author && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+          }}
+        >
+          {author.image && (
+            <img
+              alt={author.name || post.authorId}
+              height={48}
+              src={author.image}
+              style={{ borderRadius: 24 }}
+              width={48}
+            />
+          )}
+          <span
+            style={{
+              fontSize: 28,
+              color: "#71717a",
+            }}
+          >
+            {`@${post.authorId}`}
+          </span>
+        </div>
+      )}
     </div>,
     {
       ...size,
