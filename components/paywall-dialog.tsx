@@ -36,6 +36,7 @@ function PaywallDialogContent() {
       <div className="flex items-center justify-between pt-2">
         <span className="text-muted text-sm">$10/month</span>
         <Button
+          className="cursor-pointer"
           onClick={async () => {
             await checkout({
               productId: "pro_plan",
