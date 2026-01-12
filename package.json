@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vercel env run -- next dev",
-    "build": "vercel env run -- next build",
+    "build": "next build",
     "start": "next start",
     "test": "vercel env run -- bun test",
     "lint": "ultracite fix",
