@@ -160,8 +160,8 @@ const User = async () => {
       <CreditWarning />
       <BillingButton isProUser={isProUser} />
       <UserDropdown
-        email={dbUser?.email}
-        name={dbUser?.name}
+        email={dbUser?.email ?? data.user.email}
+        name={dbUser?.name ?? data.user.name}
         userImage={dbUser?.image ?? ""}
         username={dbUser?.username ?? ""}
       />
