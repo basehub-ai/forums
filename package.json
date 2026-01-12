@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bun with-env.ts next dev",
-    "build": "next build",
+    "dev": "vercel env run -- next dev",
+    "build": "vercel env run -- next build",
     "start": "next start",
-    "test": "bun with-env.ts bun test",
+    "test": "vercel env run -- bun test",
     "lint": "ultracite fix",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=./lib/db/schema.ts --out=./lib/db/migrations"
