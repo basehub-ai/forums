@@ -129,7 +129,7 @@ export const Composer = ({
       <textarea
         autoFocus={autoFocus}
         className={cn(
-          "no-focus min-h-27 w-full resize-none bg-transparent p-3 text-base text-bright outline-none sm:min-h-20 sm:text-sm",
+          "no-focus min-h-27 w-full resize-none bg-transparent p-3 text-base text-dim outline-none placeholder:text-faint sm:min-h-20 sm:text-sm",
           isScrollable && "scroll-pb-3"
         )}
         name="message"
@@ -168,123 +168,145 @@ export const Composer = ({
       ) : (
         <div
           className={cn(
-            "flex w-full animate-fade-in flex-col gap-3 px-3 py-3 sm:flex-row sm:items-end sm:justify-between",
+            "flex w-full animate-fade-in flex-col gap-2 px-3 py-3",
             isScrollable &&
               "border-muted border-t-2 border-dotted group-focus-within:border-dashed"
           )}
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {isSignedIn &&
-              selectedAsking.id !== "human" &&
-              (() => {
-                const requiredCredits = selectedAsking.isProModel ? 5 : 1
-                const hasEnoughCredits = creditBalance >= requiredCredits
-                if (!hasEnoughCredits) {
-                  if (creditBalance === 0) {
-                    return (
-                      <span className="text-red-500 text-xs sm:order-last">
-                        Out of credits
-                      </span>
-                    )
-                  }
-                  return (
-                    <span className="text-red-500 text-xs sm:order-last">
-                      Not enough credits for this model
-                    </span>
-                  )
-                }
-                return null
-              })()}
-            {isSignedIn ? (
-              <Menu.Root>
-                <Menu.Trigger
+          <div className="flex flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {isSignedIn ? (
+                <Menu.Root>
+                  <Menu.Trigger
+                    className={cn(
+                      "group h-9 justify-between bg-transparent px-3 text-faint text-sm transition-none hover:bg-accent/10 hover:text-accent hover:no-underline active:text-dim data-popup-open:bg-accent/10 data-popup-open:text-accent sm:w-auto"
+                    )}
+                  >
+                    {selectedAsking.name}
+                    <ChevronDownIcon
+                      absoluteStrokeWidth
+                      className="ml-1 size-4 group-data-popup-open:rotate-180"
+                    />
+                  </Menu.Trigger>
+                  <Menu.Popup>
+                    {options.asking.map((asking) => {
+                      const isDisabled = asking.isProModel && !isProUser
+                      return (
+                        <Menu.Item
+                          className={
+                            isDisabled
+                              ? "cursor-not-allowed opacity-50"
+                              : undefined
+                          }
+                          key={asking.id}
+                          onClick={() => {
+                            if (isDisabled) {
+                              setPaywallOpen(true)
+                              return
+                            }
+                            setSelectedAsking(asking)
+                            onAskingChange?.(asking)
+                          }}
+                        >
+                          {asking.name}
+                          {asking.isProModel && (
+                            <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
+                              PRO
+                            </span>
+                          )}
+                        </Menu.Item>
+                      )
+                    })}
+                  </Menu.Popup>
+                </Menu.Root>
+              ) : (
+                <span
                   className={cn(
                     buttonVariants({ variant: "tertiary" }),
-                    "group w-full justify-between hover:text-label hover:no-underline active:text-label data-popup-open:text-label sm:w-auto"
+                    "w-full cursor-not-allowed justify-between opacity-50 sm:w-auto"
                   )}
                 >
                   {selectedAsking.name}
-                  <ChevronDownIcon
-                    absoluteStrokeWidth
-                    className="size-4 group-data-popup-open:rotate-180"
-                  />
-                </Menu.Trigger>
-                <Menu.Popup>
-                  {options.asking.map((asking) => {
-                    const isDisabled = asking.isProModel && !isProUser
-                    return (
-                      <Menu.Item
-                        className={
-                          isDisabled
-                            ? "cursor-not-allowed opacity-50"
-                            : undefined
-                        }
-                        key={asking.id}
-                        onClick={() => {
-                          if (isDisabled) {
-                            setPaywallOpen(true)
-                            return
-                          }
-                          setSelectedAsking(asking)
-                          onAskingChange?.(asking)
-                        }}
-                      >
-                        {asking.name}
-                        {asking.isProModel && (
-                          <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
-                            PRO
-                          </span>
-                        )}
-                      </Menu.Item>
-                    )
-                  })}
-                </Menu.Popup>
-              </Menu.Root>
-            ) : (
-              <span
-                className={cn(
-                  buttonVariants({ variant: "tertiary" }),
-                  "w-full cursor-not-allowed justify-between opacity-50 sm:w-auto"
-                )}
-              >
-                {selectedAsking.name}
-                <ChevronDownIcon className="h-3 w-3 opacity-50" />
-              </span>
-            )}
+                  <ChevronDownIcon className="h-3 w-3 opacity-50" />
+                </span>
+              )}
+              {isSignedIn && selectedAsking.id !== "human" && (
+                <CreditWarning
+                  className="hidden sm:block"
+                  creditBalance={creditBalance}
+                  selectedAsking={selectedAsking}
+                />
+              )}
+            </div>
+            <Button
+              className="cursor-pointer"
+              disabled={
+                isPending ||
+                (isSignedIn &&
+                  selectedAsking.id !== "human" &&
+                  creditBalance < (selectedAsking.isProModel ? 5 : 1))
+              }
+              onClick={
+                isSignedIn
+                  ? undefined
+                  : () => {
+                      startTransition(async () => {
+                        await authClient.signIn.social({
+                          provider: "github",
+                          callbackURL: pathname,
+                        })
+                      })
+                    }
+              }
+              type={isSignedIn ? "submit" : "button"}
+            >
+              {isSignedIn
+                ? isPending
+                  ? "Posting..."
+                  : "Post"
+                : isPending
+                  ? "Logging in..."
+                  : "Log In"}
+            </Button>
           </div>
 
-          <Button
-            className="cursor-pointer"
-            disabled={
-              isPending ||
-              (isSignedIn &&
-                selectedAsking.id !== "human" &&
-                creditBalance < (selectedAsking.isProModel ? 5 : 1))
-            }
-            onClick={
-              isSignedIn
-                ? undefined
-                : () => {
-                    startTransition(async () => {
-                      await authClient.signIn.social({
-                        provider: "github",
-                        callbackURL: pathname,
-                      })
-                    })
-                  }
-            }
-            type={isSignedIn ? "submit" : "button"}
-          >
-            {isSignedIn
-              ? isPending
-                ? "Posting..."
-                : "Post"
-              : isPending
-                ? "Logging in..."
-                : "Log In"}
-          </Button>
+          {isSignedIn && selectedAsking.id !== "human" && (
+            <CreditWarning
+              className="w-full text-center sm:hidden"
+              creditBalance={creditBalance}
+              selectedAsking={selectedAsking}
+            />
+          )}
         </div>
       )}
     </form>
   )
+}
+
+const CreditWarning = ({
+  selectedAsking,
+  creditBalance,
+  className,
+}: {
+  selectedAsking: AskingOption
+  creditBalance: number
+  className?: string
+}) => {
+  const requiredCredits = selectedAsking.isProModel ? 5 : 1
+  const hasEnoughCredits = creditBalance >= requiredCredits
+  if (!hasEnoughCredits) {
+    if (creditBalance === 0) {
+      return (
+        <span className={cn("text-red-500 text-xs", className)}>
+          Out of credits
+        </span>
+      )
+    }
+    return (
+      <span className={cn("text-red-500 text-xs", className)}>
+        Not enough credits for this model
+      </span>
+    )
+  }
+  return null
 }
