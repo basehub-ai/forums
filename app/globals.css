@@ -209,3 +209,12 @@ svg tspan {
   cursor: default;
   user-select: none;
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

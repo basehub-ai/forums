@@ -8,8 +8,8 @@ import {
   TableCellText,
   TableColumnTitle,
 } from "@/components/typography"
+import { UserAvatar } from "@/components/user-avatar"
 import type { categories } from "@/lib/db/schema"
-import { AuthorAvatar } from "./author-avatar"
 
 type PostListItem = {
   id: string
@@ -73,7 +73,9 @@ export function ActivePosts({
                 <div className="flex shrink-0 items-center">
                   <TableCellText className="w-(--col-w-by)">
                     {!!post.authorUsername && (
-                      <AuthorAvatar username={post.authorUsername} />
+                      <Link href={`/user/${post.authorUsername}`}>
+                        <UserAvatar username={post.authorUsername} />
+                      </Link>
                     )}
                   </TableCellText>
                   <TableCellText className="w-(--col-w-created) text-end">

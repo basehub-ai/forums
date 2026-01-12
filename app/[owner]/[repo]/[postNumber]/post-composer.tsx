@@ -1,6 +1,7 @@
 "use client"
 
 import { Composer } from "@/components/composer"
+import { UserAvatar } from "@/components/user-avatar"
 import { createComment } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -36,13 +37,9 @@ export function PostComposer({
         )}
       >
         <div className="inline-flex items-center gap-2 font-semibold text-bright text-sm">
-          {data ? (
+          {data?.user?.image && data?.user?.username ? (
             <>
-              <img
-                alt={`Avatar of ${data.user.name}`}
-                className="size-6 rounded-full"
-                src={data.user.image || ""}
-              />
+              <UserAvatar src={data.user.image} username={data.user.username} />
               Add a comment
             </>
           ) : (
