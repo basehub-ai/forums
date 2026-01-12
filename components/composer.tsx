@@ -48,7 +48,7 @@ export const Composer = ({
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
-  const isSignedIn = !!auth?.session.userId && !isAuthLoading
+  const isSignedIn = !!auth?.session?.userId && !isAuthLoading
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
