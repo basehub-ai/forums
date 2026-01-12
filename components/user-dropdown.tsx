@@ -39,7 +39,7 @@ export const UserDropdown = ({
 
   return (
     <Menu.Root onOpenChange={setOpen} open={open}>
-      <Menu.Trigger className="group flex cursor-pointer items-center gap-1 px-1">
+      <Menu.Trigger className="group flex animate-fade-in cursor-pointer items-center gap-1 px-1">
         <UserAvatar src={userImage} username={username} />
         <span className="select-none uppercase group-hover:underline">
           {initials}

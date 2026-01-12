@@ -3,14 +3,7 @@
 import { useCustomer } from "autumn-js/react"
 import { ChevronDownIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react"
+import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
@@ -54,12 +47,12 @@ export const Composer = ({
   onChange,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { data: auth } = authClient.useSession()
-  const isSignedIn = !!auth?.session
+  const { data: auth, isPending: isAuthLoading } = authClient.useSession()
+  const isSignedIn = !!auth?.session.userId && !isAuthLoading
   const [isPending, startTransition] = useTransition()
   const pathname = usePathname()
   const setPaywallOpen = useDialogStore((s) => s.setPaywallOpen)
-  const { customer, check } = useCustomer()
+  const { customer, check, isLoading: isCustomerLoading } = useCustomer()
   const isProUser = check({ productId: "pro_plan" }).data.allowed
   const creditBalance = customer?.features?.standard_credits?.balance ?? 0
   const [selectedAsking, setSelectedAsking] = useState<AskingOption>(() => {
@@ -136,7 +129,7 @@ export const Composer = ({
       <textarea
         autoFocus={autoFocus}
         className={cn(
-          "no-focus min-h-[6.75rem] w-full resize-none bg-transparent p-3 text-base text-bright outline-none sm:min-h-20 sm:text-sm",
+          "no-focus min-h-27 w-full resize-none bg-transparent p-3 text-base text-bright outline-none sm:min-h-20 sm:text-sm",
           isScrollable && "scroll-pb-3"
         )}
         name="message"
@@ -170,36 +163,38 @@ export const Composer = ({
         required
       />
 
-      <div
-        className={cn(
-          "flex w-full flex-col gap-3 px-3 py-3 sm:flex-row sm:items-end sm:justify-between",
-          isScrollable &&
-            "border-muted border-t-2 border-dotted group-focus-within:border-dashed"
-        )}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {isSignedIn &&
-            selectedAsking.id !== "human" &&
-            (() => {
-              const requiredCredits = selectedAsking.isProModel ? 5 : 1
-              const hasEnoughCredits = creditBalance >= requiredCredits
-              if (!hasEnoughCredits) {
-                if (creditBalance === 0) {
+      {isAuthLoading || isCustomerLoading ? (
+        <div className="h-27 sm:h-15" />
+      ) : (
+        <div
+          className={cn(
+            "flex w-full animate-fade-in flex-col gap-3 px-3 py-3 sm:flex-row sm:items-end sm:justify-between",
+            isScrollable &&
+              "border-muted border-t-2 border-dotted group-focus-within:border-dashed"
+          )}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {isSignedIn &&
+              selectedAsking.id !== "human" &&
+              (() => {
+                const requiredCredits = selectedAsking.isProModel ? 5 : 1
+                const hasEnoughCredits = creditBalance >= requiredCredits
+                if (!hasEnoughCredits) {
+                  if (creditBalance === 0) {
+                    return (
+                      <span className="text-red-500 text-xs sm:order-last">
+                        Out of credits
+                      </span>
+                    )
+                  }
                   return (
                     <span className="text-red-500 text-xs sm:order-last">
-                      Out of credits
+                      Not enough credits for this model
                     </span>
                   )
                 }
-                return (
-                  <span className="text-red-500 text-xs sm:order-last">
-                    Not enough credits for this model
-                  </span>
-                )
-              }
-              return null
-            })()}
-          <Suspense fallback={null}>
+                return null
+              })()}
             {isSignedIn ? (
               <Menu.Root>
                 <Menu.Trigger
@@ -256,39 +251,40 @@ export const Composer = ({
                 <ChevronDownIcon className="h-3 w-3 opacity-50" />
               </span>
             )}
-          </Suspense>
-        </div>
-        <Button
-          className="cursor-pointer"
-          disabled={
-            isPending ||
-            (isSignedIn &&
-              selectedAsking.id !== "human" &&
-              creditBalance < (selectedAsking.isProModel ? 5 : 1))
-          }
-          onClick={
-            isSignedIn
-              ? undefined
-              : () => {
-                  startTransition(async () => {
-                    await authClient.signIn.social({
-                      provider: "github",
-                      callbackURL: pathname,
+          </div>
+
+          <Button
+            className="cursor-pointer"
+            disabled={
+              isPending ||
+              (isSignedIn &&
+                selectedAsking.id !== "human" &&
+                creditBalance < (selectedAsking.isProModel ? 5 : 1))
+            }
+            onClick={
+              isSignedIn
+                ? undefined
+                : () => {
+                    startTransition(async () => {
+                      await authClient.signIn.social({
+                        provider: "github",
+                        callbackURL: pathname,
+                      })
                     })
-                  })
-                }
-          }
-          type={isSignedIn ? "submit" : "button"}
-        >
-          {isSignedIn
-            ? isPending
-              ? "Posting..."
-              : "Post"
-            : isPending
-              ? "Logging in..."
-              : "Log In"}
-        </Button>
-      </div>
+                  }
+            }
+            type={isSignedIn ? "submit" : "button"}
+          >
+            {isSignedIn
+              ? isPending
+                ? "Posting..."
+                : "Post"
+              : isPending
+                ? "Logging in..."
+                : "Log In"}
+          </Button>
+        </div>
+      )}
     </form>
   )
 }

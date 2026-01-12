@@ -218,3 +218,7 @@ svg tspan {
     opacity: 1;
   }
 }
+
+@utility animate-fade-in {
+  animation: fade-in 150ms ease-out;
+}

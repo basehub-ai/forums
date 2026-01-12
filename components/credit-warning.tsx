@@ -16,7 +16,7 @@ export function CreditWarning() {
   }
 
   return (
-    <span className="text-red-500 text-xs">
+    <span className="animate-fade-in text-red-500 text-xs">
       {balance} credit{balance !== 1 ? "s" : ""} left
     </span>
   )

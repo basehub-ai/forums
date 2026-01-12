@@ -156,7 +156,7 @@ const User = async () => {
   ])
 
   return (
-    <div className="flex animate-[fade-in_150ms_ease-out] items-center gap-x-2">
+    <div className="flex items-center gap-x-2">
       <CreditWarning />
       <BillingButton isProUser={isProUser} />
       <UserDropdown

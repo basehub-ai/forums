@@ -11,7 +11,7 @@ export default function BillingButton({ isProUser }: { isProUser: boolean }) {
   if (isProUser) {
     return (
       <Button
-        className="cursor-pointer"
+        className="animate-fade-in cursor-pointer"
         onClick={async () => {
           await openBillingPortal({
             returnUrl: window.location.href,
@@ -28,7 +28,7 @@ export default function BillingButton({ isProUser }: { isProUser: boolean }) {
 
   return (
     <Button
-      className="cursor-pointer"
+      className="animate-fade-in cursor-pointer"
       onClick={() => setPaywallOpen(true)}
       size="xs"
       type="button"
