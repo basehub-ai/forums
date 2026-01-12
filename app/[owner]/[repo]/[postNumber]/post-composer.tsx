@@ -1,6 +1,7 @@
 "use client"
 
 import { Composer } from "@/components/composer"
+import { UserAvatar } from "@/components/user-avatar"
 import { createComment } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
@@ -26,30 +27,33 @@ export function PostComposer({
   storageKey?: string
   defaultLlmId?: string
 }) {
-  const { data } = authClient.useSession()
+  const { data, isPending: isAuthLoading } = authClient.useSession()
 
   return (
     <div>
-      <div
-        className={cn(
-          "z-10 mb-4 flex h-8 items-center justify-between bg-shade px-2 py-1"
-        )}
-      >
-        <div className="inline-flex items-center gap-2 font-semibold text-bright text-sm">
-          {data ? (
-            <>
-              <img
-                alt={`Avatar of ${data.user.name}`}
-                className="size-6 rounded-full"
-                src={data.user.image || ""}
-              />
-              Add a comment
-            </>
-          ) : (
-            <>Log in to add a comment</>
+      {isAuthLoading ? (
+        <div className="mb-4 h-8" />
+      ) : (
+        <div
+          className={cn(
+            "z-10 mb-4 flex h-8 items-center justify-between bg-shade px-2 py-1"
           )}
+        >
+          <div className="inline-flex animate-fade-in items-center gap-2 font-semibold text-bright text-sm">
+            {data?.user?.image && data?.user?.username ? (
+              <>
+                <UserAvatar
+                  src={data.user.image}
+                  username={data.user.username}
+                />
+                Add a comment
+              </>
+            ) : (
+              <>Log in to add a comment</>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <Composer
         defaultAskingId={defaultLlmId}

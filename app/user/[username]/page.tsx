@@ -2,6 +2,7 @@ import { desc, eq, sql } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import type { Metadata } from "next"
 import { cacheTag } from "next/cache"
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Container } from "@/components/container"
@@ -166,10 +167,12 @@ export default async function UserProfilePage({
   return (
     <Container>
       <div className="mb-8 flex items-center gap-2.5">
-        <img
+        <Image
           alt={githubUser.name ?? username}
           className="h-14 w-14 rounded-full"
+          height={56}
           src={githubUser.image}
+          width={56}
         />
         <div className="flex flex-col gap-0.5">
           <Title>{githubUser.name ?? username}</Title>

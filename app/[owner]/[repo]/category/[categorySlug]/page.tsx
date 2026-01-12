@@ -130,13 +130,15 @@ export default async function CategoryPage({
 
       <RepoContent
         askingOptions={[
-          ...allLlmUsers.map((u) => ({
-            id: u.id,
-            name: u.name,
-            image: u.image,
-            isDefault: u.isDefault,
-            isProModel: u.billing_category === "pro",
-          })),
+          ...allLlmUsers
+            .map((u) => ({
+              id: u.id,
+              name: u.name,
+              image: u.image,
+              isDefault: u.isDefault,
+              isProModel: u.billing_category === "pro",
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
           { id: "human", name: "Human only" },
         ]}
         categoriesById={categoriesById}

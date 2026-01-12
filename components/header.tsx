@@ -8,7 +8,6 @@ import { auth } from "@/lib/auth"
 import { checkIsPro } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { user } from "@/lib/db/schema"
-import { Button } from "./button"
 import { Container } from "./container"
 import { SignInButton } from "./sign-in-button"
 import { UserDropdown } from "./user-dropdown"
@@ -126,13 +125,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-x-5">
-          <Suspense
-            fallback={
-              <Button disabled size="sm" type="button" variant="secondary">
-                Loading
-              </Button>
-            }
-          >
+          <Suspense>
             <User />
           </Suspense>
         </div>
@@ -144,8 +137,6 @@ export function Header() {
 const User = async () => {
   const data = await auth.api.getSession({ headers: await headers() })
 
-  // console.log(data)
-
   if (!data) {
     return <SignInButton />
   }
@@ -153,19 +144,27 @@ const User = async () => {
   const [isProUser, dbUser] = await Promise.all([
     checkIsPro(data.user.id),
     db
-      .select({ username: user.username })
+      .select({
+        name: user.name,
+        username: user.username,
+        image: user.image,
+        email: user.email,
+      })
       .from(user)
       .where(eq(user.id, data.user.id))
       .then((rows) => rows[0]),
   ])
 
-  // console.log(dbUser)
-
   return (
     <div className="flex items-center gap-x-2">
       <CreditWarning />
       <BillingButton isProUser={isProUser} />
-      <UserDropdown {...data} username={dbUser?.username ?? null} />
+      <UserDropdown
+        email={dbUser?.email ?? data.user.email}
+        name={dbUser?.name ?? data.user.name}
+        userImage={dbUser?.image ?? ""}
+        username={dbUser?.username ?? ""}
+      />
     </div>
   )
 }

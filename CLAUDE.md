@@ -14,6 +14,13 @@ sharp borders, simple typography, instant interactions. no animations on dropdow
 
 - next.js 16 app router with cache components enabled
 
+### use bun
+
+- use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
+- use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
+- use scripts over commands. for example, use `bun run test` instead of `bun test`
+- use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
+
 ## output format
 
 When reporting information to me, be extremely concise and sacrifice grammar for the sake of concision.

@@ -8,6 +8,7 @@ import { CopyLinkButton } from "@/components/copy-link-button"
 import { DeleteCommentButton } from "@/components/delete-comment-button"
 import { RelativeTime } from "@/components/relative-time"
 import { Tooltip } from "@/components/ui/tooltip"
+import { UserAvatar } from "@/components/user-avatar"
 import type {
   comments as commentsSchema,
   mentions as mentionsSchema,
@@ -90,11 +91,7 @@ function CommentItem({
           className="inline-flex items-center gap-2 font-semibold text-bright text-sm hover:underline"
           href={profileUrl}
         >
-          <img
-            alt={`Avatar of ${author.name}`}
-            className="size-6 rounded-full"
-            src={author.image}
-          />
+          <UserAvatar src={author.image} username={author.username} />
 
           {author.name}
         </Link>

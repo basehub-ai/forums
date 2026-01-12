@@ -4,6 +4,7 @@ import type { InferSelectModel } from "drizzle-orm"
 import { MessageCircleIcon } from "lucide-react"
 import Link from "next/link"
 import { RelativeTime } from "@/components/relative-time"
+import { UserAvatar } from "@/components/user-avatar"
 import type { mentions as mentionsSchema } from "@/lib/db/schema"
 
 type Mention = InferSelectModel<typeof mentionsSchema>
@@ -27,11 +28,7 @@ export function MentionBanner({
   return (
     <div className="flex items-center gap-2 text-muted-foreground text-sm">
       {author ? (
-        <img
-          alt={`Avatar of ${author.name}`}
-          className="size-5 rounded-full"
-          src={author.image}
-        />
+        <UserAvatar src={author.image} username={author.username} />
       ) : null}
       <span>
         <span className="font-medium text-bright">

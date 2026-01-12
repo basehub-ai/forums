@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Tooltip } from "@/components/ui/tooltip"
-import { formatRelativeTime } from "@/lib/utils"
+import { cn, formatRelativeTime } from "@/lib/utils"
 
 export function RelativeTime({
   timestamp,
@@ -22,10 +22,16 @@ export function RelativeTime({
     return () => clearInterval(interval)
   }, [timestamp])
 
+  if (!relativeTime) {
+    return null
+  }
+
   return (
     <Tooltip.Provider>
       <Tooltip.Root>
-        <Tooltip.Trigger className={className}>{relativeTime}</Tooltip.Trigger>
+        <Tooltip.Trigger className={cn(className, "animate-fade-in")}>
+          {relativeTime}
+        </Tooltip.Trigger>
         <Tooltip.Popup>{date.toISOString()}</Tooltip.Popup>
       </Tooltip.Root>
     </Tooltip.Provider>

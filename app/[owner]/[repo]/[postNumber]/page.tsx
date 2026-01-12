@@ -306,13 +306,15 @@ export default async function PostPage({
   const archivedRefs = (gitContexts?.slice(1) ?? []).map((g) => g.sha)
 
   const askingOptions = [
-    ...allLlmUsers.map((u) => ({
-      id: u.id,
-      name: u.name,
-      image: u.image,
-      isDefault: u.isDefault,
-      isProModel: u.billing_category === "pro",
-    })),
+    ...allLlmUsers
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        image: u.image,
+        isDefault: u.isDefault,
+        isProModel: u.billing_category === "pro",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     { id: "human", name: "Human only" },
   ]
 

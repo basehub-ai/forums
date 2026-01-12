@@ -1,23 +1,26 @@
 "use client"
 
 import { useCustomer } from "autumn-js/react"
-import type { Session, User } from "better-auth"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Menu } from "@/components/ui/menu"
 import { Meter } from "@/components/ui/meter"
+import { UserAvatar } from "@/components/user-avatar"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { formatRelativeTime } from "@/lib/utils"
 
 export const UserDropdown = ({
-  user,
+  name,
   username,
+  userImage,
+  email,
 }: {
-  user: User
-  session: Session
-  username: string | null
+  name: string
+  username: string
+  userImage: string
+  email: string
 }) => {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -26,7 +29,7 @@ export const UserDropdown = ({
   const isProUser = check({ productId: "pro_plan" }).data.allowed
   const hasCanceledPro =
     check({ productId: "pro_plan" }).data.status === "canceled"
-  const initials = user.name
+  const initials = name
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -36,47 +39,31 @@ export const UserDropdown = ({
 
   return (
     <Menu.Root onOpenChange={setOpen} open={open}>
-      <Menu.Trigger className="group flex cursor-pointer items-center gap-1 px-1">
-        <img
-          alt={user.name}
-          className="size-5 rounded-full"
-          src={user.image || ""}
-        />
+      <Menu.Trigger className="group flex animate-fade-in cursor-pointer items-center gap-1 px-1">
+        <UserAvatar src={userImage} username={username} />
         <span className="select-none uppercase group-hover:underline">
           {initials}
         </span>
       </Menu.Trigger>
       <Menu.Popup align="end">
-        {username ? (
+        {username && userImage ? (
           <Link
             className="flex items-center gap-2 px-2 py-1.5 hover:bg-foreground/5"
             href={`/user/${username}`}
             onClick={() => setOpen(false)}
           >
-            <img
-              alt={user.name}
-              className="size-8 rounded-full"
-              src={user.image || ""}
-            />
+            <UserAvatar size={32} src={userImage} username={username} />
             <div className="flex flex-col">
-              <span className="font-semibold text-dim text-sm">
-                {user.name}
-              </span>
+              <span className="font-semibold text-dim text-sm">{name}</span>
               <span className="text-xs">@{username}</span>
             </div>
           </Link>
         ) : (
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <img
-              alt={user.name}
-              className="size-8 rounded-full"
-              src={user.image || ""}
-            />
+            <UserAvatar size={32} src={userImage} username={username} />
             <div className="flex flex-col">
-              <span className="font-semibold text-dim text-sm">
-                {user.name}
-              </span>
-              <span className="text-xs">{user.email}</span>
+              <span className="font-semibold text-dim text-sm">{name}</span>
+              <span className="text-xs">{email}</span>
             </div>
           </div>
         )}

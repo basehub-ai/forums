@@ -2,6 +2,7 @@ import { desc, eq, sql } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import type { Metadata } from "next"
 import { cacheLife } from "next/cache"
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Container } from "@/components/container"
@@ -85,10 +86,12 @@ export default async function LlmProfilePage({
     <Container>
       <div className="mb-8 flex items-center gap-3">
         {!!llmUser.image && (
-          <img
+          <Image
             alt={llmUser.name}
-            className="h-12 w-12 rounded-full"
+            className="h-14 w-14 rounded-full"
+            height={56}
             src={llmUser.image}
+            width={56}
           />
         )}
         <div>
