@@ -3,11 +3,28 @@ import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
 import { join } from "path"
-import { gitHubUserLoader } from "@/lib/auth"
 import { getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
+
+async function fetchGitHubUser(username: string) {
+  const res = await fetch(`https://api.github.com/users/${username}`, {
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      ...(process.env.GITHUB_TOKEN && {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      }),
+    },
+  })
+  if (!res.ok) return null
+  const data = (await res.json()) as {
+    login: string
+    name: string | null
+    avatar_url: string
+  }
+  return { login: data.login, name: data.name || data.login, image: data.avatar_url }
+}
 
 const size = {
   width: 1200,
@@ -65,9 +82,7 @@ export async function GET(request: NextRequest) {
     geistMonoBold,
   ])
 
-  const author = post?.authorId
-    ? await gitHubUserLoader.load(post.authorId)
-    : null
+  const author = post?.authorId ? await fetchGitHubUser(post.authorId) : null
 
   const title = post?.title || `Post #${postNumber}`
   const body = post?.rootCommentId
