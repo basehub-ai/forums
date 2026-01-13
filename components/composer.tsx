@@ -4,11 +4,27 @@ import { useCustomer } from "autumn-js/react"
 import { ChevronDownIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
+import ClaudeIcon from "@/components/icons/claude"
+import GeminiIcon from "@/components/icons/gemini"
+import OpenAIIcon from "@/components/icons/openai"
 import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "./button"
+
+function getModelIcon(provider?: string) {
+  switch (provider?.toLowerCase()) {
+    case "anthropic":
+      return ClaudeIcon
+    case "google":
+      return GeminiIcon
+    case "openai":
+      return OpenAIIcon
+    default:
+      return null
+  }
+}
 
 export type ComposerProps = {
   placeholder: string
@@ -20,6 +36,7 @@ export type ComposerProps = {
       image?: string | null
       isDefault?: boolean
       isProModel?: boolean
+      provider?: string
     }[]
   }
   onSubmit: (params: {
@@ -182,6 +199,10 @@ export const Composer = ({
                       "group h-9 justify-between bg-transparent px-3 text-faint text-sm transition-none hover:bg-accent/10 hover:text-accent hover:no-underline active:text-dim data-popup-open:bg-accent/10 data-popup-open:text-accent sm:w-auto"
                     )}
                   >
+                    {(() => {
+                      const Icon = getModelIcon(selectedAsking.provider)
+                      return Icon ? <Icon className="mr-1 size-4" /> : null
+                    })()}
                     {selectedAsking.name}
                     <ChevronDownIcon
                       absoluteStrokeWidth
@@ -226,6 +247,10 @@ export const Composer = ({
                     "w-full cursor-not-allowed justify-between opacity-50 sm:w-auto"
                   )}
                 >
+                  {(() => {
+                    const Icon = getModelIcon(selectedAsking.provider)
+                    return Icon ? <Icon className="size-4" /> : null
+                  })()}
                   {selectedAsking.name}
                   <ChevronDownIcon className="h-3 w-3 opacity-50" />
                 </span>

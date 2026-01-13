@@ -313,6 +313,7 @@ export default async function PostPage({
         image: u.image,
         isDefault: u.isDefault,
         isProModel: u.billing_category === "pro",
+        provider: u.provider,
       }))
       .sort((a, b) => a.name.localeCompare(b.name)),
     { id: "human", name: "Human only" },
