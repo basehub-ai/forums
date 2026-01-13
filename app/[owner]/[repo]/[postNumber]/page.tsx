@@ -121,8 +121,6 @@ export default async function PostPage({
 }: {
   params: Promise<{ owner: string; repo: string; postNumber: string }>
 }) {
-  "use cache"
-
   const { postNumber: postNumberStr, owner, repo } = await params
 
   if (postNumberStr.endsWith(".md") || postNumberStr.endsWith(".txt")) {
@@ -135,6 +133,26 @@ export default async function PostPage({
   if (Number.isNaN(postNumber)) {
     notFound()
   }
+
+  // Check post exists before cache boundary
+  const post = await getPostByNumber(owner, repo, postNumber)
+  if (!post) {
+    notFound()
+  }
+
+  return <PostPageContent owner={owner} postNumber={postNumber} repo={repo} />
+}
+
+async function PostPageContent({
+  owner,
+  repo,
+  postNumber,
+}: {
+  owner: string
+  repo: string
+  postNumber: number
+}) {
+  "use cache"
 
   const [
     postWithCategory,
@@ -224,11 +242,8 @@ export default async function PostPage({
       .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
   ])
 
-  if (!postWithCategory) {
-    notFound()
-  }
-
-  const { category, gitContexts, ...post } = postWithCategory
+  // Post existence already verified before cache boundary
+  const { category, gitContexts, ...post } = postWithCategory!
   const gitContext = gitContexts?.[0] ?? null
 
   cacheTag(`post:${post.id}`)
