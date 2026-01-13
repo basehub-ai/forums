@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import type { ComposerProps } from "@/components/composer"
 import { CopyLinkButton } from "@/components/copy-link-button"
+import { CopyMarkdownButton } from "@/components/copy-markdown-button"
 import { DeleteCommentButton } from "@/components/delete-comment-button"
 import { RelativeTime } from "@/components/relative-time"
 import { Tooltip } from "@/components/ui/tooltip"
@@ -117,6 +118,11 @@ function CommentItem({
             }
             isRootComment={isRootComment}
           />
+          {comment.streamStatus !== "streaming" && (
+            <CopyMarkdownButton
+              content={comment.content as AgentUIMessage[]}
+            />
+          )}
           <CopyLinkButton
             commentNumber={commentNumber}
             owner={owner}
