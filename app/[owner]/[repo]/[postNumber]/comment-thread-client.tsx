@@ -2,6 +2,7 @@
 
 import type { InferSelectModel } from "drizzle-orm"
 import { useEffect, useMemo, useState } from "react"
+import type { PostAnswer } from "@/agent/types"
 import { authClient } from "@/lib/auth-client"
 import type {
   comments as commentsSchema,
@@ -39,6 +40,7 @@ export function CommentThreadClient({
   rootCommentId,
   commentNumbers,
   askingOptions,
+  answer,
 }: {
   owner: string
   repo: string
@@ -49,6 +51,7 @@ export function CommentThreadClient({
   rootCommentId: string | null
   commentNumbers: Map<string, string>
   askingOptions: AskingOption[]
+  answer?: PostAnswer | null
 }) {
   const [replyingToId, setReplyingToId] = useState<string | null>(null)
   const isSignedIn = !!authClient.useSession().data?.session
@@ -85,6 +88,7 @@ export function CommentThreadClient({
 
   return (
     <CommentThread
+      answer={answer}
       askingOptions={askingOptions}
       authorsById={authorsById}
       commentNumbers={commentNumbers}

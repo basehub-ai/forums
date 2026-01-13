@@ -92,6 +92,13 @@
       "when": 1736358000000,
       "tag": "0012_rename_billing_category_premium_to_pro",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1768317365712,
+      "tag": "0013_supreme_warlock",
+      "breakpoints": true
     }
   ]
 }

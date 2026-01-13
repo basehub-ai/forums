@@ -1,5 +1,5 @@
 import * as p from "drizzle-orm/pg-core"
-import type { AgentUIMessage, GitContextData } from "@/agent/types"
+import type { AgentUIMessage, GitContextData, PostAnswer } from "@/agent/types"
 
 export const posts = p.pgTable(
   "posts",
@@ -15,6 +15,8 @@ export const posts = p.pgTable(
     rootCommentId: p.varchar("root_comment_id", { length: 32 }),
 
     authorId: p.varchar("author_id", { length: 255 }).notNull(),
+
+    answer: p.jsonb().$type<PostAnswer>(),
 
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: p.bigint("updated_at", { mode: "number" }).notNull(),
