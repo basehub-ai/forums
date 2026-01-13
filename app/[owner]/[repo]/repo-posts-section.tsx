@@ -151,6 +151,10 @@ export function RepoPostsSection({
     }
     prevQueryRef.current = searchQuery
 
+    if (posts.length === 0) {
+      return
+    }
+
     searchText(searchQuery)
 
     const semanticTimer = setTimeout(() => {
@@ -160,12 +164,12 @@ export function RepoPostsSection({
     return () => {
       clearTimeout(semanticTimer)
     }
-  }, [searchQuery, searchText, searchSemantic])
+  }, [searchQuery, searchText, searchSemantic, posts.length])
 
   const hasSearchQuery =
     searchQuery.trim().length > 0 && searchQuery.trim().length <= 150
 
-  if (hasSearchQuery) {
+  if (hasSearchQuery && posts.length > 0) {
     return (
       <div className="flex flex-col gap-8">
         <RelatedPostsSection
