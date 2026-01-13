@@ -65,26 +65,45 @@ export default async function CategoryPage({
 }: {
   params: Promise<{ owner: string; repo: string; categorySlug: string }>
 }) {
-  "use cache"
-
   const { owner, repo, categorySlug } = await params
-  cacheTag(`category:${categorySlug}`)
 
-  const [category, allLlmUsers, repoData] = await Promise.all([
+  // Check existence before cache boundary
+  const [category, repoData] = await Promise.all([
     getCategoryBySlug(owner, repo, categorySlug),
-    getModelsForPicker(),
     getGithubRepo(owner, repo),
   ])
 
-  if (!category) {
-    return notFound()
+  if (!category || !repoData) {
+    notFound()
   }
 
-  if (!repoData) {
-    return notFound()
-  }
+  return (
+    <CategoryPageContent
+      category={category}
+      categorySlug={categorySlug}
+      owner={owner}
+      repo={repo}
+    />
+  )
+}
 
-  const categoryPosts = await db
+async function CategoryPageContent({
+  owner,
+  repo,
+  categorySlug,
+  category,
+}: {
+  owner: string
+  repo: string
+  categorySlug: string
+  category: NonNullable<Awaited<ReturnType<typeof getCategoryBySlug>>>
+}) {
+  "use cache"
+  cacheTag(`category:${categorySlug}`)
+
+  const [allLlmUsers, categoryPosts] = await Promise.all([
+    getModelsForPicker(),
+    db
     .select({
       id: posts.id,
       number: posts.number,
@@ -111,7 +130,8 @@ export default async function CategoryPage({
         eq(posts.categoryId, category.id)
       )
     )
-    .orderBy(desc(posts.createdAt))
+    .orderBy(desc(posts.createdAt)),
+  ])
 
   const categoriesById = { [category.id]: category }
 

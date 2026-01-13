@@ -58,12 +58,30 @@ export default async function RepoPage({
 }: {
   params: Promise<{ owner: string; repo: string }>
 }) {
-  "use cache"
-
   const { owner, repo } = await params
+
+  // Check repo exists before cache boundary
+  const repoData = await getGithubRepo(owner, repo)
+  if (!repoData) {
+    notFound()
+  }
+
+  return <RepoPageContent owner={owner} repo={repo} repoData={repoData} />
+}
+
+async function RepoPageContent({
+  owner,
+  repo,
+  repoData,
+}: {
+  owner: string
+  repo: string
+  repoData: NonNullable<Awaited<ReturnType<typeof getGithubRepo>>>
+}) {
+  "use cache"
   cacheTag(`repo:${owner}:${repo}`)
 
-  const [repoPosts, repoCategories, allLlmUsers, repoData] = await Promise.all([
+  const [repoPosts, repoCategories, allLlmUsers] = await Promise.all([
     db
       .select({
         id: posts.id,
@@ -91,12 +109,7 @@ export default async function RepoPage({
       .from(categories)
       .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
     getModelsForPicker(),
-    getGithubRepo(owner, repo),
   ])
-
-  if (!repoData) {
-    return notFound()
-  }
 
   const categoriesById = Object.fromEntries(
     repoCategories.map((c) => [c.id, c])
