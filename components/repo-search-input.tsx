@@ -3,7 +3,7 @@
 import { SearchIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 function parseRepoInput(input: string): { owner: string; repo: string } | null {
   const trimmed = input.trim()
@@ -31,9 +31,16 @@ function parseRepoInput(input: string): { owner: string; repo: string } | null {
   return null
 }
 
-export function RepoSearchInput() {
+export function RepoSearchInput({ autoFocus }: { autoFocus?: boolean }) {
   const router = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState("")
+
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus()
+    }
+  }, [autoFocus])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -54,9 +61,11 @@ export function RepoSearchInput() {
           size={18}
         />
         <input
+          autoFocus={autoFocus}
           className="no-focus h-9 w-full bg-accent/5 pr-2 pl-8 font-medium text-accent text-base outline-dotted outline-2 outline-accent -outline-offset-1 placeholder:text-accent hover:bg-accent/10 focus:outline-dashed"
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search or paste a repo URL"
+          ref={inputRef}
           value={value}
         />
       </div>
