@@ -327,7 +327,18 @@ export function getTools(context: ToolContext) {
           ""
         )
 
-        const lines = normalizedOutput
+        // Truncate output to prevent "input too long" errors (50k chars ≈ 12.5k tokens)
+        const MAX_GREP_OUTPUT_CHARS = 50_000
+        let finalOutput = normalizedOutput
+        let wasTruncated = false
+        if (finalOutput.length > MAX_GREP_OUTPUT_CHARS) {
+          finalOutput =
+            finalOutput.slice(0, MAX_GREP_OUTPUT_CHARS) +
+            "\n\n[Output truncated - use more specific pattern or path]"
+          wasTruncated = true
+        }
+
+        const lines = finalOutput
           .trim()
           .split("\n")
           .filter((l) => l.length > 0)
@@ -340,7 +351,7 @@ export function getTools(context: ToolContext) {
             ).size
 
         return {
-          matches: normalizedOutput || "(no matches found)",
+          matches: finalOutput || "(no matches found)",
           summary: {
             matchCount: filesWithMatches
               ? 0
@@ -348,6 +359,7 @@ export function getTools(context: ToolContext) {
             fileCount,
             searchPath: normalizedPath,
             pattern,
+            wasTruncated,
           },
         }
       },

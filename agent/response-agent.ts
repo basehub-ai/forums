@@ -42,65 +42,107 @@ export async function responseAgent({
 
   const writable = getWritable({ namespace: streamId })
 
-  const { initialMessages, sandboxId, gitRef } = await setupStep({
-    postId,
-    commentId,
-    owner,
-    repo,
-  })
+  try {
+    const { initialMessages, sandboxId, gitRef } = await setupStep({
+      postId,
+      commentId,
+      owner,
+      repo,
+    })
 
-  let finishReason: FinishReason | undefined
-  let stepCount = 0
-  let totalTokens = 0
-  let totalCost = 0
-  const newMessages: AgentUIMessage[] = []
-  while (finishReason !== "stop" && stepCount < 100) {
-    try {
-      const result = await streamTextStep({
-        owner,
-        repo,
-        gitRef,
-        model,
-        writable,
-        sandboxId,
-        initialMessages,
-        newMessages,
-      })
-      finishReason = result.finishReason
-      newMessages.push(...result.newMessages)
-      totalTokens += result.totalTokens
-      totalCost += result.cost
-      stepCount += 1
-    } catch (err) {
-      console.error(err)
-      newMessages.push({
-        role: "assistant",
-        id: `${streamId}-error-${ERROR_CODES.STREAM_STEP_ERROR}`,
-        metadata: { errorCode: ERROR_CODES.STREAM_STEP_ERROR },
-        parts: [
-          {
-            type: "text",
-            text: "Sorry, I encountered an error while trying to respond. Please try again later.",
-          },
-        ],
-      })
-      break
+    let finishReason: FinishReason | undefined
+    let stepCount = 0
+    let totalTokens = 0
+    let totalCost = 0
+    const newMessages: AgentUIMessage[] = []
+    while (finishReason !== "stop" && stepCount < 100) {
+      try {
+        const result = await streamTextStep({
+          owner,
+          repo,
+          gitRef,
+          model,
+          writable,
+          sandboxId,
+          initialMessages,
+          newMessages,
+        })
+        finishReason = result.finishReason
+        newMessages.push(...result.newMessages)
+        totalTokens += result.totalTokens
+        totalCost += result.cost
+        stepCount += 1
+      } catch (err) {
+        console.error(err)
+        newMessages.push({
+          role: "assistant",
+          id: `${streamId}-error-${ERROR_CODES.STREAM_STEP_ERROR}`,
+          metadata: { errorCode: ERROR_CODES.STREAM_STEP_ERROR },
+          parts: [
+            {
+              type: "text",
+              text: "Something went wrong. Click Retry to try again.",
+            },
+          ],
+        })
+        break
+      }
     }
+
+    await closeStreamStep({
+      writable,
+      commentId,
+      owner,
+      repo,
+      content: newMessages,
+      postId,
+      gitRef,
+      totalTokens,
+      totalCost,
+      userId,
+      billingCategory,
+    })
+  } catch (err) {
+    // Handles FatalError from workflow system after max retries
+    console.error("[Workflow Fatal]", err)
+
+    await handleFatalErrorStep({ commentId, streamId, writable })
+  }
+}
+
+async function handleFatalErrorStep({
+  commentId,
+  streamId,
+  writable,
+}: {
+  commentId: string
+  streamId: string
+  writable: WritableStream
+}) {
+  "use step"
+
+  const errorMessage: AgentUIMessage = {
+    role: "assistant",
+    id: `${streamId}-fatal-error`,
+    metadata: { errorCode: ERROR_CODES.STREAM_STEP_ERROR },
+    parts: [
+      {
+        type: "text",
+        text: "Something went wrong. Click Retry to try again.",
+      },
+    ],
   }
 
-  await closeStreamStep({
-    writable,
-    commentId,
-    owner,
-    repo,
-    content: newMessages,
-    postId,
-    gitRef,
-    totalTokens,
-    totalCost,
-    userId,
-    billingCategory,
-  })
+  await Promise.all([
+    db
+      .update(comments)
+      .set({
+        streamStatus: "failed",
+        content: [errorMessage],
+      })
+      .where(eq(comments.id, commentId)),
+    writable.close(),
+  ])
 }
 
 async function setupStep({

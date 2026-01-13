@@ -3,7 +3,8 @@
 import { Collapsible } from "@base-ui/react/collapsible"
 import type { ToolUIPart } from "ai"
 import { type ComponentProps, useEffect, useState } from "react"
-import { Streamdown } from "streamdown"
+import { harden } from "rehype-harden"
+import { defaultRehypePlugins, Streamdown } from "streamdown"
 import type { AgentUIMessage } from "@/agent/types"
 import { ERROR_CODES } from "@/lib/errors"
 import { usePostMetadata } from "./post-metadata-context"
@@ -456,6 +457,7 @@ function ToolGroup({
 
 type CommentContentProps = {
   content: AgentUIMessage[]
+  hasStreamError?: boolean
   isStreaming?: boolean
   isRetrying?: boolean
   onRetry?: () => void
@@ -547,11 +549,14 @@ function groupParts(content: AgentUIMessage[]): GroupedPart[] {
 
 export function CommentContent({
   content,
+  hasStreamError = false,
   isStreaming = false,
   isRetrying = false,
   onRetry,
 }: CommentContentProps) {
   const grouped = groupParts(content)
+
+  const { owner, repo, gitContext } = usePostMetadata()
 
   return (
     <div>
@@ -565,25 +570,41 @@ export function CommentContent({
                     <Streamdown
                       components={streamdownComponents}
                       mode={isStreaming ? "streaming" : "static"}
+                      rehypePlugins={[
+                        defaultRehypePlugins.raw,
+                        defaultRehypePlugins.katex,
+                        [
+                          harden,
+                          {
+                            allowedLinkPrefixes: ["*", ""],
+                            allowedProtocols: ["*"],
+                            allowedImagePrefixes: ["*"],
+                            allowDataImages: true,
+                            defaultOrigin: `https://github.com/${owner}/${repo}/tree/${gitContext?.branch ?? "main"}/`,
+                          },
+                        ],
+                      ]}
                       shikiTheme={["github-light", "github-dark"]}
                     >
                       {item.part.text}
                     </Streamdown>
                   </div>
                 </div>
-                {item.msg.role === "assistant" && item.hasError && onRetry && (
-                  <div data-actions>
-                    <button
-                      aria-label="Retry"
-                      className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm disabled:opacity-50"
-                      disabled={isRetrying}
-                      onClick={onRetry}
-                      type="button"
-                    >
-                      {isRetrying ? "Retrying..." : "Retry"}
-                    </button>
-                  </div>
-                )}
+                {item.msg.role === "assistant" &&
+                  (item.hasError || hasStreamError) &&
+                  onRetry && (
+                    <div data-actions>
+                      <button
+                        aria-label="Retry"
+                        className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm disabled:opacity-50"
+                        disabled={isRetrying}
+                        onClick={onRetry}
+                        type="button"
+                      >
+                        {isRetrying ? "Retrying..." : "Retry"}
+                      </button>
+                    </div>
+                  )}
               </div>
             )
           case "reasoning":

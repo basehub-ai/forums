@@ -119,9 +119,7 @@ function CommentItem({
             isRootComment={isRootComment}
           />
           {comment.streamStatus !== "streaming" && (
-            <CopyMarkdownButton
-              content={comment.content as AgentUIMessage[]}
-            />
+            <CopyMarkdownButton content={comment.content as AgentUIMessage[]} />
           )}
           <CopyLinkButton
             commentNumber={commentNumber}
