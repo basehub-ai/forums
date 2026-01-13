@@ -114,7 +114,14 @@ export const Composer = ({
       textareaRef.current.value = saved
       adjustTextareaHeight()
     }
-  }, [storageKey, adjustTextareaHeight])
+    onChange?.(saved || "")
+  }, [storageKey, adjustTextareaHeight, onChange])
+
+  useEffect(() => {
+    if (autoFocus) {
+      textareaRef.current?.focus()
+    }
+  }, [autoFocus])
 
   return (
     <form
