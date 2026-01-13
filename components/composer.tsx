@@ -144,6 +144,7 @@ export const Composer = ({
       }}
     >
       <textarea
+        aria-label="Message"
         autoFocus={autoFocus}
         className={cn(
           "no-focus min-h-27 w-full resize-none bg-transparent p-3 text-base text-dim outline-none placeholder:text-faint sm:min-h-20 sm:text-sm",
@@ -201,11 +202,14 @@ export const Composer = ({
                   >
                     {(() => {
                       const Icon = getModelIcon(selectedAsking.provider)
-                      return Icon ? <Icon className="mr-1 size-4" /> : null
+                      return Icon ? (
+                        <Icon aria-hidden="true" className="mr-1 size-4" />
+                      ) : null
                     })()}
                     {selectedAsking.name}
                     <ChevronDownIcon
                       absoluteStrokeWidth
+                      aria-hidden="true"
                       className="ml-1 size-4 group-data-popup-open:rotate-180"
                     />
                   </Menu.Trigger>
@@ -249,10 +253,15 @@ export const Composer = ({
                 >
                   {(() => {
                     const Icon = getModelIcon(selectedAsking.provider)
-                    return Icon ? <Icon className="size-4" /> : null
+                    return Icon ? (
+                      <Icon aria-hidden="true" className="size-4" />
+                    ) : null
                   })()}
                   {selectedAsking.name}
-                  <ChevronDownIcon className="h-3 w-3 opacity-50" />
+                  <ChevronDownIcon
+                    aria-hidden="true"
+                    className="h-3 w-3 opacity-50"
+                  />
                 </span>
               )}
               {isSignedIn && selectedAsking.id !== "human" && (
@@ -287,10 +296,10 @@ export const Composer = ({
             >
               {isSignedIn
                 ? isPending
-                  ? "Posting..."
+                  ? "Posting…"
                   : "Post"
                 : isPending
-                  ? "Logging in..."
+                  ? "Logging in…"
                   : "Log In"}
             </Button>
           </div>
