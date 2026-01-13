@@ -48,7 +48,7 @@ export const comments = p.pgTable(
     streamId: p.varchar("stream_id", { length: 32 }),
     streamStatus: p
       .varchar("stream_status", { length: 32 })
-      .$type<"idle" | "streaming" | "completed">()
+      .$type<"idle" | "streaming" | "completed" | "failed">()
       .default("idle"),
 
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),

@@ -28,11 +28,7 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
     .join("\n\n")
 }
 
-export function CopyMarkdownButton({
-  content,
-}: {
-  content: AgentUIMessage[]
-}) {
+export function CopyMarkdownButton({ content }: { content: AgentUIMessage[] }) {
   const [isCopied, setIsCopied] = useState(false)
 
   const Icon = isCopied ? CheckIcon : FileTextIcon

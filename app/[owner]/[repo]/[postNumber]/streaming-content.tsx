@@ -18,6 +18,7 @@ import { CommentContent } from "./comment-content"
 
 type StreamingContextValue = {
   isStreaming: boolean
+  hasStreamError: boolean
   messages: AgentUIMessage[]
   isRetrying: boolean
   onRetry: () => void
@@ -54,12 +55,15 @@ export function StreamingCommentProvider({
   })
 
   useEffect(() => {
-    if (started.current) return
+    if (started.current) {
+      return
+    }
     started.current = true
     resumeStream()
   }, [resumeStream])
 
   const isStreaming = status === "streaming" || status === "submitted"
+  const hasStreamError = status === "error"
 
   function handleRetry() {
     startTransition(async () => {
@@ -72,6 +76,7 @@ export function StreamingCommentProvider({
     <StreamingContext.Provider
       value={{
         isStreaming,
+        hasStreamError,
         messages,
         isRetrying: isPending,
         onRetry: handleRetry,
@@ -85,7 +90,9 @@ export function StreamingCommentProvider({
 export function StreamingBadge() {
   const ctx = useContext(StreamingContext)
 
-  if (!ctx?.isStreaming) return null
+  if (!ctx?.isStreaming) {
+    return null
+  }
 
   return (
     <span className="animate-pulse text-muted-foreground text-xs">
@@ -96,13 +103,16 @@ export function StreamingBadge() {
 
 export function StreamingContent() {
   const ctx = useContext(StreamingContext)
-  if (!ctx) return null
+  if (!ctx) {
+    return null
+  }
 
   const lastMessage = ctx.messages.at(-1)
 
   return (
     <CommentContent
       content={lastMessage ? [lastMessage] : []}
+      hasStreamError={ctx.hasStreamError}
       isRetrying={ctx.isRetrying}
       isStreaming={ctx.isStreaming}
       onRetry={ctx.onRetry}
