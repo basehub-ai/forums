@@ -32,62 +32,64 @@ export function CommentsToc({ items }: CommentsTocProps) {
   }
 
   return (
-    <div
-      className="hidden lg:block"
+    <nav
+      className="flex flex-col gap-0.5"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <nav className="sticky top-20 flex flex-col gap-1">
-        {items.map((item) => {
-          const isActive = activeCommentId === item.commentNumber
-          const actionLabel = item.isRoot ? "posted" : "commented"
+      {items.map((item) => {
+        const isActive = activeCommentId === item.commentNumber
 
-          if (isHovered) {
-            return (
-              <button
-                className="group flex items-center gap-2 py-1 text-left text-sm transition-colors"
-                key={item.id}
-                onClick={() => scrollToComment(item.commentNumber)}
-                type="button"
-              >
-                <UserAvatar
-                  size={16}
-                  src={item.author.image}
-                  username={item.author.username}
-                />
-                <span
-                  className={`truncate ${isActive ? "font-medium text-bright" : "text-muted group-hover:text-dim"}`}
-                >
-                  {item.author.name}
-                </span>
-                <span className="shrink-0 text-faint text-xs">
-                  {actionLabel}{" "}
-                  <Suspense>
-                    <RelativeTime timestamp={item.createdAt} />
-                  </Suspense>
-                </span>
-              </button>
-            )
-          }
-
+        if (isHovered) {
           return (
             <button
-              className="group flex items-center py-1"
+              className={`group flex items-center gap-2 rounded px-1.5 py-1 text-left transition-colors ${
+                isActive ? "bg-muted/30" : "hover:bg-muted/20"
+              }`}
               key={item.id}
               onClick={() => scrollToComment(item.commentNumber)}
               type="button"
             >
-              <div
-                className={`h-px transition-all ${
-                  isActive
-                    ? "w-6 bg-bright"
-                    : "w-3 bg-faint group-hover:w-4 group-hover:bg-muted"
-                }`}
-              />
+              <div className="shrink-0">
+                <UserAvatar
+                  size={18}
+                  src={item.author.image}
+                  username={item.author.username}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div
+                  className={`truncate text-xs ${isActive ? "font-medium text-bright" : "text-dim group-hover:text-bright"}`}
+                >
+                  {item.author.name}
+                </div>
+                <div className="text-faint text-xs">
+                  <Suspense>
+                    <RelativeTime timestamp={item.createdAt} />
+                  </Suspense>
+                </div>
+              </div>
             </button>
           )
-        })}
-      </nav>
-    </div>
+        }
+
+        return (
+          <button
+            className="group flex items-center py-1.5"
+            key={item.id}
+            onClick={() => scrollToComment(item.commentNumber)}
+            type="button"
+          >
+            <div
+              className={`h-px transition-all ${
+                isActive
+                  ? "w-6 bg-bright"
+                  : "w-3 bg-faint group-hover:w-4 group-hover:bg-muted"
+              }`}
+            />
+          </button>
+        )
+      })}
+    </nav>
   )
 }

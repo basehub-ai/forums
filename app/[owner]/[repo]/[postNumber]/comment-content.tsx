@@ -54,14 +54,23 @@ function Heading({
 
   return (
     <Tag
-      className="relative mt-6 mb-2 font-semibold text-dim first:mt-0"
+      className="relative mt-6 mb-2 scroll-mt-12 font-semibold text-dim first:mt-0"
       data-heading-comment={commentNumber}
       id={headingId}
       {...props}
     >
-      <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
-        {prefix}
-      </span>
+      {headingId ? (
+        <a
+          className="right-full mr-1.5 select-none font-mono text-faint hover:text-muted sm:absolute"
+          href={`#${headingId}`}
+        >
+          {prefix}
+        </a>
+      ) : (
+        <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
+          {prefix}
+        </span>
+      )}
       {children}
     </Tag>
   )

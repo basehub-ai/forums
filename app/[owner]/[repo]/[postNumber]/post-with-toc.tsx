@@ -108,9 +108,17 @@ function PostWithTocInner({
   }, [])
 
   return (
-    <div className="relative flex gap-6">
-      <div className="fixed left-4 top-20 hidden w-48 lg:block xl:left-8">
-        <CommentsToc items={tocItems} />
+    <div className="relative">
+      <div className="pointer-events-none fixed inset-0 hidden lg:flex lg:justify-center">
+        <div className="flex w-full max-w-7xl items-start justify-between px-4">
+          <div className="pointer-events-auto sticky top-0 flex h-screen w-44 items-center">
+            <CommentsToc items={tocItems} />
+          </div>
+          <div className="w-[800px] shrink-0" />
+          <div className="pointer-events-auto sticky top-0 w-44 pt-20">
+            <HeadingsToc />
+          </div>
+        </div>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -132,10 +140,6 @@ function PostWithTocInner({
           repo={repo}
           rootCommentId={rootCommentId}
         />
-      </div>
-
-      <div className="fixed right-4 top-20 hidden w-48 lg:block xl:right-8">
-        <HeadingsToc />
       </div>
     </div>
   )
