@@ -2,13 +2,27 @@
 
 import { Collapsible } from "@base-ui/react/collapsible"
 import type { ToolUIPart } from "ai"
-import { type ComponentProps, useEffect, useState } from "react"
+import {
+  type ComponentProps,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
+import slugify from "slugify"
 import { Streamdown } from "streamdown"
 import type { AgentUIMessage } from "@/agent/types"
 import { ERROR_CODES } from "@/lib/errors"
 import { usePostMetadata } from "./post-metadata-context"
+import { useToc } from "./toc-context"
 
 const LEADING_SLASH_REGEX = /^\//
+
+const CommentNumberContext = createContext<string | null>(null)
+
+function useCommentNumber() {
+  return useContext(CommentNumberContext)
+}
 
 function Heading({
   level,
@@ -17,9 +31,32 @@ function Heading({
 }: ComponentProps<"h1"> & { level: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const Tag = `h${level}` as const
   const prefix = "#".repeat(level)
+  const commentNumber = useCommentNumber()
+  const { registerHeading, unregisterHeading } = useToc()
+
+  const text =
+    typeof children === "string"
+      ? children
+      : Array.isArray(children)
+        ? children.filter((c) => typeof c === "string").join("")
+        : ""
+
+  const headingId = commentNumber
+    ? `${commentNumber}-${slugify(text, { lower: true, strict: true })}`
+    : undefined
+
+  useEffect(() => {
+    if (headingId && text) {
+      registerHeading({ id: headingId, text, level })
+      return () => unregisterHeading(headingId)
+    }
+  }, [headingId, text, level, registerHeading, unregisterHeading])
+
   return (
     <Tag
       className="relative mt-6 mb-2 font-semibold text-dim first:mt-0"
+      data-heading-comment={commentNumber}
+      id={headingId}
       {...props}
     >
       <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
@@ -456,6 +493,7 @@ function ToolGroup({
 
 type CommentContentProps = {
   content: AgentUIMessage[]
+  commentNumber?: string
   isStreaming?: boolean
   isRetrying?: boolean
   onRetry?: () => void
@@ -547,6 +585,7 @@ function groupParts(content: AgentUIMessage[]): GroupedPart[] {
 
 export function CommentContent({
   content,
+  commentNumber,
   isStreaming = false,
   isRetrying = false,
   onRetry,
@@ -554,7 +593,8 @@ export function CommentContent({
   const grouped = groupParts(content)
 
   return (
-    <div>
+    <CommentNumberContext.Provider value={commentNumber ?? null}>
+      <div>
       {grouped.map((item, groupIdx) => {
         switch (item.type) {
           case "text":
@@ -609,6 +649,7 @@ export function CommentContent({
             return null
         }
       })}
-    </div>
+      </div>
+    </CommentNumberContext.Provider>
   )
 }

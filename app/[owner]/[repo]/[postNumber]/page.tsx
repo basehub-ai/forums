@@ -18,10 +18,10 @@ import {
 } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
-import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
 import { PostHeader } from "./post-header"
 import { PostMetadataProvider } from "./post-metadata-context"
+import { PostWithToc } from "./post-with-toc"
 
 const githubCompareSchema = z.object({
   ahead_by: z.number(),
@@ -342,7 +342,7 @@ export default async function PostPage({
           <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
 
           <div className="mt-8 space-y-4">
-            <CommentThreadClient
+            <PostWithToc
               askingOptions={askingOptions}
               authorsById={authorsById}
               commentNumbers={commentNumbers}

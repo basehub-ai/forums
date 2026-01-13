@@ -132,7 +132,10 @@ function CommentItem({
     comment.streamStatus === "streaming" ? (
       <StreamingContent />
     ) : (
-      <CommentContent content={comment.content as AgentUIMessage[]} />
+      <CommentContent
+        commentNumber={commentNumber}
+        content={comment.content as AgentUIMessage[]}
+      />
     )
 
   const body = (
