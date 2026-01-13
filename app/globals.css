@@ -38,6 +38,8 @@
 
 html {
   scrollbar-gutter: stable;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: var(--accent-transparent);
 }
 
 :root {

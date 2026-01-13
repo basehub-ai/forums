@@ -117,11 +117,11 @@ export default async function RepoPage({
             href={`https://github.com/${owner}/${repo}`}
             target="_blank"
           >
-            <GithubIcon className="h-3.5 w-3.5" />
+            <GithubIcon aria-hidden="true" className="h-3.5 w-3.5" />
             {owner}/{repo}
           </Link>
           <span className="flex items-center gap-1">
-            <StarIcon className="h-3.5 w-3.5" />
+            <StarIcon aria-hidden="true" className="h-3.5 w-3.5" />
             {formatCompactNumber(repoData.stargazers_count)}
           </span>
           {!!repoData.homepage && (
@@ -130,7 +130,7 @@ export default async function RepoPage({
               href={repoData.homepage}
               target="_blank"
             >
-              <LinkIcon className="h-3.5 w-3.5" />
+              <LinkIcon aria-hidden="true" className="h-3.5 w-3.5" />
               {new URL(repoData.homepage).host}
             </Link>
           )}
@@ -146,6 +146,7 @@ export default async function RepoPage({
               image: u.image,
               isDefault: u.isDefault,
               isProModel: u.billing_category === "pro",
+              provider: u.provider,
             }))
             .sort((a, b) => a.name.localeCompare(b.name)),
           { id: "human", name: "Human only" },
