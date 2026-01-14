@@ -11,7 +11,7 @@ import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "./button"
+import { Button } from "./button"
 
 function getModelIcon(provider?: string) {
   switch (provider?.toLowerCase()) {
@@ -83,6 +83,7 @@ export const Composer = ({
   })
   const [defaultAskingIdSet, setDefaultAskingIdSet] = useState(false)
   const [isScrollable, setIsScrollable] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
@@ -125,7 +126,10 @@ export const Composer = ({
 
   return (
     <form
-      className="group flex flex-col bg-shade/10 outline-dotted outline-2 outline-muted -outline-offset-1 focus-within:bg-shade/30 focus-within:outline-dashed"
+      className={cn(
+        "group flex flex-col bg-shade/10 outline-dotted outline-2 outline-muted -outline-offset-1 focus-within:bg-shade/30 focus-within:outline-dashed",
+        isMenuOpen && "bg-shade/30 outline-dashed"
+      )}
       onSubmit={(e) => {
         e.preventDefault()
         const form = e.currentTarget
@@ -189,73 +193,41 @@ export const Composer = ({
       />
 
       {isAuthLoading || isCustomerLoading ? (
-        <div className="h-27 sm:h-15" />
+        // biome-ignore lint/a11y/useKeyWithClickEvents: focus-forwarding UX
+        // biome-ignore lint/a11y/noStaticElementInteractions: focus-forwarding UX
+        <div
+          className="h-27 cursor-text sm:h-15"
+          onClick={(e) => {
+            const target = e.target as HTMLElement
+            if (target.closest("button")) {
+              return
+            }
+            textareaRef.current?.focus()
+          }}
+        />
       ) : (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: focus-forwarding UX
+        // biome-ignore lint/a11y/noStaticElementInteractions: focus-forwarding UX
         <div
           className={cn(
-            "flex w-full animate-fade-in flex-col gap-2 px-3 py-3",
+            "flex w-full animate-fade-in cursor-text flex-col gap-2 px-3 py-3",
             isScrollable &&
               "border-muted border-t-2 border-dotted group-focus-within:border-dashed"
           )}
+          onClick={(e) => {
+            const target = e.target as HTMLElement
+            if (target.closest("button")) {
+              return
+            }
+            textareaRef.current?.focus()
+          }}
         >
           <div className="flex flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              {isSignedIn ? (
-                <Menu.Root>
-                  <Menu.Trigger
-                    className={cn(
-                      "group h-9 justify-between bg-transparent px-3 text-faint text-sm transition-none hover:bg-accent/10 hover:text-accent hover:no-underline active:text-dim data-popup-open:bg-accent/10 data-popup-open:text-accent sm:w-auto"
-                    )}
-                  >
-                    {(() => {
-                      const Icon = getModelIcon(selectedAsking.provider)
-                      return Icon ? (
-                        <Icon aria-hidden="true" className="mr-1 size-4" />
-                      ) : null
-                    })()}
-                    {selectedAsking.name}
-                    <ChevronDownIcon
-                      absoluteStrokeWidth
-                      aria-hidden="true"
-                      className="ml-1 size-4 group-data-popup-open:rotate-180"
-                    />
-                  </Menu.Trigger>
-                  <Menu.Popup>
-                    {options.asking.map((asking) => {
-                      const isDisabled = asking.isProModel && !isProUser
-                      return (
-                        <Menu.Item
-                          className={
-                            isDisabled
-                              ? "cursor-not-allowed opacity-50"
-                              : undefined
-                          }
-                          key={asking.id}
-                          onClick={() => {
-                            if (isDisabled) {
-                              setPaywallOpen(true)
-                              return
-                            }
-                            setSelectedAsking(asking)
-                            onAskingChange?.(asking)
-                          }}
-                        >
-                          {asking.name}
-                          {asking.isProModel && (
-                            <span className="ml-auto bg-faint px-1 py-0.5 font-medium text-label text-xxs uppercase">
-                              PRO
-                            </span>
-                          )}
-                        </Menu.Item>
-                      )
-                    })}
-                  </Menu.Popup>
-                </Menu.Root>
-              ) : (
-                <span
+              <Menu.Root onOpenChange={setIsMenuOpen}>
+                <Menu.Trigger
                   className={cn(
-                    buttonVariants({ variant: "tertiary" }),
-                    "w-full cursor-not-allowed justify-between opacity-50 sm:w-auto"
+                    "group h-9 justify-between bg-transparent text-faint text-sm transition-none hover:text-accent hover:no-underline active:text-dim data-popup-open:text-accent sm:w-auto"
                   )}
                 >
                   {(() => {
@@ -266,11 +238,49 @@ export const Composer = ({
                   })()}
                   {selectedAsking.name}
                   <ChevronDownIcon
+                    absoluteStrokeWidth
                     aria-hidden="true"
-                    className="h-3 w-3 opacity-50"
+                    className="size-4 group-data-popup-open:rotate-180"
                   />
-                </span>
-              )}
+                </Menu.Trigger>
+                <Menu.Popup className="">
+                  {options.asking.map((asking) => {
+                    const isDisabled = asking.isProModel && !isProUser
+                    return (
+                      <Menu.Item
+                        className={
+                          isDisabled
+                            ? "cursor-not-allowed opacity-50"
+                            : undefined
+                        }
+                        key={asking.id}
+                        onClick={() => {
+                          if (isDisabled) {
+                            setPaywallOpen(true)
+                            return
+                          }
+                          setSelectedAsking(asking)
+                          onAskingChange?.(asking)
+                        }}
+                      >
+                        {(() => {
+                          const Icon = getModelIcon(asking.provider)
+                          return Icon ? (
+                            <Icon aria-hidden="true" className="size-4" />
+                          ) : null
+                        })()}
+                        {asking.name}
+                        {asking.isProModel && (
+                          <span className="bg-accent/10 px-1.5 py-0.5 font-medium text-accent text-xxs">
+                            PRO
+                          </span>
+                        )}
+                      </Menu.Item>
+                    )
+                  })}
+                </Menu.Popup>
+              </Menu.Root>
+
               {isSignedIn && selectedAsking.id !== "human" && (
                 <CreditWarning
                   className="hidden sm:block"

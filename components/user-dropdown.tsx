@@ -68,7 +68,7 @@ export const UserDropdown = ({
           </div>
         )}
         <Menu.Separator />
-        <div className="space-y-2 px-2 py-1.5">
+        <div className="space-y-2 p-1.5">
           <Meter.Root max={creditsMax} min={0} value={credits?.usage ?? 0}>
             <div className="flex items-center justify-between">
               <Meter.Label>Credits</Meter.Label>
