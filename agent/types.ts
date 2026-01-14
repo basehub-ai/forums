@@ -9,3 +9,9 @@ export type GitContextData = {
   message: string
   date: string
 }
+
+export type NoAnswerReason = "not-a-question" | "unclear" | "needs-more-context"
+
+export type PostAnswer =
+  | { type: "answer"; text: string; updatedAt: number }
+  | { type: "no-answer"; reason: NoAnswerReason; updatedAt: number }

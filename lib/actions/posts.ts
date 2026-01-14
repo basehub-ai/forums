@@ -5,9 +5,10 @@ import { updateTag } from "next/cache"
 import { headers } from "next/headers"
 import slugify from "slugify"
 import { getRun, start } from "workflow/api"
+import { runAnswerAgent } from "@/agent/answer-agent"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
-import type { AgentUIMessage } from "@/agent/types"
+import type { AgentUIMessage, PostAnswer } from "@/agent/types"
 import {
   auth,
   extractGitHubUserId,
@@ -337,6 +338,15 @@ export async function createPost(data: {
 
   waitUntil(indexRepo(data.owner, data.repo))
 
+  waitUntil(
+    runAnswerAgent({
+      postId,
+      owner: data.owner,
+      repo: data.repo,
+      postNumber: newPost.number,
+    })
+  )
+
   updateTag(`repo:${data.owner}:${data.repo}`)
   updateTag(`post:${postId}`)
   if (authorUsername) {
@@ -509,6 +519,23 @@ export async function createComment(data: {
       repo: post.repo,
     })
   )
+
+  const currentAnswer = post.answer as PostAnswer | null | undefined
+  const skipAnswerAgent =
+    currentAnswer?.type === "no-answer" &&
+    currentAnswer.reason === "not-a-question"
+
+  if (!skipAnswerAgent) {
+    waitUntil(
+      runAnswerAgent({
+        postId: data.postId,
+        owner: post.owner,
+        repo: post.repo,
+        postNumber: post.number,
+        currentAnswer,
+      })
+    )
+  }
 
   updateTag(`repo:${post.owner}:${post.repo}`)
   updateTag(`post:${post.id}`)

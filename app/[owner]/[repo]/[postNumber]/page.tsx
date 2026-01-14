@@ -157,6 +157,7 @@ export default async function PostPage({
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
         gitContexts: posts.gitContexts,
+        answer: posts.answer,
         category: {
           id: categories.id,
           title: categories.title,
@@ -343,6 +344,7 @@ export default async function PostPage({
 
           <div className="mt-8 space-y-4">
             <CommentThreadClient
+              answer={post.answer}
               askingOptions={askingOptions}
               authorsById={authorsById}
               commentNumbers={commentNumbers}

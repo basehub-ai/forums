@@ -2,7 +2,7 @@ import type { InferSelectModel } from "drizzle-orm"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Suspense } from "react"
-import type { AgentUIMessage } from "@/agent/types"
+import type { AgentUIMessage, PostAnswer } from "@/agent/types"
 import type { ComposerProps } from "@/components/composer"
 import { CopyLinkButton } from "@/components/copy-link-button"
 import { CopyMarkdownButton } from "@/components/copy-markdown-button"
@@ -18,6 +18,7 @@ import type {
 import { cn } from "@/lib/utils"
 import { CommentContent } from "./comment-content"
 import { MentionBanner } from "./mention-banner"
+import { PostAnswerBox } from "./post-answer"
 import { PostComposer } from "./post-composer"
 import {
   StreamingBadge,
@@ -217,6 +218,7 @@ export function CommentThread({
   onReply,
   onCancelReply,
   askingOptions,
+  answer,
 }: {
   owner: string
   repo: string
@@ -230,6 +232,7 @@ export function CommentThread({
   onReply?: (commentId: string) => void
   onCancelReply?: () => void
   askingOptions: ComposerProps["options"]["asking"]
+  answer?: PostAnswer | null
 }) {
   const reactionsByComment: Record<string, Reaction[]> = {}
   for (const reaction of reactions) {
@@ -281,51 +284,59 @@ export function CommentThread({
         const replies = repliesByThread.get(comment.id) ?? []
         const hasReplies = replies.length > 0
 
+        const showAnswer = isRootComment && answer?.type === "answer"
+
         return (
-          <CommentItem
-            askingOptions={askingOptions}
-            author={author}
-            comment={comment}
-            commentId={comment.id}
-            commentNumber={commentNumber}
-            depth={0}
-            hasReplies={hasReplies}
-            isReplying={replyingToId === comment.id}
-            isRootComment={isRootComment}
-            key={comment.id}
-            onCancelReply={onCancelReply}
-            onReply={onReply}
-            owner={owner}
-            reactions={reactionsByComment[comment.id] ?? []}
-            repo={repo}
-          >
-            {hasReplies && (
-              <div className="space-y-4">
-                {replies.map((reply) => {
-                  const replyAuthor = authorsById[reply.authorId]
-                  if (!replyAuthor) {
-                    return null
-                  }
-                  const replyNumber = commentNumbers.get(reply.id) ?? "?"
-                  return (
-                    <CommentItem
-                      askingOptions={askingOptions}
-                      author={replyAuthor}
-                      comment={reply}
-                      commentId={reply.id}
-                      commentNumber={replyNumber}
-                      depth={1}
-                      isRootComment={false}
-                      key={reply.id}
-                      owner={owner}
-                      reactions={reactionsByComment[reply.id] ?? []}
-                      repo={repo}
-                    />
-                  )
-                })}
+          <div key={comment.id}>
+            <CommentItem
+              askingOptions={askingOptions}
+              author={author}
+              comment={comment}
+              commentId={comment.id}
+              commentNumber={commentNumber}
+              depth={0}
+              hasReplies={hasReplies}
+              isReplying={replyingToId === comment.id}
+              isRootComment={isRootComment}
+              onCancelReply={onCancelReply}
+              onReply={onReply}
+              owner={owner}
+              reactions={reactionsByComment[comment.id] ?? []}
+              repo={repo}
+            >
+              {hasReplies && (
+                <div className="space-y-4">
+                  {replies.map((reply) => {
+                    const replyAuthor = authorsById[reply.authorId]
+                    if (!replyAuthor) {
+                      return null
+                    }
+                    const replyNumber = commentNumbers.get(reply.id) ?? "?"
+                    return (
+                      <CommentItem
+                        askingOptions={askingOptions}
+                        author={replyAuthor}
+                        comment={reply}
+                        commentId={reply.id}
+                        commentNumber={replyNumber}
+                        depth={1}
+                        isRootComment={false}
+                        key={reply.id}
+                        owner={owner}
+                        reactions={reactionsByComment[reply.id] ?? []}
+                        repo={repo}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </CommentItem>
+            {showAnswer && (
+              <div className="mt-8">
+                <PostAnswerBox answer={answer} />
               </div>
             )}
-          </CommentItem>
+          </div>
         )
       })}
     </div>
