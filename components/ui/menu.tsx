@@ -13,7 +13,7 @@ function Trigger({
   return (
     <BaseMenu.Trigger
       className={cn(
-        "inline-flex cursor-pointer items-center gap-1 text-faint text-sm transition-colors duration-300 hover:text-bright hover:underline hover:duration-100 active:text-bright data-popup-open:text-bright",
+        "inline-flex cursor-pointer items-center gap-2 text-faint text-sm transition-colors duration-300 hover:text-bright hover:underline hover:duration-100 active:text-bright data-popup-open:text-bright",
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ function Popup({
         <div className="relative">
           <BaseMenu.Popup
             className={cn(
-              "peer relative z-50 min-w-[160px] border border-dim bg-background p-1 text-sm",
+              "peer relative z-50 min-w-[160px] border border-dim bg-background p-1.5 text-sm",
               "outline-none data-closed:pointer-events-none",
               className
             )}
