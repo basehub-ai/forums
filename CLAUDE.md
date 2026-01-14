@@ -8,7 +8,11 @@ if the thing you want to comment takes just one line to explain, then omit the c
 
 ## design
 
-sharp borders, simple typography, instant interactions. no animations on dropdowns or popups.
+sharp borders, simple typography, instant interactions. no animations on dropdowns or popups. Icons should always have absoluteStrokeWidth.
+
+## confirming actions with dialogs
+
+when an action has serious consequences, it needs to have a confirmation dialog. Create a new dialog and put it inside /lib/stores/dialogs.ts and /components/dialogs.tsx, never use `confirm()`.
 
 ## stack
 

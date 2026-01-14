@@ -1,13 +1,15 @@
 "use client"
 
-import { DeleteCommentDialog } from "@/components/delete-comment-dialog"
+import { DeletePostOrCommentDialog } from "@/components/delete-comment-dialog"
+import { ModeratorDeletePostDialog } from "@/components/moderator-delete-post-dialog"
 import { PaywallDialog } from "@/components/paywall-dialog"
 
 export function Dialogs() {
   return (
     <>
       <PaywallDialog />
-      <DeleteCommentDialog />
+      <DeletePostOrCommentDialog />
+      <ModeratorDeletePostDialog />
     </>
   )
 }

@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { Button } from "@/components/button"
 import { Dialog } from "@/components/ui/dialog"
-import { deleteComment } from "@/lib/actions/posts"
+import { deletePost } from "@/lib/actions/moderation"
 import { useDialogStore } from "@/lib/stores/dialogs"
 
-export function DeletePostOrCommentDialog() {
-  const dialog = useDialogStore((s) => s.deletePostOrCommentDialog)
-  const setDialog = useDialogStore((s) => s.setDeletePostOrCommentDialog)
+export function ModeratorDeletePostDialog() {
+  const dialog = useDialogStore((s) => s.moderatorDeletePostDialog)
+  const setDialog = useDialogStore((s) => s.setModeratorDeletePostDialog)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -31,16 +31,10 @@ export function DeletePostOrCommentDialog() {
     setError(null)
     startTransition(async () => {
       try {
-        const result = await deleteComment(dialog.commentId)
+        const { owner, repo } = await deletePost(dialog.postId)
         setDialog(null)
         setError(null)
-        if (result.deletedPost) {
-          const path = window.location.pathname
-          const parts = path.split("/").filter(Boolean)
-          if (parts.length >= 2) {
-            router.push(`/${parts[0]}/${parts[1]}`)
-          }
-        }
+        router.push(`/${owner}/${repo}`)
         router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete")
@@ -48,21 +42,16 @@ export function DeletePostOrCommentDialog() {
     })
   }
 
-  const title = dialog?.isRootComment ? "Delete Post" : "Delete Comment"
-
-  const message = dialog?.isRootComment
-    ? "This will permanently delete the entire post, including all its comments."
-    : dialog?.hasLlmResponse
-      ? "This will also delete the LLM's response to this comment."
-      : "This will permanently delete this comment."
-
   return (
     <Dialog.Root onOpenChange={() => handleClose()} open={isOpen}>
       <Dialog.Portal>
         <Dialog.Backdrop />
-        <Dialog.Popup initialFocus={deleteButtonRef} title={title}>
+        <Dialog.Popup initialFocus={deleteButtonRef} title="Delete Post">
           <div className="space-y-4">
-            <p className="text-muted text-sm">{message}</p>
+            <p className="text-muted text-sm">
+              This will permanently delete the entire post, including all its
+              comments.
+            </p>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button

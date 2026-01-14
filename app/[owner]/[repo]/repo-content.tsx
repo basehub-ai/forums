@@ -19,6 +19,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  pinned: boolean
   commentCount: number
   reactionCount: number
 }
@@ -29,6 +30,7 @@ type RepoContentProps = {
   owner: string
   repo: string
   posts: PostListItem[]
+  pinnedPosts: PostListItem[]
   categoriesById: Record<string, Category>
   askingOptions: ComposerProps["options"]["asking"]
   categoryId?: string
@@ -38,6 +40,7 @@ export function RepoContent({
   owner,
   repo,
   posts,
+  pinnedPosts,
   categoriesById,
   askingOptions,
   categoryId,
@@ -89,6 +92,7 @@ export function RepoContent({
         categoriesById={categoriesById}
         categoryId={categoryId}
         owner={owner}
+        pinnedPosts={pinnedPosts}
         posts={posts}
         repo={repo}
         searchQuery={searchQuery}

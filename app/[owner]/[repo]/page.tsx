@@ -74,6 +74,7 @@ export default async function RepoPage({
         authorUsername: comments.authorUsername,
         rootCommentId: posts.rootCommentId,
         createdAt: posts.createdAt,
+        pinned: posts.pinned,
         commentCount: sql<number>`(
           SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
         )`.as("comment_count"),
@@ -101,6 +102,9 @@ export default async function RepoPage({
   const categoriesById = Object.fromEntries(
     repoCategories.map((c) => [c.id, c])
   )
+
+  const pinnedPosts = repoPosts.filter((p) => p.pinned)
+  const regularPosts = repoPosts.filter((p) => !p.pinned)
 
   return (
     <Container>
@@ -153,7 +157,8 @@ export default async function RepoPage({
         ]}
         categoriesById={categoriesById}
         owner={owner}
-        posts={repoPosts}
+        pinnedPosts={pinnedPosts}
+        posts={regularPosts}
         repo={repo}
       />
     </Container>
