@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon, FileTextIcon } from "lucide-react"
+import { CheckIcon, CopyIcon } from "lucide-react"
 import { useState } from "react"
 import type { AgentUIMessage } from "@/agent/types"
 import { Tooltip } from "@/components/ui/tooltip"
@@ -31,7 +31,7 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
 export function CopyMarkdownButton({ content }: { content: AgentUIMessage[] }) {
   const [isCopied, setIsCopied] = useState(false)
 
-  const Icon = isCopied ? CheckIcon : FileTextIcon
+  const Icon = isCopied ? CheckIcon : CopyIcon
 
   const copyToClipboard = () => {
     const markdown = convertMessagesToMarkdown(content)
@@ -43,10 +43,10 @@ export function CopyMarkdownButton({ content }: { content: AgentUIMessage[] }) {
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
-        className="flex size-6 cursor-pointer items-center justify-center pl-0.5 text-muted-foreground text-xs"
+        className="flex size-6 cursor-pointer items-center justify-center px-1.5 text-muted-foreground text-xs"
         onClick={copyToClipboard}
       >
-        <Icon absoluteStrokeWidth className="size-4" />
+        <Icon absoluteStrokeWidth className="size-4 shrink-0" />
       </Tooltip.Trigger>
       <Tooltip.Popup>{isCopied ? "Copied" : "Copy as markdown"}</Tooltip.Popup>
     </Tooltip.Root>
