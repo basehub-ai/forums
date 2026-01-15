@@ -97,7 +97,9 @@ export async function canModerate(
   // Check cached permissions
   const cached = await getCachedPermissions(userId, owner, repo)
   if (cached !== "miss") {
-    return cached?.push === true || cached?.admin === true
+    return (
+      cached?.push === true || cached?.admin === true || cached?.triage === true
+    )
   }
 
   // Fetch from GitHub
