@@ -20,6 +20,7 @@
   --color-highlight-blue: var(--highlight-blue);
   --color-highlight-yellow: var(--highlight-yellow);
   --color-highlight-gray: var(--highlight-gray);
+  --color-highlight-red: var(--highlight-red);
 
   --text-xxs: 11px;
 
@@ -48,6 +49,7 @@ html {
   --highlight-blue: #0072e4;
   --highlight-yellow: #c78f00;
   --highlight-gray: #6b6b6b;
+  --highlight-red: #c70000;
 
   /* bg */
   /* --base: #fff; */

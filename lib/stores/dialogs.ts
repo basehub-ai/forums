@@ -1,21 +1,35 @@
 import { create } from "zustand"
 
-type DeleteCommentDialog = {
+type DeletePostOrCommentDialog = {
   commentId: string
   isRootComment: boolean
   hasLlmResponse: boolean
 }
 
+type ModeratorDeletePostDialog = {
+  postId: string
+}
+
 type DialogStore = {
   paywallOpen: boolean
   setPaywallOpen: (open: boolean) => void
-  deleteCommentDialog: DeleteCommentDialog | null
-  setDeleteCommentDialog: (dialog: DeleteCommentDialog | null) => void
+  deletePostOrCommentDialog: DeletePostOrCommentDialog | null
+  setDeletePostOrCommentDialog: (
+    dialog: DeletePostOrCommentDialog | null
+  ) => void
+  moderatorDeletePostDialog: ModeratorDeletePostDialog | null
+  setModeratorDeletePostDialog: (
+    dialog: ModeratorDeletePostDialog | null
+  ) => void
 }
 
 export const useDialogStore = create<DialogStore>((set) => ({
   paywallOpen: false,
   setPaywallOpen: (open) => set({ paywallOpen: open }),
-  deleteCommentDialog: null,
-  setDeleteCommentDialog: (dialog) => set({ deleteCommentDialog: dialog }),
+  deletePostOrCommentDialog: null,
+  setDeletePostOrCommentDialog: (dialog) =>
+    set({ deletePostOrCommentDialog: dialog }),
+  moderatorDeletePostDialog: null,
+  setModeratorDeletePostDialog: (dialog) =>
+    set({ moderatorDeletePostDialog: dialog }),
 }))

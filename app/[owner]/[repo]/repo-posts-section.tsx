@@ -1,7 +1,7 @@
 "use client"
 
 import type { InferSelectModel } from "drizzle-orm"
-import { AsteriskIcon, SparklesIcon } from "lucide-react"
+import { AsteriskIcon, PinIcon, SparklesIcon } from "lucide-react"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { RelativeTime } from "@/components/relative-time"
@@ -23,6 +23,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  pinned: boolean
   commentCount: number
   reactionCount: number
 }
@@ -35,6 +36,7 @@ type Category = InferSelectModel<typeof categories>
 
 type RepoPostsSectionProps = {
   posts: PostListItem[]
+  pinnedPosts: PostListItem[]
   owner: string
   repo: string
   categoriesById: Record<string, Category>
@@ -44,6 +46,7 @@ type RepoPostsSectionProps = {
 
 export function RepoPostsSection({
   posts,
+  pinnedPosts,
   owner,
   repo,
   categoryId,
@@ -189,7 +192,51 @@ export function RepoPostsSection({
     )
   }
 
-  return <LatestPosts owner={owner} posts={posts} repo={repo} />
+  return (
+    <div className="flex flex-col gap-8">
+      {pinnedPosts.length > 0 && (
+        <PinnedPosts owner={owner} posts={pinnedPosts} repo={repo} />
+      )}
+      <LatestPosts owner={owner} posts={posts} repo={repo} />
+    </div>
+  )
+}
+
+function PinnedPosts({
+  posts,
+  owner,
+  repo,
+}: {
+  posts: PostListItem[]
+  owner: string
+  repo: string
+}) {
+  return (
+    <div>
+      <div className="relative mb-2">
+        <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+        <h2 className="relative z-10 flex w-fit items-center gap-1.5 bg-background pr-2 font-medium text-sm uppercase">
+          <PinIcon absoluteStrokeWidth className="h-3 w-3" />
+          Pinned Posts
+        </h2>
+      </div>
+      <List>
+        {posts.map((post) => (
+          <ListItem key={post.id}>
+            <Link
+              className="group flex grow items-start gap-1 overflow-hidden"
+              href={`/${owner}/${repo}/${post.number}`}
+            >
+              <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+              <span className="text-dim group-hover:text-bright group-hover:underline">
+                {post.title || `Post #${post.number}`}
+              </span>
+            </Link>
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  )
 }
 
 function LatestPosts({

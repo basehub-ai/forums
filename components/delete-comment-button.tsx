@@ -18,7 +18,7 @@ export function DeleteCommentButton({
 }) {
   const session = authClient.useSession()
   const userId = session.data?.user.id
-  const setDialog = useDialogStore((s) => s.setDeleteCommentDialog)
+  const setDialog = useDialogStore((s) => s.setDeletePostOrCommentDialog)
 
   const isAuthor = userId === authorId
 

@@ -1,14 +1,16 @@
 "use client"
 
-import { ChevronRight, TagIcon } from "lucide-react"
+import { ChevronRight, PinIcon, TagIcon, TrashIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { type ReactNode, useTransition } from "react"
+import { type ReactNode, useEffect, useState, useTransition } from "react"
 import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
 import { Tooltip } from "@/components/ui/tooltip"
+import { checkCanModerate, pinPost, unpinPost } from "@/lib/actions/moderation"
 import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
+import { useDialogStore } from "@/lib/stores/dialogs"
 import { usePostMetadata } from "./post-metadata-context"
 
 function categorySlugify(title: string) {
@@ -108,6 +110,7 @@ export function PostHeader({
         <div className="mt-2 h-6 text-muted-foreground text-sm">Loading...</div>
       )}
 
+      <ModerationBanner />
       <StaleBanner />
       {hasArchivedRefs && <RefSelector />}
     </header>
@@ -145,18 +148,112 @@ function RefSelector() {
   )
 }
 
+function ModerationBanner() {
+  const { owner, repo, postId, pinned } = usePostMetadata()
+  const session = authClient.useSession()
+  const [canModerate, setCanModerate] = useState(false)
+  const [isPinned, setIsPinned] = useState(pinned)
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const setModeratorDeletePostDialog = useDialogStore(
+    (s) => s.setModeratorDeletePostDialog
+  )
+
+  useEffect(() => {
+    if (!session.data?.user) {
+      return
+    }
+    checkCanModerate(owner, repo).then(setCanModerate)
+  }, [owner, repo, session.data?.user])
+
+  if (!canModerate) {
+    return null
+  }
+
+  function handlePin() {
+    startTransition(async () => {
+      if (isPinned) {
+        await unpinPost(postId)
+        setIsPinned(false)
+      } else {
+        await pinPost(postId)
+        setIsPinned(true)
+      }
+      router.refresh()
+    })
+  }
+
+  function handleDelete() {
+    setModeratorDeletePostDialog({ postId })
+  }
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
+      <span className="min-w-0">You can moderate this post.</span>
+      <div className="flex gap-2">
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={
+                <button
+                  className="flex shrink-0 items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 text-white disabled:opacity-50 dark:text-black"
+                  disabled={isPending}
+                  onClick={handlePin}
+                  type="button"
+                >
+                  <PinIcon className="h-3 w-3" />
+                  {isPinned ? "Unpin" : "Pin"}
+                </button>
+              }
+            />
+            <Tooltip.Popup>
+              {isPinned ? "Unpin post" : "Pin post"}
+            </Tooltip.Popup>
+          </Tooltip.Root>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={
+                <button
+                  className="flex shrink-0 items-center gap-1 bg-highlight-red px-1.5 py-0.5 text-white disabled:opacity-50"
+                  disabled={isPending}
+                  onClick={handleDelete}
+                  type="button"
+                >
+                  <TrashIcon className="h-3 w-3" />
+                  Delete
+                </button>
+              }
+            />
+            <Tooltip.Popup>Delete post</Tooltip.Popup>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
+    </div>
+  )
+}
+
 function StaleBanner() {
   const { staleInfo, gitContext, owner, repo, postId, authorId } =
     usePostMetadata()
   const session = authClient.useSession()
   const userId = session.data?.user.id
   const isAuthor = userId === authorId
+  const [canModerate, setCanModerate] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+
+  useEffect(() => {
+    if (!session.data?.user) {
+      return
+    }
+    checkCanModerate(owner, repo).then(setCanModerate)
+  }, [owner, repo, session.data?.user])
 
   if (!(staleInfo && gitContext)) {
     return null
   }
+
+  const canRerun = isAuthor || canModerate
 
   function handleRerun() {
     startTransition(async () => {
@@ -187,15 +284,24 @@ function StaleBanner() {
         </Link>
         .
       </span>
-      {isAuthor && (
-        <button
-          className="shrink-0 bg-highlight-yellow px-1.5 py-0.5 text-white disabled:opacity-50 dark:text-black"
-          disabled={isPending}
-          onClick={handleRerun}
-          type="button"
-        >
-          {isPending ? "Re-running..." : "Re-run"}
-        </button>
+      {canRerun && (
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={
+                <button
+                  className="shrink-0 bg-highlight-yellow px-1.5 py-0.5 text-white disabled:opacity-50 dark:text-black"
+                  disabled={isPending}
+                  onClick={handleRerun}
+                  type="button"
+                >
+                  {isPending ? "Re-running..." : "Re-run"}
+                </button>
+              }
+            />
+            <Tooltip.Popup>Re-run with latest content</Tooltip.Popup>
+          </Tooltip.Root>
+        </Tooltip.Provider>
       )}
     </div>
   )

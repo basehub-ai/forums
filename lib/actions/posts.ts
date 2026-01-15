@@ -15,6 +15,7 @@ import {
   isAdmin,
 } from "@/lib/auth"
 import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
+import { canModerate } from "@/lib/data/permissions"
 import { db } from "@/lib/db/client"
 import {
   categories,
@@ -926,8 +927,12 @@ export async function rerunLlmCommentsInPost(data: {
     throw new Error("Post not found")
   }
 
-  if (post.authorId !== session.user.id) {
-    throw new Error("Unauthorized: only the post author can re-run responses")
+  const isAuthor = post.authorId === session.user.id
+  const isModerator = await canModerate(session.user.id, post.owner, post.repo)
+  if (!(isAuthor || isModerator)) {
+    throw new Error(
+      "Unauthorized: only the post author or moderators can re-run responses"
+    )
   }
 
   if (!defaultLlm) {

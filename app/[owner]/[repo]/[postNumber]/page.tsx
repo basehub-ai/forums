@@ -157,6 +157,7 @@ export default async function PostPage({
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
         gitContexts: posts.gitContexts,
+        pinned: posts.pinned,
         category: {
           id: categories.id,
           title: categories.title,
@@ -228,7 +229,7 @@ export default async function PostPage({
     notFound()
   }
 
-  const { category, gitContexts, ...post } = postWithCategory
+  const { category, gitContexts, pinned, ...post } = postWithCategory
   const gitContext = gitContexts?.[0] ?? null
 
   cacheTag(`post:${post.id}`)
@@ -328,11 +329,13 @@ export default async function PostPage({
     <PostMetadataProvider
       archivedRefs={archivedRefs}
       authorId={post.authorId}
+      canModerate={false}
       categories={repoCategories}
       initialCategory={category?.id ? category : null}
       initialGitContext={gitContext}
       initialTitle={post.title}
       owner={owner}
+      pinned={pinned}
       postId={post.id}
       repo={repo}
       staleInfo={staleInfo}

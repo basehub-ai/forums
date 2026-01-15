@@ -94,6 +94,7 @@ export default async function CategoryPage({
       authorUsername: comments.authorUsername,
       rootCommentId: posts.rootCommentId,
       createdAt: posts.createdAt,
+      pinned: posts.pinned,
       commentCount: sql<number>`(
         SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
       )`.as("comment_count"),
@@ -112,6 +113,9 @@ export default async function CategoryPage({
       )
     )
     .orderBy(desc(posts.createdAt))
+
+  const pinnedPosts = categoryPosts.filter((p) => p.pinned)
+  const regularPosts = categoryPosts.filter((p) => !p.pinned)
 
   const categoriesById = { [category.id]: category }
 
@@ -145,7 +149,8 @@ export default async function CategoryPage({
         categoriesById={categoriesById}
         categoryId={category.id}
         owner={owner}
-        posts={categoryPosts}
+        pinnedPosts={pinnedPosts}
+        posts={regularPosts}
         repo={repo}
       />
     </Container>

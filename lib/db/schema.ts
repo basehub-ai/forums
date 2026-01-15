@@ -18,6 +18,7 @@ export const posts = p.pgTable(
 
     createdAt: p.bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: p.bigint("updated_at", { mode: "number" }).notNull(),
+    pinned: p.boolean().notNull().default(false),
   },
   (table) => [
     p
