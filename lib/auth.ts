@@ -59,7 +59,6 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       redirectURI: `${productionOrigin}/api/auth/callback/github`,
       overrideUserInfoOnSignIn: true,
-      scope: ["user:email"],
     },
   },
   databaseHooks: {
