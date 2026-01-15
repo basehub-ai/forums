@@ -1116,6 +1116,8 @@ export async function deletePost(postId: string) {
 
   await db.delete(posts).where(eq(posts.id, postId))
 
+  await indexRepo(post.owner, post.repo)
+
   updateTag(`repo:${post.owner}:${post.repo}`)
   updateTag(`post:${postId}`)
 

@@ -265,6 +265,14 @@ export async function indexRepo(owner: string, repo: string): Promise<void> {
     .where(sql`${posts.owner} = ${owner} AND ${posts.repo} = ${repo}`)
 
   if (repoStats.length === 0 || repoStats[0].postCount === 0) {
+    try {
+      await typesense
+        .collections(REPOS_COLLECTION)
+        .documents(`${owner}/${repo}`)
+        .delete()
+    } catch {
+      // Ignore if document doesn't exist
+    }
     return
   }
 
@@ -446,7 +454,9 @@ function dedupeHits(
       text: string
       isRootComment: boolean
     }
-    if (seen.has(doc.postId)) continue
+    if (seen.has(doc.postId)) {
+      continue
+    }
     seen.add(doc.postId)
 
     const hl = hit.highlight as { text?: { snippet?: string } } | undefined
@@ -542,7 +552,9 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
       })
 
     const hits = results.hits ?? []
-    if (hits.length === 0) break
+    if (hits.length === 0) {
+      break
+    }
 
     const idsWithoutEmbedding = hits
       .filter((hit) => {
@@ -587,7 +599,9 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
       }
     }
 
-    if (hits.length < perPage) break
+    if (hits.length < perPage) {
+      break
+    }
     page++
   }
 
@@ -614,7 +628,9 @@ export async function indexAllComments(): Promise<{
       .limit(batchSize)
       .offset(offset)
 
-    if (dbComments.length === 0) break
+    if (dbComments.length === 0) {
+      break
+    }
     total += dbComments.length
 
     for (const comment of dbComments) {
