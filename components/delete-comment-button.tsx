@@ -37,10 +37,10 @@ export function DeleteCommentButton({
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
-        className="flex size-6 cursor-pointer items-center justify-center pr-0.5 text-muted-foreground text-xs"
+        className="flex size-6 cursor-pointer items-center justify-center px-1.5 text-muted-foreground text-xs"
         onClick={handleClick}
       >
-        <Trash2 absoluteStrokeWidth className="size-4" />
+        <Trash2 absoluteStrokeWidth className="size-4 shrink-0" />
       </Tooltip.Trigger>
       <Tooltip.Popup>
         {isRootComment ? "Delete post" : "Delete comment"}

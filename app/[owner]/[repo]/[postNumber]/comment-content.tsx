@@ -554,82 +554,129 @@ export function CommentContent({
   isRetrying = false,
   onRetry,
 }: CommentContentProps) {
+  const [thinkingExpanded, setThinkingExpanded] = useState(false)
   const grouped = groupParts(content)
-
   const { owner, repo, gitContext } = usePostMetadata()
+
+  const lastTextIdx = grouped.findLastIndex((item) => item.type === "text")
+  const shouldCollapse = !isStreaming && lastTextIdx > 0
+  const thinkingParts = shouldCollapse ? grouped.slice(0, lastTextIdx) : []
+  const visibleParts = shouldCollapse ? grouped.slice(lastTextIdx) : grouped
+
+  const hasNonToolParts = thinkingParts.some(
+    (p) => p.type === "text" || p.type === "reasoning"
+  )
+  const allThinkingTools = thinkingParts
+    .filter(
+      (p): p is Extract<GroupedPart, { type: "tool-group" }> =>
+        p.type === "tool-group"
+    )
+    .flatMap((p) => p.tools)
+  const toolCounts = countToolsByName(allThinkingTools)
+  const thinkingTriggerText = toolCounts
+    .map(({ name, count }) => `${count} ${name}`)
+    .join(" - ")
+
+  function renderPart(item: GroupedPart, groupIdx: number) {
+    switch (item.type) {
+      case "text":
+        return (
+          <div data-from={item.msg.role} key={`${item.msgId}-${item.idx}`}>
+            <div data-error={item.hasError || undefined}>
+              <div>
+                <Streamdown
+                  components={streamdownComponents}
+                  mode={isStreaming ? "streaming" : "static"}
+                  rehypePlugins={[
+                    defaultRehypePlugins.raw,
+                    defaultRehypePlugins.katex,
+                    [
+                      harden,
+                      {
+                        allowedLinkPrefixes: ["*", ""],
+                        allowedProtocols: ["*"],
+                        allowedImagePrefixes: ["*"],
+                        allowDataImages: true,
+                        defaultOrigin: `https://github.com/${owner}/${repo}/tree/${gitContext?.branch ?? "main"}/`,
+                      },
+                    ],
+                  ]}
+                  shikiTheme={["github-light", "github-dark"]}
+                >
+                  {item.part.text}
+                </Streamdown>
+              </div>
+            </div>
+            {item.msg.role === "assistant" &&
+              (item.hasError || hasStreamError) &&
+              onRetry && (
+                <div data-actions>
+                  <button
+                    aria-label="Retry"
+                    className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm disabled:opacity-50"
+                    disabled={isRetrying}
+                    onClick={onRetry}
+                    type="button"
+                  >
+                    {isRetrying ? "Retrying..." : "Retry"}
+                  </button>
+                </div>
+              )}
+          </div>
+        )
+      case "reasoning":
+        return (
+          <Collapsible.Root
+            key={`${item.msgId}-${item.idx}`}
+            open={Boolean(isStreaming && item.isLast ? "" : undefined)}
+          >
+            <Collapsible.Trigger>Thinking...</Collapsible.Trigger>
+            <Collapsible.Panel>{item.part.text}</Collapsible.Panel>
+          </Collapsible.Root>
+        )
+      case "tool-group":
+        return (
+          <ToolGroup
+            isLastGroup={groupIdx === grouped.length - 1}
+            isStreaming={isStreaming}
+            key={`${item.msgId}-tools-${item.startIdx}`}
+            tools={item.tools}
+          />
+        )
+      default:
+        return null
+    }
+  }
 
   return (
     <div>
-      {grouped.map((item, groupIdx) => {
-        switch (item.type) {
-          case "text":
-            return (
-              <div data-from={item.msg.role} key={`${item.msgId}-${item.idx}`}>
-                <div data-error={item.hasError || undefined}>
-                  <div>
-                    <Streamdown
-                      components={streamdownComponents}
-                      mode={isStreaming ? "streaming" : "static"}
-                      rehypePlugins={[
-                        defaultRehypePlugins.raw,
-                        defaultRehypePlugins.katex,
-                        [
-                          harden,
-                          {
-                            allowedLinkPrefixes: ["*", ""],
-                            allowedProtocols: ["*"],
-                            allowedImagePrefixes: ["*"],
-                            allowDataImages: true,
-                            defaultOrigin: `https://github.com/${owner}/${repo}/tree/${gitContext?.branch ?? "main"}/`,
-                          },
-                        ],
-                      ]}
-                      shikiTheme={["github-light", "github-dark"]}
-                    >
-                      {item.part.text}
-                    </Streamdown>
-                  </div>
-                </div>
-                {item.msg.role === "assistant" &&
-                  (item.hasError || hasStreamError) &&
-                  onRetry && (
-                    <div data-actions>
-                      <button
-                        aria-label="Retry"
-                        className="flex items-center gap-1 bg-highlight-yellow px-1.5 py-0.5 font-medium text-bright text-sm disabled:opacity-50"
-                        disabled={isRetrying}
-                        onClick={onRetry}
-                        type="button"
-                      >
-                        {isRetrying ? "Retrying..." : "Retry"}
-                      </button>
-                    </div>
-                  )}
-              </div>
-            )
-          case "reasoning":
-            return (
-              <Collapsible.Root
-                key={`${item.msgId}-${item.idx}`}
-                open={Boolean(isStreaming && item.isLast ? "" : undefined)}
+      {thinkingParts.length > 0 &&
+        (hasNonToolParts ? (
+          <Collapsible.Root
+            onOpenChange={setThinkingExpanded}
+            open={thinkingExpanded}
+          >
+            <Collapsible.Trigger className="mb-4 flex cursor-pointer items-center gap-2 text-left">
+              <span
+                className={`border px-1.5 py-0.5 font-medium text-xs ${
+                  thinkingExpanded
+                    ? "border-highlight-gray bg-highlight-gray text-background"
+                    : "border-highlight-gray/30 bg-highlight-gray/10 text-highlight-gray"
+                }`}
               >
-                <Collapsible.Trigger>Thinking...</Collapsible.Trigger>
-                <Collapsible.Panel>{item.part.text}</Collapsible.Panel>
-              </Collapsible.Root>
-            )
-          case "tool-group":
-            return (
-              <ToolGroup
-                isLastGroup={groupIdx === grouped.length - 1}
-                isStreaming={isStreaming}
-                key={`${item.msgId}-tools-${item.startIdx}`}
-                tools={item.tools}
-              />
-            )
-          default:
-            return null
-        }
-      })}
+                {thinkingTriggerText}
+              </span>
+            </Collapsible.Trigger>
+            <Collapsible.Panel className="mb-4 border-highlight-gray/20 border-l-2 pl-3">
+              {thinkingParts.map((item, idx) => renderPart(item, idx))}
+            </Collapsible.Panel>
+          </Collapsible.Root>
+        ) : (
+          thinkingParts.map((item, idx) => renderPart(item, idx))
+        ))}
+      {visibleParts.map((item, idx) =>
+        renderPart(item, thinkingParts.length + idx)
+      )}
     </div>
   )
 }

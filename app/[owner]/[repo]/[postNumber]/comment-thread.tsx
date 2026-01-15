@@ -97,7 +97,7 @@ function CommentItem({
           {author.name}
         </Link>
         <span className="hidden sm:inline">&nbsp;</span>
-        <span className="text-muted-foreground text-sm">
+        <span className="mr-1.5 text-muted-foreground text-sm">
           {actionLabel}{" "}
           <Suspense>
             <RelativeTime
@@ -106,6 +106,12 @@ function CommentItem({
             />
           </Suspense>
         </span>
+        <CopyLinkButton
+          commentNumber={commentNumber}
+          owner={owner}
+          postNumber={postNumber}
+          repo={repo}
+        />
       </div>
       <div className="flex items-center">
         {comment.streamStatus === "streaming" && <StreamingBadge />}
@@ -121,12 +127,6 @@ function CommentItem({
           {comment.streamStatus !== "streaming" && (
             <CopyMarkdownButton content={comment.content as AgentUIMessage[]} />
           )}
-          <CopyLinkButton
-            commentNumber={commentNumber}
-            owner={owner}
-            postNumber={postNumber}
-            repo={repo}
-          />
         </Tooltip.Provider>
       </div>
     </div>
