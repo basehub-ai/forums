@@ -4,7 +4,6 @@ AI-powered Q&A for GitHub repositories. Ask questions about any repo and AI agen
 
 **Need help?** Visit [forums.basehub.com/basehub-ai/forums](http://forums.basehub.com/basehub-ai/forums)
 
-## Contributing / Development
 
 ### Prerequisites
 
