@@ -155,10 +155,12 @@ export async function searchBranches(
   })
 
   if (!res.ok) {
-    throw new Error(`GitHub GraphQL request failed: ${res.status}`)
+    const text = await res.text()
+    throw new Error(`GitHub GraphQL request failed (${res.status}): ${text}`)
   }
 
   const json = (await res.json()) as {
+    errors?: { message: string }[]
     data?: {
       repository?: {
         refs?: {
@@ -166,6 +168,12 @@ export async function searchBranches(
         }
       }
     }
+  }
+
+  if (json.errors?.length) {
+    throw new Error(
+      `GitHub GraphQL error: ${json.errors.map((e) => e.message).join(", ")}`
+    )
   }
 
   return json.data?.repository?.refs?.nodes?.map((n) => n.name) ?? []

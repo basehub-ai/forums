@@ -113,7 +113,11 @@ export const Composer = ({
 
   useEffect(() => {
     if (owner && repo) {
-      searchBranchesAction(owner, repo, "", 50).then(setBranches)
+      searchBranchesAction(owner, repo, "", 50)
+        .then(setBranches)
+        .catch((error) => {
+          console.error("Failed to search branches:", error)
+        })
     }
   }, [owner, repo])
 

@@ -51,8 +51,11 @@ export function BranchSelectorDialog({
     }
 
     startTransition(async () => {
-      const results = await searchBranchesAction(owner, repo, debouncedQuery)
-      setBranches(results)
+      await searchBranchesAction(owner, repo, debouncedQuery)
+        .then(setBranches)
+        .catch((error) => {
+          console.error("Failed to search branches:", error)
+        })
     })
   }, [open, owner, repo, debouncedQuery, initialBranches])
 
