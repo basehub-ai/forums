@@ -1,5 +1,21 @@
+import { eq } from "drizzle-orm"
 import { cache } from "react"
 import { z } from "zod"
+import { db } from "@/lib/db/client"
+import { account } from "@/lib/db/schema"
+
+export async function getUserAccessToken(
+  userId: string
+): Promise<string | null> {
+  const githubAccount = await db
+    .select({ accessToken: account.accessToken })
+    .from(account)
+    .where(eq(account.userId, userId))
+    .limit(1)
+    .then((r) => r[0])
+
+  return githubAccount?.accessToken ?? null
+}
 
 export async function githubFetch(
   url: string,

@@ -2,8 +2,7 @@
 
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
-import { searchBranches } from "@/lib/data/github"
-import { getUserAccessToken } from "@/lib/data/permissions"
+import { getUserAccessToken, searchBranches } from "@/lib/data/github"
 
 export async function searchBranchesAction(
   owner: string,

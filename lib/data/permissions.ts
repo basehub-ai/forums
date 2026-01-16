@@ -1,6 +1,4 @@
-import { eq } from "drizzle-orm"
-import { db } from "@/lib/db/client"
-import { account } from "@/lib/db/schema"
+import { getUserAccessToken } from "@/lib/data/github"
 import { redis } from "@/lib/redis"
 
 type RepoPermissions = {
@@ -15,19 +13,6 @@ const CACHE_TTL_SECONDS = 5 * 60 // 5 minutes
 
 function permissionsCacheKey(userId: string, owner: string, repo: string) {
   return `repo-permissions:${userId}:${owner}:${repo}`
-}
-
-export async function getUserAccessToken(
-  userId: string
-): Promise<string | null> {
-  const githubAccount = await db
-    .select({ accessToken: account.accessToken })
-    .from(account)
-    .where(eq(account.userId, userId))
-    .limit(1)
-    .then((r) => r[0])
-
-  return githubAccount?.accessToken ?? null
 }
 
 export async function getUserRepoPermissions(
