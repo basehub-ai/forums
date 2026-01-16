@@ -51,6 +51,7 @@ const githubRepoSchema = z.object({
   description: z.string().nullable(),
   stargazers_count: z.number(),
   homepage: z.string().nullable(),
+  default_branch: z.string(),
 })
 
 export type GithubRepoData = z.infer<typeof githubRepoSchema>
@@ -73,3 +74,83 @@ export const getGithubRepo = cache(
     }
   }
 )
+
+const githubBranchSchema = z.object({
+  name: z.string(),
+})
+
+export const getBranches = cache(
+  async (owner: string, repo: string): Promise<string[] | null> => {
+    try {
+      const res = await githubFetch(
+        `https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`
+      )
+
+      if (!res.ok || res.status === 404) {
+        return null
+      }
+
+      const branches = z.array(githubBranchSchema).parse(await res.json())
+      return branches.map((b) => b.name)
+    } catch (error) {
+      console.error(`Failed to fetch branches for ${owner}/${repo}:`, error)
+      return null
+    }
+  }
+)
+
+const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+
+const searchBranchesQuery = `
+  query($owner: String!, $repoName: String!, $queryString: String!, $first: Int!) {
+    repository(owner: $owner, name: $repoName) {
+      refs(first: $first, query: $queryString, refPrefix: "refs/heads/") {
+        nodes {
+          name
+        }
+      }
+    }
+  }
+`
+
+export async function searchBranches(
+  owner: string,
+  repo: string,
+  query: string,
+  first: number,
+  accessToken: string
+): Promise<string[]> {
+  const res = await fetch(GITHUB_GRAPHQL_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: searchBranchesQuery,
+      variables: {
+        owner,
+        repoName: repo,
+        queryString: query,
+        first,
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    throw new Error(`GitHub GraphQL request failed: ${res.status}`)
+  }
+
+  const json = (await res.json()) as {
+    data?: {
+      repository?: {
+        refs?: {
+          nodes?: { name: string }[]
+        }
+      }
+    }
+  }
+
+  return json.data?.repository?.refs?.nodes?.map((n) => n.name) ?? []
+}

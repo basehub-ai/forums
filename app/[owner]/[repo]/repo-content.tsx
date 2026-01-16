@@ -34,6 +34,7 @@ type RepoContentProps = {
   categoriesById: Record<string, Category>
   askingOptions: ComposerProps["options"]["asking"]
   categoryId?: string
+  defaultBranch: string
 }
 
 export function RepoContent({
@@ -44,6 +45,7 @@ export function RepoContent({
   categoriesById,
   askingOptions,
   categoryId,
+  defaultBranch,
 }: RepoContentProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
@@ -62,11 +64,12 @@ export function RepoContent({
         <Composer
           autoFocus
           defaultAskingId={defaultLlmId}
+          defaultBranch={defaultBranch}
           onAskingChange={(asking) => {
             localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
           }}
           onChange={setSearchQuery}
-          onSubmit={async ({ value, options }) => {
+          onSubmit={async ({ value, options, branch }) => {
             const result = await createPost({
               owner,
               repo,
@@ -77,13 +80,16 @@ export function RepoContent({
               },
               seekingAnswerFrom: options.asking.id,
               categoryId,
+              branch,
             })
             router.push(`/${owner}/${repo}/${result.postNumber}`)
           }}
           options={{
             asking: askingOptions,
           }}
+          owner={owner}
           placeholder="Ask or search"
+          repo={repo}
           storageKey={`new-post-composer:${owner}:${repo}`}
         />
       </div>

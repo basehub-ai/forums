@@ -28,6 +28,7 @@ export async function responseAgent({
   model,
   userId,
   billingCategory,
+  branch,
 }: {
   commentId: string
   streamId: string
@@ -37,6 +38,7 @@ export async function responseAgent({
   model: string
   userId: string
   billingCategory: BillingCategory
+  branch?: string
 }) {
   "use workflow"
 
@@ -48,6 +50,7 @@ export async function responseAgent({
       commentId,
       owner,
       repo,
+      branch,
     })
 
     let finishReason: FinishReason | undefined
@@ -150,11 +153,13 @@ async function setupStep({
   commentId,
   owner,
   repo,
+  branch,
 }: {
   postId: string
   commentId: string
   owner: string
   repo: string
+  branch?: string
 }): Promise<{
   initialMessages: AgentUIMessage[]
   sandboxId: string
@@ -196,7 +201,7 @@ async function setupStep({
 
   const workspace = await getWorkspace({
     sandboxId: null,
-    gitContext: { owner, repo, ref: existingGitContext?.sha },
+    gitContext: { owner, repo, ref: existingGitContext?.sha ?? branch },
   })
 
   if (!existingGitContext) {

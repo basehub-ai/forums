@@ -148,6 +148,7 @@ export default async function CategoryPage({
         ]}
         categoriesById={categoriesById}
         categoryId={category.id}
+        defaultBranch={repoData.default_branch}
         owner={owner}
         pinnedPosts={pinnedPosts}
         posts={regularPosts}
