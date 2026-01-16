@@ -38,7 +38,6 @@ type PostMetadata = {
     title?: string
     categoryId?: string | null
   }) => Promise<void>
-  canModerate: boolean
   pinned: boolean
 }
 
@@ -55,7 +54,6 @@ export function PostMetadataProvider({
   staleInfo,
   archivedRefs,
   categories,
-  canModerate,
   pinned,
   children,
 }: {
@@ -69,7 +67,6 @@ export function PostMetadataProvider({
   staleInfo: StaleInfo
   archivedRefs: string[]
   categories: Category[]
-  canModerate: boolean
   pinned: boolean
   children: React.ReactNode
 }) {
@@ -150,7 +147,6 @@ export function PostMetadataProvider({
         selectedRef,
         setSelectedRef,
         updateMetadata,
-        canModerate,
         pinned,
       }}
     >

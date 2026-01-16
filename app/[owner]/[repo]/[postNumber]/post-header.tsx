@@ -3,14 +3,15 @@
 import { ChevronRight, PinIcon, TagIcon, TrashIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { type ReactNode, useEffect, useState, useTransition } from "react"
+import { type ReactNode, useState, useTransition } from "react"
 import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
 import { Tooltip } from "@/components/ui/tooltip"
-import { checkCanModerate, pinPost, unpinPost } from "@/lib/actions/moderation"
+import { pinPost, unpinPost } from "@/lib/actions/moderation"
 import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
+import { useRepoPermissions } from "../repo-permissions-context"
 import { usePostMetadata } from "./post-metadata-context"
 
 function categorySlugify(title: string) {
@@ -149,22 +150,14 @@ function RefSelector() {
 }
 
 function ModerationBanner() {
-  const { owner, repo, postId, pinned } = usePostMetadata()
-  const session = authClient.useSession()
-  const [canModerate, setCanModerate] = useState(false)
+  const { postId, pinned } = usePostMetadata()
+  const { canModerate } = useRepoPermissions()
   const [isPinned, setIsPinned] = useState(pinned)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const setModeratorDeletePostDialog = useDialogStore(
     (s) => s.setModeratorDeletePostDialog
   )
-
-  useEffect(() => {
-    if (!session.data?.user) {
-      return
-    }
-    checkCanModerate(owner, repo).then(setCanModerate)
-  }, [owner, repo, session.data?.user])
 
   if (!canModerate) {
     return null
@@ -238,16 +231,9 @@ function StaleBanner() {
   const session = authClient.useSession()
   const userId = session.data?.user.id
   const isAuthor = userId === authorId
-  const [canModerate, setCanModerate] = useState(false)
+  const { canModerate } = useRepoPermissions()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-
-  useEffect(() => {
-    if (!session.data?.user) {
-      return
-    }
-    checkCanModerate(owner, repo).then(setCanModerate)
-  }, [owner, repo, session.data?.user])
 
   if (!(staleInfo && gitContext)) {
     return null
