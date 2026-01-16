@@ -156,6 +156,7 @@ export default async function RepoPage({
           { id: "human", name: "Human only" },
         ]}
         categoriesById={categoriesById}
+        defaultBranch={repoData.default_branch}
         owner={owner}
         pinnedPosts={pinnedPosts}
         posts={regularPosts}

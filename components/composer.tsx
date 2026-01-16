@@ -1,13 +1,15 @@
 "use client"
 
 import { useCustomer } from "autumn-js/react"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon, GitBranchIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
+import { BranchSelectorDialog } from "@/components/branch-selector-dialog"
 import ClaudeIcon from "@/components/icons/claude"
 import GeminiIcon from "@/components/icons/gemini"
 import OpenAIIcon from "@/components/icons/openai"
 import { Menu } from "@/components/ui/menu"
+import { searchBranchesAction } from "@/lib/actions/branches"
 import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
@@ -44,11 +46,15 @@ export type ComposerProps = {
     options: {
       [K in keyof ComposerProps["options"]]: ComposerProps["options"][K][number]
     }
+    branch?: string
   }) => Promise<void>
   autoFocus?: boolean
   defaultAskingId?: string
   onAskingChange?: (asking: ComposerProps["options"]["asking"][number]) => void
   onChange?: (value: string) => void
+  defaultBranch?: string
+  owner?: string
+  repo?: string
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -62,6 +68,9 @@ export const Composer = ({
   defaultAskingId,
   onAskingChange,
   onChange,
+  defaultBranch,
+  owner,
+  repo,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
@@ -84,6 +93,9 @@ export const Composer = ({
   const [defaultAskingIdSet, setDefaultAskingIdSet] = useState(false)
   const [isScrollable, setIsScrollable] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [selectedBranch, setSelectedBranch] = useState(defaultBranch ?? "main")
+  const [branches, setBranches] = useState<string[]>([])
+  const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false)
 
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
@@ -98,6 +110,16 @@ export const Composer = ({
 
     setIsScrollable(textarea.scrollHeight > maxHeight)
   }, [])
+
+  useEffect(() => {
+    if (owner && repo) {
+      searchBranchesAction(owner, repo, "", 50)
+        .then(setBranches)
+        .catch((error) => {
+          console.error("Failed to search branches:", error)
+        })
+    }
+  }, [owner, repo])
 
   useEffect(() => {
     if (defaultAskingId && !defaultAskingIdSet) {
@@ -128,7 +150,7 @@ export const Composer = ({
     <form
       className={cn(
         "group flex flex-col bg-shade/10 outline-dotted outline-2 outline-muted -outline-offset-1 focus-within:bg-shade/30 focus-within:outline-dashed",
-        isMenuOpen && "bg-shade/30 outline-dashed"
+        (isMenuOpen || isBranchDialogOpen) && "bg-shade/30 outline-dashed"
       )}
       onSubmit={(e) => {
         e.preventDefault()
@@ -139,7 +161,11 @@ export const Composer = ({
           return
         }
         startTransition(async () => {
-          await onSubmit({ value, options: { asking: selectedAsking } })
+          await onSubmit({
+            value,
+            options: { asking: selectedAsking },
+            branch: selectedBranch,
+          })
             .then(() => {
               form.reset()
               sessionStorage.removeItem(storageKey)
@@ -198,6 +224,9 @@ export const Composer = ({
         <div
           className="h-27 cursor-text sm:h-15"
           onClick={(e) => {
+            if (isBranchDialogOpen) {
+              return
+            }
             const target = e.target as HTMLElement
             if (target.closest("button")) {
               return
@@ -215,6 +244,9 @@ export const Composer = ({
               "border-muted border-t-2 border-dotted group-focus-within:border-dashed"
           )}
           onClick={(e) => {
+            if (isBranchDialogOpen) {
+              return
+            }
             const target = e.target as HTMLElement
             if (target.closest("button")) {
               return
@@ -227,7 +259,7 @@ export const Composer = ({
               <Menu.Root onOpenChange={setIsMenuOpen}>
                 <Menu.Trigger
                   className={cn(
-                    "group h-9 justify-between bg-transparent text-faint text-sm transition-none hover:text-accent hover:no-underline active:text-dim data-popup-open:text-accent sm:w-auto"
+                    "group h-9 justify-between bg-transparent text-faint text-sm transition-none hover:text-accent hover:no-underline active:text-accent data-popup-open:text-accent sm:w-auto"
                   )}
                 >
                   {(() => {
@@ -236,7 +268,9 @@ export const Composer = ({
                       <Icon aria-hidden="true" className="size-4" />
                     ) : null
                   })()}
-                  {selectedAsking.name}
+                  <span className="hidden truncate sm:block">
+                    {selectedAsking.name}
+                  </span>
                   <ChevronDownIcon
                     absoluteStrokeWidth
                     aria-hidden="true"
@@ -280,6 +314,46 @@ export const Composer = ({
                   })}
                 </Menu.Popup>
               </Menu.Root>
+
+              {owner && repo && (
+                <>
+                  <button
+                    className={cn(
+                      "group flex h-9 cursor-pointer items-center gap-2 bg-transparent text-faint text-sm transition-none hover:text-accent active:text-accent sm:w-auto",
+                      isBranchDialogOpen && "text-accent"
+                    )}
+                    onClick={() => setIsBranchDialogOpen(true)}
+                    type="button"
+                  >
+                    <GitBranchIcon
+                      absoluteStrokeWidth
+                      aria-hidden="true"
+                      className="size-4 sm:hidden"
+                    />
+                    <span className="hidden max-w-24 truncate sm:block">
+                      {selectedBranch}
+                    </span>
+                    <ChevronDownIcon
+                      absoluteStrokeWidth
+                      aria-hidden="true"
+                      className={cn(
+                        "size-4",
+                        isBranchDialogOpen && "rotate-180"
+                      )}
+                    />
+                  </button>
+                  <BranchSelectorDialog
+                    defaultBranch={defaultBranch ?? "main"}
+                    initialBranches={branches}
+                    onOpenChange={setIsBranchDialogOpen}
+                    onSelectBranch={setSelectedBranch}
+                    open={isBranchDialogOpen}
+                    owner={owner}
+                    repo={repo}
+                    selectedBranch={selectedBranch}
+                  />
+                </>
+              )}
 
               {isSignedIn && selectedAsking.id !== "human" && (
                 <CreditWarning

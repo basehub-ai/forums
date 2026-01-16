@@ -166,6 +166,7 @@ export async function createPost(data: {
   content: AgentUIMessage
   seekingAnswerFrom?: string | null
   categoryId?: string
+  branch?: string
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
@@ -269,6 +270,7 @@ export async function createPost(data: {
         model: llm.model,
         userId: session.user.id,
         billingCategory,
+        branch: data.branch,
       },
     ])
 
