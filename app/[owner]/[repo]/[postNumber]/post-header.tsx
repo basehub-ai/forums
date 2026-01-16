@@ -263,7 +263,7 @@ function StaleBanner() {
   }
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
+    <div className="mt-4 flex min-h-8 flex-wrap items-center justify-between gap-2 border-faint border-l-2 bg-shade px-2 py-1 font-medium text-faint text-sm">
       <span className="min-w-0">
         This post might have stale content, as{" "}
         <Link
