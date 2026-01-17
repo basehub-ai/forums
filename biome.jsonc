@@ -45,6 +45,30 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/mobile/**/*"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useAltText": "off",
+            "useButtonType": "off",
+            "useValidAnchor": "off",
+            "useHtmlLang": "off",
+            "useIframeTitle": "off",
+            "useHeadingContent": "off",
+            "useMediaCaption": "off"
+          },
+          "style": {
+            "noHeadElement": "off",
+            "useFilenamingConvention": "off"
+          },
+          "suspicious": {
+            "noDocumentImportInPage": "off",
+            "noHeadImportInDocument": "off"
+          }
+        }
+      }
     }
   ]
 }
