@@ -31,10 +31,16 @@ export function RepoPermissionsProvider({
       return
     }
     setIsLoading(true)
-    checkCanModerate(owner, repo).then((result) => {
-      setCanModerate(result)
-      setIsLoading(false)
-    })
+    checkCanModerate(owner, repo)
+      .then((result) => {
+        setCanModerate(result)
+        setIsLoading(false)
+      })
+      .catch((error) => {
+        console.error("Failed to check moderation permissions:", error)
+        setCanModerate(false)
+        setIsLoading(false)
+      })
   }, [owner, repo, session.data?.user])
 
   return (

@@ -151,7 +151,7 @@ function RefSelector() {
 
 function ModerationBanner() {
   const { postId, pinned } = usePostMetadata()
-  const { canModerate } = useRepoPermissions()
+  const { canModerate, isLoading } = useRepoPermissions()
   const [isPinned, setIsPinned] = useState(pinned)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -159,7 +159,7 @@ function ModerationBanner() {
     (s) => s.setModeratorDeletePostDialog
   )
 
-  if (!canModerate) {
+  if (!canModerate || isLoading) {
     return null
   }
 
@@ -231,7 +231,7 @@ function StaleBanner() {
   const session = authClient.useSession()
   const userId = session.data?.user.id
   const isAuthor = userId === authorId
-  const { canModerate } = useRepoPermissions()
+  const { canModerate, isLoading } = useRepoPermissions()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -239,7 +239,7 @@ function StaleBanner() {
     return null
   }
 
-  const canRerun = isAuthor || canModerate
+  const canRerun = (isAuthor || canModerate) && !isLoading
 
   function handleRerun() {
     startTransition(async () => {
