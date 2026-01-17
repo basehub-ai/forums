@@ -91,8 +91,7 @@ You're working on your own. The category has already been set.`
       }),
       // biome-ignore lint/suspicious/useAwait: .
       execute: async (cat) => {
-        result.newCategory = cat
-        result.newCategory.title = result.newCategory.title.toLowerCase()
+        result.newCategory = { ...cat, title: cat.title.toLowerCase() }
         return { ok: true }
       },
     })
