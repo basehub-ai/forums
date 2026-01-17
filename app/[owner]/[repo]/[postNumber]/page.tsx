@@ -329,7 +329,6 @@ export default async function PostPage({
     <PostMetadataProvider
       archivedRefs={archivedRefs}
       authorId={post.authorId}
-      canModerate={false}
       categories={repoCategories}
       initialCategory={category?.id ? category : null}
       initialGitContext={gitContext}
