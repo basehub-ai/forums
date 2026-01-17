@@ -128,7 +128,7 @@ export function BranchSelectorDialog({
                         className={cn(
                           "flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-left text-sm outline-none hover:bg-shade hover:text-bright focus:bg-shade focus:text-bright",
                           branch === selectedBranch
-                            ? "text-accent"
+                            ? "text-accent hover:text-accent"
                             : "text-muted"
                         )}
                         key={branch}
