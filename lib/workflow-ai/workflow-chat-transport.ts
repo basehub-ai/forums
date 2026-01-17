@@ -236,9 +236,10 @@ export class WorkflowChatTransport<UI_MESSAGE extends UIMessage>
 
         chunkIndex++
 
-        yield chunk.value
+        const value = chunk.value as UIMessageChunk
+        yield value
 
-        if (chunk.value.type === "finish") {
+        if (value.type === "finish") {
           gotFinish = true
         }
       }
@@ -326,9 +327,10 @@ export class WorkflowChatTransport<UI_MESSAGE extends UIMessage>
 
           chunkIndex++
 
-          yield chunk.value
+          const value = chunk.value as UIMessageChunk
+          yield value
 
-          if (chunk.value.type === "finish") {
+          if (value.type === "finish") {
             gotFinish = true
           }
         }
