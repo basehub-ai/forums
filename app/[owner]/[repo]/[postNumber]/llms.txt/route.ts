@@ -9,7 +9,10 @@ function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toISOString()
 }
 
-function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
+function convertMessagesToMarkdown(
+  messages: AgentUIMessage[],
+  includeTools: boolean
+): string {
   return messages
     .map((msg) => {
       if (msg.role === "user" || msg.role === "assistant") {
@@ -20,6 +23,22 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
             }
             if (part.type === "text") {
               return part.text
+            }
+            if (includeTools && part.type.startsWith("tool-")) {
+              const toolPart = part as {
+                type: string
+                input?: unknown
+                output?: unknown
+              }
+              const toolName = toolPart.type.slice(5)
+              let result = `**Tool: ${toolName}**\n`
+              if (toolPart.input !== undefined) {
+                result += `Input:\n\`\`\`json\n${JSON.stringify(toolPart.input, null, 2)}\n\`\`\`\n`
+              }
+              if (toolPart.output !== undefined) {
+                result += `Output:\n\`\`\`json\n${JSON.stringify(toolPart.output, null, 2)}\n\`\`\`\n`
+              }
+              return result
             }
             return ""
           })
@@ -33,12 +52,14 @@ function convertMessagesToMarkdown(messages: AgentUIMessage[]): string {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: {
     params: Promise<{ owner: string; repo: string; postNumber: string }>
   }
 ) {
   const { owner, repo, postNumber: postNumberStr } = await context.params
+  const url = new URL(request.url)
+  const includeTools = url.searchParams.get("tools") === "true"
   const postNumber = Number.parseInt(postNumberStr, 10)
 
   if (Number.isNaN(postNumber)) {
@@ -170,7 +191,7 @@ export async function GET(
     markdown += `## ${authorLabel}\n\n`
     markdown += `*Posted at ${formatTimestamp(comment.createdAt)}*\n\n`
 
-    const content = convertMessagesToMarkdown(comment.content)
+    const content = convertMessagesToMarkdown(comment.content, includeTools)
     markdown += `${content}\n\n`
     markdown += "---\n\n"
   }

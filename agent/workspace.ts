@@ -1,12 +1,17 @@
 import { Sandbox } from "@vercel/sandbox"
 import ms from "ms"
 import { ResultAsync } from "neverthrow"
-import type { GitContextData } from "@/agent/types"
+import type { AgentMode, GitContextData } from "@/agent/types"
 import {
+  extendPostSandboxTTL,
   extendSandboxTTL,
+  getOrLockPostSandbox,
   getOrLockSandbox,
+  releasePostSandboxLock,
   releaseSandboxLock,
+  removePostSandboxIf,
   removeSandboxIf,
+  storePostSandbox,
   storeSandbox,
 } from "@/lib/redis"
 export type GitContext = {
@@ -60,7 +65,8 @@ async function createSandbox(): Promise<Sandbox> {
 
 async function extendSandboxTimeout(
   sandbox: Sandbox,
-  gitContext: GitContext
+  gitContext: GitContext,
+  postId?: string
 ): Promise<void> {
   const result = await ResultAsync.fromPromise(
     sandbox.extendTimeout(timeout),
@@ -75,7 +81,16 @@ async function extendSandboxTimeout(
     return
   }
 
-  await extendSandboxTTL(gitContext.owner, gitContext.repo, timeout)
+  if (postId) {
+    await extendPostSandboxTTL(
+      gitContext.owner,
+      gitContext.repo,
+      postId,
+      timeout
+    )
+  } else {
+    await extendSandboxTTL(gitContext.owner, gitContext.repo, timeout)
+  }
 }
 
 async function getOrCreateSharedSandbox(
@@ -130,28 +145,124 @@ async function getOrCreateSharedSandbox(
   return getOrCreateSharedSandbox(gitContext, retryCount + 1)
 }
 
+async function getOrCreateBuildSandbox(
+  gitContext: GitContext,
+  postId: string,
+  retryCount = 0
+): Promise<Sandbox> {
+  const { owner, repo } = gitContext
+
+  const result = await getOrLockPostSandbox(
+    owner,
+    repo,
+    postId,
+    CREATION_LOCK_TTL
+  )
+
+  if (result.type === "existing") {
+    const sandbox = await tryRetrieveSandbox(result.sandboxId)
+
+    if (sandbox) {
+      await extendSandboxTimeout(sandbox, gitContext, postId)
+      return sandbox
+    }
+    console.warn(
+      `Stale build sandbox ${result.sandboxId} for ${owner}/${repo}/${postId}, removing`
+    )
+    await removePostSandboxIf(owner, repo, postId, result.sandboxId)
+    return getOrCreateBuildSandbox(gitContext, postId, retryCount)
+  }
+
+  if (result.type === "create") {
+    try {
+      const sandbox = await createSandbox()
+
+      await storePostSandbox(owner, repo, postId, sandbox.sandboxId, timeout)
+
+      console.log(
+        `Created build sandbox ${sandbox.sandboxId} for ${owner}/${repo}/${postId}`
+      )
+
+      return sandbox
+    } catch (error) {
+      await releasePostSandboxLock(owner, repo, postId)
+      throw error
+    }
+  }
+
+  if (retryCount >= MAX_RETRIES) {
+    throw new Error(
+      `Timed out waiting for build sandbox creation for ${owner}/${repo}/${postId}`
+    )
+  }
+
+  const delay = BASE_RETRY_DELAY * 2 ** retryCount
+  const jitter = Math.random() * delay * 0.1
+  await sleep(delay + jitter)
+
+  return getOrCreateBuildSandbox(gitContext, postId, retryCount + 1)
+}
+
 export const getWorkspace = async ({
   sandboxId,
   gitContext,
+  mode = "ask",
+  postId,
+  userEmail,
+  userName,
 }: {
   sandboxId: string | null
   gitContext: GitContext
+  mode?: AgentMode
+  postId?: string
+  userEmail?: string | null
+  userName?: string | null
 }): Promise<Workspace> => {
   let sandbox: Sandbox | null = null
 
   if (sandboxId) {
     sandbox = await tryRetrieveSandbox(sandboxId)
     if (sandbox) {
-      await extendSandboxTimeout(sandbox, gitContext)
+      await extendSandboxTimeout(
+        sandbox,
+        gitContext,
+        mode === "build" ? postId : undefined
+      )
     }
   }
 
   if (!sandbox) {
-    sandbox = await getOrCreateSharedSandbox(gitContext)
+    if (mode === "build" && postId) {
+      sandbox = await getOrCreateBuildSandbox(gitContext, postId)
+    } else {
+      sandbox = await getOrCreateSharedSandbox(gitContext)
+    }
   }
+
   const repoUrl = `https://github.com/${gitContext.owner}/${gitContext.repo}.git`
-  const repoDir = `${gitContext.repo}.git` // Use .git suffix for bare repo
   const providedRef = gitContext.ref
+
+  if (mode === "build") {
+    return initializeBuildWorkspace(
+      sandbox,
+      gitContext,
+      repoUrl,
+      providedRef,
+      userEmail,
+      userName
+    )
+  }
+
+  return initializeAskWorkspace(sandbox, gitContext, repoUrl, providedRef)
+}
+
+async function initializeAskWorkspace(
+  sandbox: Sandbox,
+  gitContext: GitContext,
+  repoUrl: string,
+  providedRef?: string
+): Promise<Workspace> {
+  const repoDir = `${gitContext.repo}.git`
   const worktreesBase = `${gitContext.repo}-worktrees`
 
   const result = await sandbox.runCommand({
@@ -295,4 +406,153 @@ export const getWorkspace = async ({
   const gitContextData = JSON.parse(gitContextJson) as GitContextData
 
   return { path: worktreePath, sandbox, gitContextData }
+}
+
+async function initializeBuildWorkspace(
+  sandbox: Sandbox,
+  gitContext: GitContext,
+  repoUrl: string,
+  providedRef?: string,
+  userEmail?: string | null,
+  userName?: string | null
+): Promise<Workspace> {
+  const repoDir = gitContext.repo
+  const gitEmail = userEmail || "build@forums.basehub.com"
+  const gitName = userName || "Forums Build Agent"
+
+  const result = await sandbox.runCommand({
+    cmd: "bash",
+    args: [
+      "-c",
+      `
+        set -e
+        REPO_DIR="$1"
+        REPO_URL="$2"
+        PROVIDED_REF="$3"
+        GIT_EMAIL="$4"
+        GIT_NAME="$5"
+
+        export PATH="$HOME/.local/bin:$PATH"
+
+        # Install tools in background if not present
+        INSTALL_PID=""
+        if ! which rg >/dev/null 2>&1 || ! which gh >/dev/null 2>&1; then
+          (
+            mkdir -p ~/.local/bin
+            cd /tmp
+
+            # Install ripgrep
+            if ! which rg >/dev/null 2>&1; then
+              curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+              tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+              cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
+              rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
+            fi
+
+            # Install GitHub CLI
+            if ! which gh >/dev/null 2>&1; then
+              curl -sLO https://github.com/cli/cli/releases/download/v2.62.0/gh_2.62.0_linux_amd64.tar.gz &&
+              tar xzf gh_2.62.0_linux_amd64.tar.gz &&
+              cp -f gh_2.62.0_linux_amd64/bin/gh ~/.local/bin/ &&
+              rm -rf gh_2.62.0_linux_amd64*
+            fi
+          ) &
+          INSTALL_PID=$!
+        fi
+
+        # Check if this is first initialization or a subsequent call
+        FIRST_INIT=false
+        if [ ! -d "$REPO_DIR" ]; then
+          FIRST_INIT=true
+          git clone --quiet "$REPO_URL" "$REPO_DIR" 2>&1
+        fi
+
+        cd "$REPO_DIR"
+
+        # Configure git user identity (always, in case it changed)
+        git config user.email "$GIT_EMAIL"
+        git config user.name "$GIT_NAME"
+
+        # Wait for tool installation to complete if it was started
+        if [ -n "$INSTALL_PID" ]; then
+          wait $INSTALL_PID || true
+        fi
+
+        # Configure git to use gh for authentication (after gh is installed)
+        gh auth setup-git >/dev/null 2>&1 || true
+
+        # Only checkout ref on first initialization
+        # Subsequent calls should preserve agent's git state (branches, commits, etc.)
+        if [ "$FIRST_INIT" = true ]; then
+          git fetch origin --quiet 2>&1
+
+          # Determine ref: use provided or detect default branch
+          if [ -n "$PROVIDED_REF" ]; then
+            REF="$PROVIDED_REF"
+          else
+            REF=$(git remote show origin 2>/dev/null | grep 'HEAD branch' | cut -d' ' -f5)
+            if [ -z "$REF" ]; then
+              REF="main"
+            fi
+          fi
+
+          # Checkout the ref (branch or SHA - agent handles branch creation from here)
+          git checkout "$REF" >/dev/null 2>&1 || {
+            echo "Error: Failed to checkout $REF" >&2
+            exit 1
+          }
+        fi
+
+        # Output path on first line
+        ABS_PATH=$(pwd)
+        echo "$ABS_PATH"
+
+        # Gather git context and output as JSON on second line
+        SHA=$(git rev-parse HEAD)
+        BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        TAGS=$(git tag --points-at HEAD 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+        MESSAGE=$(git log -1 --format="%s")
+        DATE=$(git log -1 --format="%ci")
+
+        node -p "JSON.stringify({
+          sha: process.argv[1],
+          branch: process.argv[2],
+          tags: process.argv[3] ? process.argv[3].split(',') : [],
+          message: process.argv[4],
+          date: process.argv[5]
+        })" "$SHA" "$BRANCH" "$TAGS" "$MESSAGE" "$DATE"
+      `,
+      "--",
+      repoDir,
+      repoUrl,
+      providedRef || "",
+      gitEmail,
+      gitName,
+    ],
+  })
+
+  let stdout = ""
+  let stderr = ""
+  for await (const log of result.logs()) {
+    if (log.stream === "stdout") {
+      stdout += log.data
+    } else {
+      stderr += log.data
+    }
+  }
+
+  const lines = stdout.trim().split("\n")
+  const repoPath = lines[0]?.replace(cleanupRegex, "")
+  const gitContextJson = lines.at(-1)?.trim()
+
+  if (!(repoPath && gitContextJson?.startsWith("{"))) {
+    console.error(
+      `Invalid build workspace output! stdout: "${stdout}", stderr: "${stderr}"`
+    )
+    throw new Error("Failed to initialize build workspace")
+  }
+
+  const gitContextData = JSON.parse(gitContextJson) as GitContextData
+
+  return { path: repoPath, sandbox, gitContextData }
 }

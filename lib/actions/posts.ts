@@ -7,7 +7,7 @@ import slugify from "slugify"
 import { getRun, start } from "workflow/api"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
-import type { AgentUIMessage } from "@/agent/types"
+import type { AgentMode, AgentUIMessage } from "@/agent/types"
 import {
   auth,
   extractGitHubUserId,
@@ -15,6 +15,7 @@ import {
   isAdmin,
 } from "@/lib/auth"
 import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
+import { getUserAccessToken } from "@/lib/data/github"
 import { canModerate } from "@/lib/data/permissions"
 import { db } from "@/lib/db/client"
 import {
@@ -167,9 +168,29 @@ export async function createPost(data: {
   seekingAnswerFrom?: string | null
   categoryId?: string
   branch?: string
+  mode?: AgentMode
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
+
+  const mode = data.mode ?? "ask"
+  let userAccessToken: string | null = null
+
+  if (mode === "build") {
+    const hasPermission = await canModerate(
+      session.user.id,
+      data.owner,
+      data.repo
+    )
+    if (!hasPermission) {
+      throw new Error("Build mode requires write access to this repository")
+    }
+    userAccessToken = await getUserAccessToken(session.user.id)
+    if (!userAccessToken) {
+      throw new Error("Could not retrieve GitHub access token for build mode")
+    }
+  }
+
   const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const postId = nanoid()
@@ -271,6 +292,10 @@ export async function createPost(data: {
         userId: session.user.id,
         billingCategory,
         branch: data.branch,
+        mode,
+        userAccessToken,
+        userEmail: session.user.email,
+        userName: session.user.name,
       },
     ])
 
@@ -360,12 +385,14 @@ export async function createComment(data: {
   content: AgentUIMessage
   threadCommentId?: string
   seekingAnswerFrom?: string | null
+  mode?: AgentMode
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
   const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const commentId = nanoid()
+  const mode = data.mode ?? "ask"
 
   const [post, llm] = await Promise.all([
     db
@@ -400,6 +427,23 @@ export async function createComment(data: {
 
   if (!post) {
     throw new Error("Post not found")
+  }
+
+  let userAccessToken: string | null = null
+
+  if (mode === "build") {
+    const hasPermission = await canModerate(
+      session.user.id,
+      post.owner,
+      post.repo
+    )
+    if (!hasPermission) {
+      throw new Error("Build mode requires write access to this repository")
+    }
+    userAccessToken = await getUserAccessToken(session.user.id)
+    if (!userAccessToken) {
+      throw new Error("Could not retrieve GitHub access token for build mode")
+    }
   }
 
   const isOp = session.user.id === post.authorId
@@ -457,6 +501,10 @@ export async function createComment(data: {
         model: llm.model,
         userId: session.user.id,
         billingCategory,
+        mode,
+        userAccessToken,
+        userEmail: session.user.email,
+        userName: session.user.name,
       },
     ])
 
@@ -1238,4 +1286,16 @@ export async function deleteComment(commentId: string) {
   updateTag(`post:${post.id}`)
 
   return { success: true, deletedPost: false }
+}
+
+export async function checkCanModerate(
+  owner: string,
+  repo: string
+): Promise<boolean> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user?.id) {
+    return false
+  }
+
+  return canModerate(session.user.id, owner, repo)
 }

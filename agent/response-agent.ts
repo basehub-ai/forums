@@ -15,8 +15,8 @@ import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
-import { getTools } from "./tools"
-import type { AgentUIMessage } from "./types"
+import { getAllTools, getTools } from "./tools"
+import type { AgentMode, AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
 
 export async function responseAgent({
@@ -29,6 +29,10 @@ export async function responseAgent({
   userId,
   billingCategory,
   branch,
+  mode = "ask",
+  userAccessToken,
+  userEmail,
+  userName,
 }: {
   commentId: string
   streamId: string
@@ -39,6 +43,10 @@ export async function responseAgent({
   userId: string
   billingCategory: BillingCategory
   branch?: string
+  mode?: AgentMode
+  userAccessToken?: string | null
+  userEmail?: string | null
+  userName?: string | null
 }) {
   "use workflow"
 
@@ -51,6 +59,9 @@ export async function responseAgent({
       owner,
       repo,
       branch,
+      mode,
+      userEmail,
+      userName,
     })
 
     let finishReason: FinishReason | undefined
@@ -69,6 +80,9 @@ export async function responseAgent({
           sandboxId,
           initialMessages,
           newMessages,
+          mode,
+          postId,
+          userAccessToken: userAccessToken ?? undefined,
         })
         finishReason = result.finishReason
         newMessages.push(...result.newMessages)
@@ -154,12 +168,18 @@ async function setupStep({
   owner,
   repo,
   branch,
+  mode = "ask",
+  userEmail,
+  userName,
 }: {
   postId: string
   commentId: string
   owner: string
   repo: string
   branch?: string
+  mode?: AgentMode
+  userEmail?: string | null
+  userName?: string | null
 }): Promise<{
   initialMessages: AgentUIMessage[]
   sandboxId: string
@@ -202,6 +222,10 @@ async function setupStep({
   const workspace = await getWorkspace({
     sandboxId: null,
     gitContext: { owner, repo, ref: existingGitContext?.sha ?? branch },
+    mode,
+    postId,
+    userEmail,
+    userName,
   })
 
   if (!existingGitContext) {
@@ -222,6 +246,48 @@ async function setupStep({
   }
 }
 
+const ASK_SYSTEM_PROMPT = (owner: string, repo: string) =>
+  `You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`.
+
+## Environment
+The repo is already cloned and available. All file paths are relative to the workspace root. You can use Read, Grep, and List tools to explore the codebase.
+
+## General Goals
+Users might ask you anything, but generally, your goal should be to ground your knowledge with the source code to provide a sourced answer. Users want to get to the source. As you explore source code, you'll note that sometimes, repositories are documented (say, with comments, or markdown files). While that's certainly useful, nothing beats reading the actual source code, as documentation gets stale overtime.
+
+Explore freely but not eagerly: let the user direct you, don't waste your context by being over-eager.`
+
+const BUILD_SYSTEM_PROMPT = (owner: string, repo: string) =>
+  `You're a developer assistant for the GitHub repository \`${owner}/${repo}\`.
+
+## Environment
+The repo is cloned in a temporary sandbox. You have full read/write access. All file paths are relative to the workspace root.
+
+## Tools Available
+- Read, Grep, List: explore and search the codebase
+- Write: create or overwrite files
+- Edit: make targeted replacements in existing files
+- Bash: run shell commands (git, npm, tests, etc.)
+
+## IMPORTANT: Always Create a PR
+The sandbox is temporary - the user can ONLY see your changes if you push them to GitHub. Unless the user explicitly says otherwise, you MUST:
+1. Create a feature branch: \`git checkout -b feature/short-description\`
+2. Make the requested changes
+3. Commit with a clear message
+4. Push and create a PR: \`git push -u origin HEAD && gh pr create --fill\`
+
+Without a PR, your work is invisible and lost when the sandbox ends.
+
+## Git Details
+- GH_TOKEN is set for GitHub CLI authentication
+- Use \`git status\` to check state before committing
+- Keep commits atomic and focused
+
+## Best Practices
+- Read relevant files before making changes
+- Run tests after changes when applicable
+- If tests fail, fix them before creating the PR`
+
 async function streamTextStep({
   owner,
   repo,
@@ -231,6 +297,9 @@ async function streamTextStep({
   sandboxId,
   initialMessages,
   newMessages,
+  mode = "ask",
+  postId,
+  userAccessToken,
 }: {
   owner: string
   repo: string
@@ -240,6 +309,9 @@ async function streamTextStep({
   sandboxId: string
   initialMessages: AgentUIMessage[]
   newMessages: UIMessage[]
+  mode?: AgentMode
+  postId?: string
+  userAccessToken?: string
 }): Promise<{
   finishReason: FinishReason
   newMessages: AgentUIMessage[]
@@ -251,35 +323,41 @@ async function streamTextStep({
   const workspace = await getWorkspace({
     sandboxId,
     gitContext: { owner, repo, ref: gitRef },
+    mode,
+    postId,
   })
   const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
 
+  const tools =
+    mode === "build" && userAccessToken
+      ? getAllTools({ workspace, userAccessToken })
+      : getTools({ workspace })
+
+  const systemPrompt =
+    mode === "build"
+      ? BUILD_SYSTEM_PROMPT(owner, repo)
+      : ASK_SYSTEM_PROMPT(owner, repo)
+
   const result = streamText({
     messages: await convertToModelMessages(allMessages),
-    tools: getTools({ workspace }),
-    system: `You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`.
-
-## Environment
-The repo is already cloned and available. All file paths are relative to the workspace root. You can use Read, Grep, and List tools to explore the codebase.
-
-## General Goals
-Users might ask you anything, but generally, your goal should be to ground your knowledge with the source code to provide a sourced answer. Users want to get to the source. As you explore source code, you'll note that sometimes, repositories are documented (say, with comments, or markdown files). While that's certainly useful, nothing beats reading the actual source code, as documentation gets stale overtime.
-
-Explore freely but not eagerly: let the user direct you, don't waste your context by being over-eager.`,
+    tools,
+    system: systemPrompt,
     model,
   })
 
   const stepNewMessages: AgentUIMessage[] = []
+  const isFirstStep = newMessages.length === 0
 
   await result
     .toUIMessageStream({
       onFinish: ({ messages }) => {
         stepNewMessages.push(
-          ...messages.map((m) => {
+          ...messages.map((m, index) => {
             return {
               ...m,
               id: nanoid(),
-              metadata: {},
+              metadata:
+                isFirstStep && index === 0 && mode === "build" ? { mode } : {},
             } satisfies AgentUIMessage
           })
         )

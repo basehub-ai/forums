@@ -1,6 +1,11 @@
 import type { UIMessage } from "ai"
 
-export type AgentUIMessage = UIMessage<{ errorCode?: number }>
+export type AgentMode = "ask" | "build"
+
+export type AgentUIMessage = UIMessage<{
+  errorCode?: number
+  mode?: AgentMode
+}>
 
 export type GitContextData = {
   sha: string
