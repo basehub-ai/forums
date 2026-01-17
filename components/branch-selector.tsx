@@ -7,6 +7,8 @@ import { BranchSelectorDialog } from "@/components/branch-selector-dialog"
 import { searchBranchesAction } from "@/lib/actions/branches"
 import { cn } from "@/lib/utils"
 
+const getStorageKey = (owner: string, repo: string) => `branch:${owner}/${repo}`
+
 export type BranchSelectorProps = {
   defaultBranch: string
   owner: string
@@ -20,12 +22,10 @@ export function BranchSelector({
   repo,
   onBranchChange,
 }: BranchSelectorProps) {
-  const [selectedBranch, setSelectedBranch] = useQueryState(
-    "branch",
-    parseAsString.withDefault(defaultBranch)
-  )
+  const [branchParam, setBranchParam] = useQueryState("branch", parseAsString)
   const [branches, setBranches] = useState<string[]>([])
   const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     searchBranchesAction(owner, repo, "", 50)
@@ -35,16 +35,60 @@ export function BranchSelector({
       })
   }, [owner, repo])
 
+  // Resolve branch on initial load: URL param → localStorage → default
+  useEffect(() => {
+    if (branches.length === 0 || isInitialized) {
+      return
+    }
+
+    const storageKey = getStorageKey(owner, repo)
+
+    // If URL has a valid branch param, use it
+    if (branchParam && branches.includes(branchParam)) {
+      localStorage.setItem(storageKey, branchParam)
+      setIsInitialized(true)
+      return
+    }
+
+    // No URL param or invalid - try localStorage
+    const savedBranch = localStorage.getItem(storageKey)
+    if (savedBranch && branches.includes(savedBranch)) {
+      setBranchParam(savedBranch)
+      setIsInitialized(true)
+      return
+    }
+
+    // Fallback to default
+    setBranchParam(defaultBranch)
+    localStorage.setItem(storageKey, defaultBranch)
+    setIsInitialized(true)
+  }, [
+    branches,
+    owner,
+    repo,
+    branchParam,
+    defaultBranch,
+    setBranchParam,
+    isInitialized,
+  ])
+
+  const selectedBranch = branchParam ?? defaultBranch
+
   const handleSelectBranch = (branch: string) => {
-    setSelectedBranch(branch)
+    setBranchParam(branch)
+    localStorage.setItem(getStorageKey(owner, repo), branch)
     onBranchChange?.(branch)
+  }
+
+  if (!isInitialized) {
+    return
   }
 
   return (
     <>
       <button
         className={cn(
-          "group flex h-9 cursor-pointer items-center gap-2 bg-transparent text-faint text-sm transition-none hover:text-accent active:text-accent sm:w-auto",
+          "group flex h-9 animate-fade-in cursor-pointer items-center gap-2 bg-transparent text-faint text-sm transition-none hover:text-accent active:text-accent sm:w-auto",
           isBranchDialogOpen && "text-accent"
         )}
         onClick={() => setIsBranchDialogOpen(true)}
