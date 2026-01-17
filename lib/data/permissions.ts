@@ -16,7 +16,7 @@ async function getUserRepoPermissions(
   accessToken: string
 ): Promise<RepoPermissions | null> {
   "use cache: remote"
-  cacheLife("hours") // 5 minutes
+  cacheLife("hours")
 
   try {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
