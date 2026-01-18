@@ -1,29 +1,38 @@
 {
   "name": "@forums/mobile",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "lint": "biome check --fix ./*.ts ./*.tsx",
-    "typecheck": "tsc --noEmit"
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "lint": "ultracite fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf node_modules"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.4.15",
+    "better-auth": "1.4.14",
     "expo": "~54.0.31",
-    "expo-constants": "~18.0.13",
-    "expo-linking": "~8.0.11",
+    "expo-constants": "^18.0.13",
+    "expo-dev-client": "~6.0.20",
+    "expo-linking": "^8.0.11",
+    "expo-network": "^8.0.8",
     "expo-router": "~6.0.21",
+    "expo-secure-store": "^15.0.8",
     "expo-status-bar": "~3.0.9",
+    "expo-system-ui": "~6.0.9",
+    "expo-web-browser": "^15.0.10",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.10",
+    "@biomejs/biome": "2.3.11",
     "@types/react": "~19.1.0",
-    "typescript": "~5.9.2"
+    "typescript": "^5",
+    "ultracite": "7.0.11"
   },
   "private": true
 }

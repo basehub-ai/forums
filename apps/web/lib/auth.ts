@@ -1,3 +1,4 @@
+import { expo } from "@better-auth/expo"
 import { autumn } from "autumn-js/better-auth"
 import type { User } from "better-auth"
 import { betterAuth } from "better-auth"
@@ -52,7 +53,8 @@ export const auth = betterAuth({
     },
   },
   baseURL: getSiteOrigin(),
-  plugins: [oAuthProxy({ productionURL: productionOrigin }), autumn()],
+  trustedOrigins: ["forums://"],
+  plugins: [expo(), oAuthProxy({ productionURL: productionOrigin }), autumn()],
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
