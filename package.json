@@ -15,6 +15,7 @@
     "@ai-sdk/react": "^3.0.33",
     "@base-ui-components/react": "^1.0.0-rc.0",
     "@base-ui/react": "^1.0.0",
+    "@better-auth/expo": "^1.4.14",
     "@paper-design/shaders-react": "^0.0.69",
     "@parallel-web/ai-sdk-tools": "^0.1.6",
     "@tailwindcss/typography": "^0.5.19",
