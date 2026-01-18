@@ -53,12 +53,8 @@ export const auth = betterAuth({
     },
   },
   baseURL: getSiteOrigin(),
-  trustedOrigins: [
-    "forums://",
-    // Development mode - Expo's exp:// scheme
-    ...(process.env.NODE_ENV === "development" ? ["exp://"] : []),
-  ],
-  plugins: [oAuthProxy({ productionURL: productionOrigin }), autumn(), expo()],
+  trustedOrigins: ["forums://"],
+  plugins: [expo(), oAuthProxy({ productionURL: productionOrigin }), autumn()],
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
