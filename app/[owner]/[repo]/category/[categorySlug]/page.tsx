@@ -112,7 +112,7 @@ export default async function CategoryPage({
         eq(posts.categoryId, category.id)
       )
     )
-    .orderBy(desc(posts.createdAt))
+    .orderBy(desc(posts.updatedAt))
 
   const pinnedPosts = categoryPosts.filter((p) => p.pinned)
   const regularPosts = categoryPosts.filter((p) => !p.pinned)

@@ -86,7 +86,7 @@ export default async function RepoPage({
       .from(posts)
       .leftJoin(comments, eq(posts.rootCommentId, comments.id))
       .where(and(eq(posts.owner, owner), eq(posts.repo, repo)))
-      .orderBy(desc(posts.createdAt)),
+      .orderBy(desc(posts.updatedAt)),
     db
       .select()
       .from(categories)
