@@ -366,7 +366,9 @@ export default async function PostPage({
         <PostComposer
           askingOptions={askingOptions}
           defaultLlmId={lastLlmAuthorId}
+          owner={owner}
           postId={post.id}
+          repo={repo}
         />
       </Container>
     </PostMetadataProvider>

@@ -224,7 +224,7 @@ function PinnedPosts({
         {posts.map((post) => (
           <ListItem key={post.id}>
             <Link
-              className="group flex grow items-start gap-1 overflow-hidden"
+              className="group flex h-5 grow items-start gap-1 overflow-hidden"
               href={`/${owner}/${repo}/${post.number}`}
             >
               <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
@@ -322,7 +322,7 @@ function RelatedPostsSection({
     .slice(0, 2)
 
   return (
-    <div className="h-[104px] border-muted border-l-2 border-dotted pl-4">
+    <div className="h-26 border-muted border-l-2 border-dotted pl-4">
       <div className="mb-2 flex items-center gap-1.5 text-faint text-xs uppercase">
         <SparklesIcon className="h-3 w-3" />
         Related Posts
@@ -438,6 +438,7 @@ function HighlightedText({ html }: { html: string }) {
   return (
     <span
       className="[&_mark]:bg-highlight-yellow [&_mark]:text-background"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: .
       dangerouslySetInnerHTML={{ __html: cleaned }}
     />
   )
