@@ -78,6 +78,11 @@ function CommentItem({
 
   const { postNumber } = useParams<{ postNumber: string }>()
 
+  // Check if this is a build mode comment (only relevant for LLM comments)
+  const isBuildMode =
+    author.isLlm &&
+    (comment.content as AgentUIMessage[]).some((m) => m.metadata?.mode === "build")
+
   const actionLabel = isRootComment ? "posted" : "commented"
 
   const header = (
@@ -95,6 +100,9 @@ function CommentItem({
           <UserAvatar src={author.image} username={author.username} />
 
           {author.name}
+          {isBuildMode && (
+            <span className="font-normal text-muted-foreground">(build)</span>
+          )}
         </Link>
         <span className="hidden sm:inline">&nbsp;</span>
         <span className="mr-1.5 text-muted-foreground text-sm">
