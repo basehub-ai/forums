@@ -6,6 +6,7 @@ import { db } from "@/lib/db/client"
 import { categories, posts } from "@/lib/db/schema"
 import { updatePostIndex } from "@/lib/typesense-index"
 import { nanoid } from "@/lib/utils"
+import type { AgentMode } from "./types"
 
 export async function runCategoryAgent({
   postId,
@@ -13,12 +14,14 @@ export async function runCategoryAgent({
   repo,
   content,
   existingCategoryId,
+  mode = "ask",
 }: {
   postId: string
   owner: string
   repo: string
   content: string
   existingCategoryId?: string
+  mode?: AgentMode
 }) {
   const result: {
     title: string
@@ -39,12 +42,19 @@ export async function runCategoryAgent({
         .where(and(eq(categories.owner, owner), eq(categories.repo, repo)))
     : []
 
+  const titleGuidelines =
+    mode === "build"
+      ? `- Frame the title to describe what the user wants to build, create, or implement (e.g. "Add dark mode support" or "Create user authentication flow")
+   - Use action-oriented language that reflects the task or feature being requested
+   - Try to always set a title that accurately reflects the build request`
+      : `- If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
+   - Only use statement-style titles for announcements, discussions, or purely informational posts
+   - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question`
+
   const systemPrompt = needsCategory
     ? `You are a forum assistant. Given a post's content, you must:
 1. Set a concise post title (10 words max) using setTitle.
-   - If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
-   - Only use statement-style titles for announcements, discussions, or purely informational posts
-   - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question
+${titleGuidelines}
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
 
 Existing categories:
@@ -52,9 +62,7 @@ ${existingCategories.length ? existingCategories.map((c) => `- ${c.emoji || ""} 
 
 You're working on your own. Meaning, the user won't be able to respond any question you might have. They'll send in the only info they have available at this time.`
     : `You are a forum assistant. Given a post's content, set a concise post title (10 words max) using setTitle.
-- If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
-- Only use statement-style titles for announcements, discussions, or purely informational posts
-- Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question
+${titleGuidelines}
 
 You're working on your own. The category has already been set.`
 
@@ -113,10 +121,13 @@ You're working on your own. The category has already been set.`
       "Title fallback triggered, finishReason:",
       await stream.finishReason
     )
+    const fallbackSystemPrompt =
+      mode === "build"
+        ? "Generate a concise, action-oriented title (10 words max) for the following build request. Focus on what the user wants to create, implement, or add. Reply with ONLY the title, nothing else."
+        : "Generate a concise title (10 words max) for the following post doing your best to describe what the post is/will be about, based on the user's comment. Reply with ONLY the title, nothing else."
     const fallback = await generateText({
       model: "anthropic/claude-haiku-4.5",
-      system:
-        "Generate a concise title (10 words max) for the following post doing your best to describe what the post is/will be about, based on the user's comment. Reply with ONLY the title, nothing else.",
+      system: fallbackSystemPrompt,
       prompt: content,
     })
     result.title = fallback.text.trim()

@@ -331,6 +331,7 @@ export async function createPost(data: {
       repo: data.repo,
       content: contentText,
       existingCategoryId: data.categoryId,
+      mode,
     })
   }
 
