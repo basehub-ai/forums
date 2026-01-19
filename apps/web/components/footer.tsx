@@ -5,36 +5,39 @@ export function Footer() {
   return (
     <footer className="mt-auto py-8">
       <Container>
-        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6">
-          <Link
-            className="font-medium text-dim text-sm hover:text-bright hover:underline"
-            href="http://x.com/basehub_ai"
-            target="_blank"
-          >
-            About Us
-          </Link>
-          <span className="hidden text-border-solid sm:inline">|</span>
-          <Link
-            className="font-medium text-dim text-sm hover:text-bright hover:underline"
-            href="https://forums.basehub.com/basehub-ai/forums/9"
-          >
-            Pricing
-          </Link>
-          <span className="hidden text-border-solid sm:inline">|</span>
-          <Link
-            className="font-medium text-dim text-sm hover:text-bright hover:underline"
-            href="https://github.com/basehub-ai/forums"
-            target="_blank"
-          >
-            GitHub
-          </Link>
-          <span className="hidden text-border-solid sm:inline">|</span>
-          <Link
-            className="font-medium text-dim text-sm hover:text-bright hover:underline"
-            href="/basehub-ai/forums"
-          >
-            Help
-          </Link>
+        <nav className="flex w-full justify-between">
+          <span className="text-sm">
+            Built by{" "}
+            <a
+              className="underline underline-offset-2"
+              href="https://basehub.com"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              BaseHub
+            </a>
+            .
+          </span>
+          <div className="flex items-center gap-x-4">
+            <Link
+              className="text-sm underline underline-offset-2"
+              href="https://basehub.com/privacy"
+            >
+              Privacy
+            </Link>
+            <Link
+              className="text-sm underline underline-offset-2"
+              href="https://github.com/basehub-ai"
+            >
+              GitHub
+            </Link>
+            <Link
+              className="text-sm underline underline-offset-2"
+              href="https://x.com/basehub_ai"
+            >
+              X
+            </Link>
+          </div>
         </nav>
       </Container>
     </footer>

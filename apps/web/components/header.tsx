@@ -18,15 +18,15 @@ export function Header() {
       <Container className="flex min-h-header flex-row items-center justify-between gap-x-5">
         {/* left side */}
         <div className="flex items-center gap-x-2 pt-4 pb-4">
-          <Link className="group flex items-center gap-x-1 pr-1" href="/">
+          <Link className="group flex items-center gap-x-1.5 pr-1" href="/">
             <svg
               fill="none"
-              height="22"
+              height="18"
               viewBox="0 0 22 22"
-              width="22"
+              width="18"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <title>Forums Logo</title>
+              <title>repoquery Logo</title>
               <path
                 d="M2.74303 14.98C2.87782 15.3201 2.90783 15.6926 2.8292 16.0498L1.85295 19.0656C1.8215 19.2186 1.82963 19.377 1.87658 19.5259C1.92353 19.6749 2.00774 19.8093 2.12123 19.9166C2.23472 20.0238 2.37372 20.1003 2.52505 20.1387C2.67638 20.1772 2.83503 20.1764 2.98595 20.1363L6.11454 19.2215C6.45161 19.1546 6.80069 19.1838 7.12195 19.3058C9.07939 20.2199 11.2968 20.4133 13.3829 19.8519C15.4691 19.2904 17.2899 18.0102 18.5241 16.2371C19.7583 14.464 20.3267 12.312 20.1288 10.1607C19.931 8.00943 18.9797 5.99714 17.4428 4.47889C15.9059 2.96064 13.8821 2.034 11.7286 1.86245C9.57501 1.69091 7.43008 2.28548 5.67219 3.54128C3.91431 4.79707 2.65644 6.63338 2.12052 8.72622C1.5846 10.8191 1.80507 13.0339 2.74303 14.98Z"
                 stroke="#FF6C02"
@@ -118,15 +118,40 @@ export function Header() {
                 />
               </g>
             </svg>
-            <span className="whitespace-nowrap font-semibold text-dim uppercase group-hover:text-bright group-hover:underline">
-              Forums
+            <span className="whitespace-nowrap font-semibold text-[15px] text-dim uppercase leading-5 tracking-tight group-hover:text-bright group-hover:underline">
+              repoquery
             </span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-x-5">
+        <div className="relative flex items-center gap-x-5">
+          <Link className="relative z-10 bg-background" href="/mcp">
+            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
+              MCP
+            </span>
+          </Link>
+          <Link className="relative z-10 bg-background" href="/cli">
+            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
+              CLI
+            </span>
+          </Link>
+          <Link className="relative z-10 bg-background" href="/faq">
+            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
+              FAQ
+            </span>
+          </Link>
+          <Link
+            className="relative z-10 bg-background"
+            href="https://github.com/basehub-ai/forums"
+          >
+            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
+              GITHUB
+            </span>
+          </Link>
           <Suspense>
-            <User />
+            <div className="relative z-10 bg-background">
+              <User />
+            </div>
           </Suspense>
         </div>
       </Container>

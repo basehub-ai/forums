@@ -70,6 +70,7 @@ export function RepoListWithSearch({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run on mount
   useEffect(() => {
     if (containerRef.current && minHeight === undefined) {
       setMinHeight(containerRef.current.offsetHeight)
@@ -146,15 +147,15 @@ export function RepoListWithSearch({
 
   const headerText = searchQuery
     ? `Searching "${searchQuery}"`
-    : "Top Repositories"
+    : "POPULAR REPOS"
 
   return (
     <>
       <form
-        className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+        className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
         onSubmit={handleSubmit}
       >
-        <div className="relative flex w-full items-center sm:w-sm">
+        <div className="relative flex w-full items-center sm:w-80">
           <SearchIcon
             className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-accent"
             size={18}
@@ -164,20 +165,10 @@ export function RepoListWithSearch({
             className="no-focus h-9 w-full bg-accent/5 pr-2 pl-8 font-medium text-accent text-base outline-dotted outline-2 outline-accent -outline-offset-1 placeholder:text-accent hover:bg-accent/10 focus:outline-dashed"
             maxLength={56}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Search or paste a repo URL"
+            placeholder="Search a repo"
             ref={inputRef}
             value={value}
           />
-        </div>
-        <div className="text-sm">
-          <span className="text-faint">or </span>
-          <Link
-            className="text-muted hover:text-bright hover:underline"
-            href="/lucky"
-          >
-            I'm feeling lucky
-          </Link>
-          .
         </div>
       </form>
 
@@ -247,14 +238,8 @@ export function RepoListWithSearch({
                 )
               })}
             </List>
-          ) : displayedQuery ? (
-            <p className="mt-4 text-muted">
-              No forum found for this repo. Press Enter to go there!
-            </p>
           ) : (
-            <p className="mt-4 text-muted">
-              No repositories yet. Search for a repo to get started!
-            </p>
+            <p className="mt-4 text-muted">No repositories found.</p>
           )}
         </div>
       </div>

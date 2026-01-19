@@ -7,9 +7,11 @@ const buttonVariants = cva("flex items-center justify-center font-medium", {
   variants: {
     variant: {
       primary:
-        "bg-accent text-white disabled:cursor-not-allowed disabled:opacity-50",
-      secondary: "bg-accent/10 text-accent hover:bg-accent/10",
-      tertiary: "bg-faint font-medium text-label uppercase",
+        "cursor-pointer bg-accent text-white disabled:cursor-not-allowed disabled:opacity-50",
+      secondary:
+        "cursor-pointer bg-accent/10 text-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50",
+      tertiary:
+        "cursor-pointer bg-faint font-medium text-label uppercase disabled:cursor-not-allowed disabled:opacity-50",
     },
     size: {
       default: "h-9 px-3",
