@@ -9,7 +9,7 @@ export type BuildToolContext = {
 }
 
 const normalizationRegex = /^\//
-const exitCodeMatchRegex = /___EXIT_CODE___(\d+)\s*$/
+const exitCodeMatchRegex = /___EXIT_CODE___(\d+)/m
 const exitCodeReplaceRegex = /___EXIT_CODE___\d+\s*$/
 
 function normalizePath(inputPath: string, workspacePath: string): string {
@@ -25,7 +25,8 @@ function normalizePath(inputPath: string, workspacePath: string): string {
   // pathA starts with pathB and either pathA === pathB or the next char is /
   if (
     resolvedPath === resolvedWorkspace ||
-    (resolvedPath.startsWith(resolvedWorkspace + "/") && resolvedPath.length > resolvedWorkspace.length)
+    (resolvedPath.startsWith(resolvedWorkspace + "/") &&
+      resolvedPath.length > resolvedWorkspace.length)
   ) {
     // Return relative path from workspace
     if (resolvedPath === resolvedWorkspace) {
@@ -64,7 +65,7 @@ export function getBuildTools(context: BuildToolContext) {
         } catch (error) {
           return {
             success: false,
-            path: path,
+            path,
             bytesWritten: 0,
             error: error instanceof Error ? error.message : "Invalid path",
           }
@@ -142,7 +143,7 @@ export function getBuildTools(context: BuildToolContext) {
         } catch (error) {
           return {
             success: false,
-            path: path,
+            path,
             replacements: 0,
             error: error instanceof Error ? error.message : "Invalid path",
           }
@@ -251,10 +252,14 @@ export function getBuildTools(context: BuildToolContext) {
 
         if (workdir) {
           try {
-            const normalizedWorkdir = normalizePath(workdir, context.workspace.path)
+            const normalizedWorkdir = normalizePath(
+              workdir,
+              context.workspace.path
+            )
             cwd = join(context.workspace.path, normalizedWorkdir)
           } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : "Invalid path"
+            const errorMsg =
+              error instanceof Error ? error.message : "Invalid path"
             return {
               stdout: "",
               stderr: errorMsg,
@@ -288,19 +293,20 @@ export function getBuildTools(context: BuildToolContext) {
           result.stderr(),
         ])
 
-        // Parse exit code from output
-        // Use a non-greedy match to find the marker anywhere in the output,
-        // then extract the exit code. This handles cases where output appears
-        // after the marker (e.g., from background processes).
-        const exitCodeMatch = rawStdout.match(/___EXIT_CODE___(\d+)/m)
+        // Parse exit code from output (marker may appear mid-output if background processes write after it)
+        const exitCodeMatch = rawStdout.match(exitCodeMatchRegex)
         const exitCode = exitCodeMatch
           ? Number.parseInt(exitCodeMatch[1], 10)
           : 1
         const stdout = rawStdout.replace(exitCodeReplaceRegex, "")
 
+        // Sanitize output to prevent token leaks
+        const sanitize = (s: string) =>
+          s.replaceAll(context.userAccessToken, "[REDACTED]")
+
         return {
-          stdout,
-          stderr,
+          stdout: sanitize(stdout),
+          stderr: sanitize(stderr),
           exitCode,
         }
       },

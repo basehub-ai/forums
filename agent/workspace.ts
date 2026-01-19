@@ -481,13 +481,14 @@ async function initializeBuildWorkspace(
         git config user.email "$GIT_EMAIL"
         git config user.name "$GIT_NAME"
 
+        # Configure git credential helper to use GH_TOKEN at runtime
+        # This reads from the environment when git needs credentials (set by Bash tool)
+        git config credential.helper '!f() { test "$1" = get && echo "username=x-access-token" && echo "password=$GH_TOKEN"; }; f'
+
         # Wait for tool installation to complete if it was started
         if [ -n "$INSTALL_PID" ]; then
           wait $INSTALL_PID || true
         fi
-
-        # Configure git to use gh for authentication (after gh is installed)
-        gh auth setup-git >/dev/null 2>&1 || true
 
         # Only checkout ref on first initialization
         # Subsequent calls should preserve agent's git state (branches, commits, etc.)

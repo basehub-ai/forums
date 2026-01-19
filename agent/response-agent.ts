@@ -271,7 +271,7 @@ The repo is cloned in a temporary sandbox at \`/vercel/sandbox/${repo}\`. You st
 
 ## IMPORTANT: Always Create a PR
 The sandbox is temporary - the user can ONLY see your changes if you push them to GitHub. Unless the user explicitly says otherwise, you MUST:
-1. Create a feature branch: \`git checkout -b feature/short-description\`
+1. Create a feature branch with a unique 5-char suffix: \`git checkout -b forums/short-description-$(openssl rand -hex 3 | head -c5)\`
 2. Make the requested changes
 3. Commit with a clear message
 4. Push and create a PR: \`git push -u origin HEAD && gh pr create --fill\`
@@ -279,8 +279,8 @@ The sandbox is temporary - the user can ONLY see your changes if you push them t
 Without a PR, your work is invisible and lost when the sandbox ends.
 
 ## Git Configuration
-- Git user.name and user.email are pre-configured with the authenticated user's identity. Do not modify git config.
-- GitHub CLI (\`gh\`) is pre-authenticated. Just use it directly.
+- Git is pre-configured: user identity is set to the authenticated user, and credentials are handled automatically.
+- \`git push origin HEAD\` and \`gh\` commands just work. Do not modify git config or attempt manual authentication.
 - Use \`git status\` to check state before committing
 - Keep commits atomic and focused
 
