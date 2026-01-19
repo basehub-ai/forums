@@ -83,6 +83,8 @@ export async function responseAgent({
           mode,
           postId,
           userAccessToken: userAccessToken ?? undefined,
+          userEmail: userEmail ?? undefined,
+          userName: userName ?? undefined,
         })
         finishReason = result.finishReason
         newMessages.push(...result.newMessages)
@@ -301,6 +303,8 @@ async function streamTextStep({
   mode = "ask",
   postId,
   userAccessToken,
+  userEmail,
+  userName,
 }: {
   owner: string
   repo: string
@@ -313,6 +317,8 @@ async function streamTextStep({
   mode?: AgentMode
   postId?: string
   userAccessToken?: string
+  userEmail?: string
+  userName?: string
 }): Promise<{
   finishReason: FinishReason
   newMessages: AgentUIMessage[]
@@ -326,6 +332,8 @@ async function streamTextStep({
     gitContext: { owner, repo, ref: gitRef },
     mode,
     postId,
+    userEmail,
+    userName,
   })
   const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
 

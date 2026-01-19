@@ -243,25 +243,33 @@ export const getWorkspace = async ({
   const providedRef = gitContext.ref
 
   if (mode === "build") {
-    return initializeBuildWorkspace(
+    if (!(userEmail && userName)) {
+      throw new Error("Build mode requires userEmail and userName")
+    }
+    return initializeBuildWorkspace({
       sandbox,
       gitContext,
       repoUrl,
       providedRef,
       userEmail,
-      userName
-    )
+      userName,
+    })
   }
 
-  return initializeAskWorkspace(sandbox, gitContext, repoUrl, providedRef)
+  return initializeAskWorkspace({ sandbox, gitContext, repoUrl, providedRef })
 }
 
-async function initializeAskWorkspace(
-  sandbox: Sandbox,
-  gitContext: GitContext,
-  repoUrl: string,
+async function initializeAskWorkspace({
+  sandbox,
+  gitContext,
+  repoUrl,
+  providedRef,
+}: {
+  sandbox: Sandbox
+  gitContext: GitContext
+  repoUrl: string
   providedRef?: string
-): Promise<Workspace> {
+}): Promise<Workspace> {
   const repoDir = `${gitContext.repo}.git`
   const worktreesBase = `${gitContext.repo}-worktrees`
 
@@ -416,17 +424,22 @@ async function initializeAskWorkspace(
   return { path: worktreePath, sandbox, gitContextData }
 }
 
-async function initializeBuildWorkspace(
-  sandbox: Sandbox,
-  gitContext: GitContext,
-  repoUrl: string,
-  providedRef?: string,
-  userEmail?: string | null,
-  userName?: string | null
-): Promise<Workspace> {
+async function initializeBuildWorkspace({
+  sandbox,
+  gitContext,
+  repoUrl,
+  providedRef,
+  userEmail,
+  userName,
+}: {
+  sandbox: Sandbox
+  gitContext: GitContext
+  repoUrl: string
+  providedRef?: string
+  userEmail: string
+  userName: string
+}): Promise<Workspace> {
   const repoDir = gitContext.repo
-  const gitEmail = userEmail || "build@forums.basehub.com"
-  const gitName = userName || "Forums Build Agent"
 
   const result = await sandbox.runCommand({
     cmd: "bash",
@@ -535,8 +548,8 @@ async function initializeBuildWorkspace(
       repoDir,
       repoUrl,
       providedRef || "",
-      gitEmail,
-      gitName,
+      userEmail,
+      userName,
     ],
   })
 
