@@ -4,6 +4,10 @@ Q&A impulsado por IA para repositorios de GitHub. Haz preguntas sobre cualquier 
 
 **¿Necesitas ayuda?** Visita [forums.basehub.com/basehub-ai/forums](http://forums.basehub.com/basehub-ai/forums)
 
+## ¿Por qué esto está en español?
+
+Porque estamos probando. 🧪
+
 ## Contribuciones / Desarrollo
 
 ### Requisitos Previos
