@@ -1,7 +1,7 @@
 "use client"
 
 import { useCustomer } from "autumn-js/react"
-import { ChevronDownIcon, HammerIcon, SearchIcon } from "lucide-react"
+import { ChevronDownIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import {
   Suspense,
@@ -354,7 +354,7 @@ export const Composer = ({
                 />
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               {canModerate && (
                 <button
                   aria-label={
@@ -363,8 +363,7 @@ export const Composer = ({
                       : "Switch to ask mode"
                   }
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center text-faint transition-colors hover:text-accent",
-                    mode === "build" && "text-accent"
+                    "flex items-center justify-center text-faint text-sm transition-colors hover:text-accent"
                   )}
                   onClick={toggleMode}
                   title={
@@ -374,11 +373,7 @@ export const Composer = ({
                   }
                   type="button"
                 >
-                  {mode === "ask" ? (
-                    <SearchIcon absoluteStrokeWidth className="size-4" />
-                  ) : (
-                    <HammerIcon absoluteStrokeWidth className="size-4" />
-                  )}
+                  {mode}
                 </button>
               )}
               <Button

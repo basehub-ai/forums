@@ -194,7 +194,7 @@ export function getBuildTools(context: BuildToolContext) {
 
     Bash: tool({
       description:
-        "Execute a shell command in the workspace. GH_TOKEN is set for GitHub CLI operations. Use this for git operations, running tests, installing dependencies, and other shell tasks.",
+        "Execute a shell command in the workspace. GitHub CLI is pre-authenticated. Use this for git operations, running tests, installing dependencies, and other shell tasks.",
       inputSchema: z.object({
         command: z.string().describe("The shell command to execute"),
         workdir: z
