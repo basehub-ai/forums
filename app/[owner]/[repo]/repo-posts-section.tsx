@@ -23,6 +23,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  updatedAt: number
   pinned: boolean
   commentCount: number
   reactionCount: number
@@ -265,7 +266,7 @@ function LatestPosts({
             </div>
             <div className="flex shrink-0">
               <TableColumnTitle className="mr-17.5">OP</TableColumnTitle>
-              <TableColumnTitle className="px-0 pl-2">Created</TableColumnTitle>
+              <TableColumnTitle className="px-0 pl-2">Updated</TableColumnTitle>
             </div>
           </div>
         </div>
@@ -293,7 +294,7 @@ function LatestPosts({
                   )}
                 </TableCellText>
                 <TableCellText className="w-(--col-w-created) text-end">
-                  <RelativeTime timestamp={post.createdAt} />
+                  <RelativeTime timestamp={post.updatedAt} />
                 </TableCellText>
               </div>
             </ListItem>
@@ -387,7 +388,7 @@ function TextSearchResults({
             </div>
             <div className="flex shrink-0">
               <TableColumnTitle className="mr-17.5">OP</TableColumnTitle>
-              <TableColumnTitle className="px-0 pl-2">Created</TableColumnTitle>
+              <TableColumnTitle className="px-0 pl-2">Updated</TableColumnTitle>
             </div>
           </div>
         </div>
@@ -416,7 +417,7 @@ function TextSearchResults({
                     )}
                   </TableCellText>
                   <TableCellText className="w-(--col-w-created) text-end">
-                    <RelativeTime timestamp={post.createdAt} />
+                    <RelativeTime timestamp={post.updatedAt} />
                   </TableCellText>
                 </div>
               </div>
