@@ -163,9 +163,7 @@ export function RepoListWithSearch({
       return topRepos
     }
 
-    const indexed = new Set(
-      typesenseResults.map((r) => r.name.toLowerCase())
-    )
+    const indexed = new Set(typesenseResults.map((r) => r.name.toLowerCase()))
     const githubOnly = githubResults.filter(
       (r) => !indexed.has(r.name.toLowerCase())
     )
@@ -213,7 +211,7 @@ export function RepoListWithSearch({
         </div>
       </form>
 
-      <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
+      <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:100px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
         <div
           className="min-w-fit px-4 sm:px-0"
           ref={containerRef}
@@ -231,7 +229,11 @@ export function RepoListWithSearch({
                 {!displayedQuery && (
                   <TableColumnTitle className="mr-8">Stars</TableColumnTitle>
                 )}
-                <TableColumnTitle className={displayedQuery ? "px-0 pl-2" : "mr-13.5"}>Posts</TableColumnTitle>
+                <TableColumnTitle
+                  className={displayedQuery ? "px-0 pl-2" : "mr-13.5"}
+                >
+                  Questions
+                </TableColumnTitle>
                 {!displayedQuery && (
                   <TableColumnTitle className="px-0 pl-2">
                     Last Active
@@ -270,7 +272,11 @@ export function RepoListWithSearch({
                           {formatCompactNumber(repo.stars)}
                         </TableCellText>
                       )}
-                      <TableCellText className={displayedQuery ? "text-end" : "w-(--col-w-2)"}>
+                      <TableCellText
+                        className={
+                          displayedQuery ? "text-end" : "w-(--col-w-2)"
+                        }
+                      >
                         {formatCompactNumber(repo.posts)}
                       </TableCellText>
                       {!displayedQuery && (

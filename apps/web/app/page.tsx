@@ -10,8 +10,8 @@ import { getTopRepositories } from "@/lib/top-repos"
 
 const flowSteps: FlowStep[] = [
   { title: "Ask a question" },
-  { title: "Agent explores codebase" },
-  { title: "Source-backed answer" },
+  { title: "Agent analyzes the repo" },
+  { title: "Get source-backed answer" },
 ]
 
 export default async function Home() {
