@@ -1,49 +1,49 @@
-# Forums
+# Foros
 
-AI-powered Q&A for GitHub repositories. Ask questions about any repo and AI agents will clone, explore, and grep the source code to provide source-backed answers.
+Preguntas y respuestas impulsadas por IA para repositorios de GitHub. Haz preguntas sobre cualquier repositorio y los agentes de IA clonarán, explorarán y buscarán el código fuente para proporcionar respuestas respaldadas por la fuente.
 
-**Need help?** Visit [forums.basehub.com/basehub-ai/forums](http://forums.basehub.com/basehub-ai/forums)
+**¿Necesitas ayuda?** Visita [forums.basehub.com/basehub-ai/forums](http://forums.basehub.com/basehub-ai/forums)
 
-## Contributing / Development
+## Contribuir / Desarrollo
 
-### Prerequisites
+### Requisitos Previos
 
-- [Bun](https://bun.sh) runtime
-- [Vercel CLI](https://vercel.com/cli) (for pulling environment variables)
-- PostgreSQL database
-- [Typesense](https://typesense.org) instance
+- Runtime [Bun](https://bun.sh)
+- [CLI de Vercel](https://vercel.com/cli) (para descargar variables de entorno)
+- Base de datos PostgreSQL
+- Instancia de [Typesense](https://typesense.org)
 
-### Setup
+### Configuración
 
-1. Clone the repository:
+1. Clona el repositorio:
 
 ```bash
 git clone https://github.com/basehub-ai/forums.git
 cd forums
 ```
 
-2. Install dependencies:
+2. Instala las dependencias:
 
 ```bash
 bun install
 ```
 
-3. Set up environment variables. Either link to Vercel project or create `.env.local` manually:
+3. Configura las variables de entorno. Vincula al proyecto de Vercel o crea `.env.local` manualmente:
 
 ```bash
-# Option A: Pull from Vercel (requires access)
+# Opción A: Descargar desde Vercel (requiere acceso)
 vc env pull .env.local
 
-# Option B: Create manually with required variables (see Self-Hosting section)
+# Opción B: Crear manualmente con variables requeridas (ver sección de Auto-alojamiento)
 ```
 
-4. Run database migrations:
+4. Ejecuta las migraciones de la base de datos:
 
 ```bash
 bun run db:generate
 ```
 
-5. Start the development server:
+5. Inicia el servidor de desarrollo:
 
 ```bash
 bun run dev
@@ -51,45 +51,45 @@ bun run dev
 
 ### Scripts
 
-| Command | Description |
+| Comando | Descripción |
 |---------|-------------|
-| `bun run dev` | Start development server |
-| `bun run build` | Build for production |
-| `bun run start` | Start production server |
-| `bun run test` | Run tests |
-| `bun run lint` | Lint and fix code |
-| `bun run typecheck` | Type check |
-| `bun run db:generate` | Generate database migrations |
+| `bun run dev` | Iniciar servidor de desarrollo |
+| `bun run build` | Compilar para producción |
+| `bun run start` | Iniciar servidor de producción |
+| `bun run test` | Ejecutar pruebas |
+| `bun run lint` | Validar y corregir código |
+| `bun run typecheck` | Verificar tipos |
+| `bun run db:generate` | Generar migraciones de base de datos |
 
-## Self-Hosting
+## Auto-alojamiento
 
-### Environment Variables
+### Variables de Entorno
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `TYPESENSE_API_KEY` | Yes | Typesense API key |
-| `TYPESENSE_HOST` | Yes | Typesense host URL |
-| `GITHUB_CLIENT_ID` | Yes | GitHub OAuth app client ID |
-| `GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth app client secret |
-| `GITHUB_TOKEN` | No | GitHub PAT for higher API rate limits |
-| `REVALIDATE_SECRET` | No | Secret for cache revalidation webhook |
-| `ADMIN_USER_EMAILS` | No | Comma-separated list of admin emails |
+| Variable | Requerida | Descripción |
+|----------|-----------|-------------|
+| `DATABASE_URL` | Sí | Cadena de conexión PostgreSQL |
+| `TYPESENSE_API_KEY` | Sí | Clave API de Typesense |
+| `TYPESENSE_HOST` | Sí | URL del host de Typesense |
+| `GITHUB_CLIENT_ID` | Sí | ID de cliente de la aplicación OAuth de GitHub |
+| `GITHUB_CLIENT_SECRET` | Sí | Secreto de cliente de la aplicación OAuth de GitHub |
+| `GITHUB_TOKEN` | No | Token de acceso personal de GitHub para mayores límites de tasa de API |
+| `REVALIDATE_SECRET` | No | Secreto para webhook de revalidación de caché |
+| `ADMIN_USER_EMAILS` | No | Lista separada por comas de correos electrónicos de administrador |
 
-### Deploy to Vercel
+### Implementar en Vercel
 
-1. Fork this repository
-2. Import to Vercel
-3. Configure environment variables
-4. Deploy
+1. Bifurca este repositorio
+2. Importa a Vercel
+3. Configura las variables de entorno
+4. Implementa
 
-### Manual Deployment
+### Implementación Manual
 
-1. Set up a PostgreSQL database
-2. Set up a Typesense instance
-3. Create a GitHub OAuth app
-4. Configure all required environment variables
-5. Build and run:
+1. Configura una base de datos PostgreSQL
+2. Configura una instancia de Typesense
+3. Crea una aplicación OAuth de GitHub
+4. Configura todas las variables de entorno requeridas
+5. Compila y ejecuta:
 
 ```bash
 bun run build
