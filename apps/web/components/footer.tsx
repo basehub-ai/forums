@@ -11,7 +11,7 @@ export function Footer() {
             <a
               className="underline underline-offset-2"
               href="https://basehub.com"
-              rel="noopener noreferrer"
+              rel="noopener"
               target="_blank"
             >
               BaseHub
@@ -22,18 +22,21 @@ export function Footer() {
             <Link
               className="text-sm underline underline-offset-2"
               href="https://basehub.com/privacy"
+              target="_blank"
             >
               Privacy
             </Link>
             <Link
               className="text-sm underline underline-offset-2"
               href="https://github.com/basehub-ai"
+              target="_blank"
             >
               GitHub
             </Link>
             <Link
               className="text-sm underline underline-offset-2"
               href="https://x.com/basehub_ai"
+              target="_blank"
             >
               X
             </Link>

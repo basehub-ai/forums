@@ -332,7 +332,7 @@ function CommitMessage({
         href={`https://github.com/${owner}/${repo}/pull/${prNumber}`}
         key={match.index}
         onClick={(e) => e.stopPropagation()}
-        rel="noopener noreferrer"
+        rel="noopener"
         target="_blank"
       >
         #{prNumber}

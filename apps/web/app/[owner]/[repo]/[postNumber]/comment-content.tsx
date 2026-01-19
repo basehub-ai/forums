@@ -44,7 +44,7 @@ const streamdownComponents: ComponentProps<typeof Streamdown>["components"] = {
   a: (props) => (
     <a
       className="text-highlight-blue underline-offset-2 hover:underline"
-      rel="noopener noreferrer"
+      rel="noopener"
       target="_blank"
       {...props}
     />
@@ -150,7 +150,7 @@ function ToolInputDisplay({
         <a
           className="hover:underline"
           href={githubUrl}
-          rel="noopener noreferrer"
+          rel="noopener"
           target="_blank"
           title={filePath}
         >
@@ -271,7 +271,7 @@ function ToolInputDisplay({
         <a
           className="hover:underline"
           href={url}
-          rel="noopener noreferrer"
+          rel="noopener"
           target="_blank"
           title={url}
         >

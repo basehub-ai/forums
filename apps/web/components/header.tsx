@@ -143,6 +143,7 @@ export function Header() {
           <Link
             className="relative z-10 bg-background"
             href="https://github.com/basehub-ai/forums"
+            target="_blank"
           >
             <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
               GITHUB
