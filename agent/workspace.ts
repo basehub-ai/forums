@@ -403,7 +403,15 @@ async function initializeAskWorkspace(
     throw new Error("Failed to initialize git worktree")
   }
 
-  const gitContextData = JSON.parse(gitContextJson) as GitContextData
+  let gitContextData: GitContextData
+  try {
+    gitContextData = JSON.parse(gitContextJson) as GitContextData
+  } catch (error) {
+    console.error(
+      `Failed to parse git context JSON: ${error instanceof Error ? error.message : String(error)}, json: "${gitContextJson}"`
+    )
+    throw new Error("Failed to parse git context data")
+  }
 
   return { path: worktreePath, sandbox, gitContextData }
 }
@@ -552,7 +560,15 @@ async function initializeBuildWorkspace(
     throw new Error("Failed to initialize build workspace")
   }
 
-  const gitContextData = JSON.parse(gitContextJson) as GitContextData
+  let gitContextData: GitContextData
+  try {
+    gitContextData = JSON.parse(gitContextJson) as GitContextData
+  } catch (error) {
+    console.error(
+      `Failed to parse git context JSON in build workspace: ${error instanceof Error ? error.message : String(error)}, json: "${gitContextJson}"`
+    )
+    throw new Error("Failed to parse git context data in build workspace")
+  }
 
   return { path: repoPath, sandbox, gitContextData }
 }

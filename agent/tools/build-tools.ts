@@ -1,5 +1,5 @@
 import { type ToolSet, tool } from "ai"
-import { join } from "path"
+import { join, resolve } from "path"
 import { z } from "zod"
 import type { Workspace } from "../workspace"
 
@@ -13,16 +13,31 @@ const exitCodeMatchRegex = /___EXIT_CODE___(\d+)\s*$/
 const exitCodeReplaceRegex = /___EXIT_CODE___\d+\s*$/
 
 function normalizePath(inputPath: string, workspacePath: string): string {
-  if (inputPath.startsWith(workspacePath)) {
-    return (
-      inputPath.slice(workspacePath.length).replace(normalizationRegex, "") ||
-      "."
-    )
+  // Resolve the absolute path
+  const absolutePath = inputPath.startsWith("/")
+    ? inputPath
+    : join(workspacePath, inputPath)
+
+  const resolvedPath = resolve(absolutePath)
+  const resolvedWorkspace = resolve(workspacePath)
+
+  // Ensure the resolved path is within the workspace
+  // pathA starts with pathB and either pathA === pathB or the next char is /
+  if (
+    resolvedPath === resolvedWorkspace ||
+    (resolvedPath.startsWith(resolvedWorkspace + "/") && resolvedPath.length > resolvedWorkspace.length)
+  ) {
+    // Return relative path from workspace
+    if (resolvedPath === resolvedWorkspace) {
+      return "."
+    }
+    return resolvedPath.slice(resolvedWorkspace.length + 1)
   }
-  if (inputPath.startsWith("/")) {
-    return inputPath.slice(1)
-  }
-  return inputPath
+
+  // Path escapes workspace - this is a security violation
+  throw new Error(
+    `Path traversal detected: "${inputPath}" resolves outside workspace directory`
+  )
 }
 
 export function getBuildTools(context: BuildToolContext) {
@@ -43,7 +58,18 @@ export function getBuildTools(context: BuildToolContext) {
         error: z.string().optional().describe("Error message if failed"),
       }),
       execute: async ({ path, content }) => {
-        const normalizedPath = normalizePath(path, context.workspace.path)
+        let normalizedPath: string
+        try {
+          normalizedPath = normalizePath(path, context.workspace.path)
+        } catch (error) {
+          return {
+            success: false,
+            path: path,
+            bytesWritten: 0,
+            error: error instanceof Error ? error.message : "Invalid path",
+          }
+        }
+
         const fullPath = join(context.workspace.path, normalizedPath)
 
         const contentBase64 = Buffer.from(content).toString("base64")
@@ -110,7 +136,18 @@ export function getBuildTools(context: BuildToolContext) {
         error: z.string().optional().describe("Error message if failed"),
       }),
       execute: async ({ path, old_string, new_string }) => {
-        const normalizedPath = normalizePath(path, context.workspace.path)
+        let normalizedPath: string
+        try {
+          normalizedPath = normalizePath(path, context.workspace.path)
+        } catch (error) {
+          return {
+            success: false,
+            path: path,
+            replacements: 0,
+            error: error instanceof Error ? error.message : "Invalid path",
+          }
+        }
+
         const fullPath = join(context.workspace.path, normalizedPath)
 
         const result = await context.workspace.sandbox.runCommand("node", [
@@ -210,27 +247,40 @@ export function getBuildTools(context: BuildToolContext) {
         exitCode: z.number().describe("Exit code of the command"),
       }),
       execute: async ({ command, workdir }) => {
-        const cwd = workdir
-          ? join(
-              context.workspace.path,
-              normalizePath(workdir, context.workspace.path)
-            )
-          : context.workspace.path
+        let cwd = context.workspace.path
+
+        if (workdir) {
+          try {
+            const normalizedWorkdir = normalizePath(workdir, context.workspace.path)
+            cwd = join(context.workspace.path, normalizedWorkdir)
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : "Invalid path"
+            return {
+              stdout: "",
+              stderr: errorMsg,
+              exitCode: 1,
+            }
+          }
+        }
 
         const result = await context.workspace.sandbox.runCommand("bash", [
           "-c",
           `
-            cd "${cwd}" || exit 1
+            cd "$1" || exit 1
             export PATH="$HOME/.local/bin:$PATH"
-            export GH_TOKEN="${context.userAccessToken}"
+            export GH_TOKEN="$2"
 
             # Run the command and capture exit code
-            ${command}
+            bash -c "$3"
             EXIT_CODE=$?
 
             # Output exit code marker
             echo "___EXIT_CODE___$EXIT_CODE"
           `,
+          "--",
+          cwd,
+          context.userAccessToken,
+          command,
         ])
 
         const [rawStdout, stderr] = await Promise.all([
@@ -239,7 +289,10 @@ export function getBuildTools(context: BuildToolContext) {
         ])
 
         // Parse exit code from output
-        const exitCodeMatch = rawStdout.match(exitCodeMatchRegex)
+        // Use a non-greedy match to find the marker anywhere in the output,
+        // then extract the exit code. This handles cases where output appears
+        // after the marker (e.g., from background processes).
+        const exitCodeMatch = rawStdout.match(/___EXIT_CODE___(\d+)/m)
         const exitCode = exitCodeMatch
           ? Number.parseInt(exitCodeMatch[1], 10)
           : 1
