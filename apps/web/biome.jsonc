@@ -1,6 +1,10 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["ultracite/core", "ultracite/next", "ultracite/biome/core"],
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/next"
+  ],
   "javascript": {
     "formatter": {
       "semicolons": "asNeeded"
@@ -42,30 +46,6 @@
           },
           "suspicious": {
             "noConsole": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["apps/mobile/**/*"],
-      "linter": {
-        "rules": {
-          "a11y": {
-            "useAltText": "off",
-            "useButtonType": "off",
-            "useValidAnchor": "off",
-            "useHtmlLang": "off",
-            "useIframeTitle": "off",
-            "useHeadingContent": "off",
-            "useMediaCaption": "off"
-          },
-          "style": {
-            "noHeadElement": "off",
-            "useFilenamingConvention": "off"
-          },
-          "suspicious": {
-            "noDocumentImportInPage": "off",
-            "noHeadImportInDocument": "off"
           }
         }
       }
