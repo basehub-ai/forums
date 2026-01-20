@@ -3,7 +3,19 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "UPSTASH_REDIS_REST_URL",
+        "UPSTASH_REDIS_REST_TOKEN",
+        "TYPESENSE_API_KEY",
+        "TYPESENSE_HOST",
+        "PARALLEL_API_KEY",
+        "BETTER_AUTH_SECRET",
+        "DATABASE_URL",
+        "ADMIN_USER_EMAILS",
+        "REVALIDATE_SECRET",
+        "AUTUMN_SECRET_KEY"
+      ]
     },
     "dev": {
       "cache": false,
