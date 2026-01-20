@@ -11,6 +11,7 @@ import {
   useState,
   useTransition,
 } from "react"
+import type { AgentMode } from "@/agent/types"
 import { BranchSelector } from "@/components/branch-selector"
 import ClaudeIcon from "@/components/icons/claude"
 import GeminiIcon from "@/components/icons/gemini"
@@ -20,6 +21,8 @@ import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
+
+const PREFERRED_MODE_KEY = "preferred-mode"
 
 function getModelIcon(provider?: string) {
   switch (provider?.toLowerCase()) {
@@ -53,6 +56,7 @@ export type ComposerProps = {
       [K in keyof ComposerProps["options"]]: ComposerProps["options"][K][number]
     }
     branch?: string
+    mode?: AgentMode
   }) => Promise<void>
   autoFocus?: boolean
   defaultAskingId?: string
@@ -61,6 +65,7 @@ export type ComposerProps = {
   defaultBranch?: string
   owner?: string
   repo?: string
+  canModerate?: boolean
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -77,6 +82,7 @@ export const Composer = ({
   defaultBranch,
   owner,
   repo,
+  canModerate,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
@@ -100,6 +106,24 @@ export const Composer = ({
   const [isScrollable, setIsScrollable] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const selectedBranchRef = useRef(defaultBranch ?? "main")
+  const [mode, setMode] = useState<AgentMode>("ask")
+
+  useEffect(() => {
+    if (canModerate) {
+      const saved = localStorage.getItem(PREFERRED_MODE_KEY)
+      if (saved === "build" || saved === "ask") {
+        setMode(saved)
+      }
+    }
+  }, [canModerate])
+
+  const toggleMode = useCallback(() => {
+    setMode((prev) => {
+      const next = prev === "ask" ? "build" : "ask"
+      localStorage.setItem(PREFERRED_MODE_KEY, next)
+      return next
+    })
+  }, [])
 
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
@@ -159,6 +183,7 @@ export const Composer = ({
             value,
             options: { asking: selectedAsking },
             branch: selectedBranchRef.current,
+            mode: canModerate ? mode : undefined,
           })
             .then(() => {
               form.reset()
@@ -193,6 +218,11 @@ export const Composer = ({
           onChange?.(value)
         }}
         onKeyDown={(e) => {
+          if (e.key === "Tab" && e.shiftKey && canModerate) {
+            e.preventDefault()
+            toggleMode()
+            return
+          }
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault()
             if (isSignedIn) {
@@ -324,36 +354,59 @@ export const Composer = ({
                 />
               )}
             </div>
-            <Button
-              className="cursor-pointer"
-              disabled={
-                isPending ||
-                (isSignedIn &&
-                  selectedAsking.id !== "human" &&
-                  creditBalance < (selectedAsking.isProModel ? 5 : 1))
-              }
-              onClick={
-                isSignedIn
-                  ? undefined
-                  : () => {
-                      startTransition(async () => {
-                        await authClient.signIn.social({
-                          provider: "github",
-                          callbackURL: pathname,
+            <div className="flex items-center gap-4">
+              {canModerate && (
+                <button
+                  aria-label={
+                    mode === "ask"
+                      ? "Switch to build mode"
+                      : "Switch to ask mode"
+                  }
+                  className={cn(
+                    "flex items-center justify-center text-faint text-sm transition-colors hover:text-accent"
+                  )}
+                  onClick={toggleMode}
+                  title={
+                    mode === "ask"
+                      ? "Ask mode (Shift+Tab to switch)"
+                      : "Build mode (Shift+Tab to switch)"
+                  }
+                  type="button"
+                >
+                  {mode}
+                </button>
+              )}
+              <Button
+                className="cursor-pointer"
+                disabled={
+                  isPending ||
+                  (isSignedIn &&
+                    selectedAsking.id !== "human" &&
+                    creditBalance < (selectedAsking.isProModel ? 5 : 1))
+                }
+                onClick={
+                  isSignedIn
+                    ? undefined
+                    : () => {
+                        startTransition(async () => {
+                          await authClient.signIn.social({
+                            provider: "github",
+                            callbackURL: pathname,
+                          })
                         })
-                      })
-                    }
-              }
-              type={isSignedIn ? "submit" : "button"}
-            >
-              {isSignedIn
-                ? isPending
-                  ? "Posting…"
-                  : "Post"
-                : isPending
-                  ? "Logging in…"
-                  : "Log In"}
-            </Button>
+                      }
+                }
+                type={isSignedIn ? "submit" : "button"}
+              >
+                {isSignedIn
+                  ? isPending
+                    ? "Posting…"
+                    : "Post"
+                  : isPending
+                    ? "Logging in…"
+                    : "Log In"}
+              </Button>
+            </div>
           </div>
 
           {isSignedIn && selectedAsking.id !== "human" && (

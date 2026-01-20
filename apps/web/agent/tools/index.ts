@@ -4,6 +4,7 @@ import { join } from "path"
 import { z } from "zod"
 import { getSiteOrigin } from "@/lib/utils"
 import type { Workspace } from "../workspace"
+import { type BuildToolContext, getBuildTools } from "./build-tools"
 
 export type ToolContext = {
   workspace: Workspace
@@ -534,3 +535,13 @@ export function getTools(context: ToolContext) {
 
 export type AgentTools = ReturnType<typeof getTools>
 export type AgentToolName = keyof AgentTools
+
+export function getAllTools(context: BuildToolContext) {
+  return {
+    ...getTools({ workspace: context.workspace }),
+    ...getBuildTools(context),
+  }
+}
+
+export type AllTools = ReturnType<typeof getAllTools>
+export type AllToolName = keyof AllTools

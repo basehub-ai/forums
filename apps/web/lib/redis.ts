@@ -156,3 +156,129 @@ export async function releaseSandboxLock(
   const lockKey = sandboxLockKey(owner, repo)
   await redis.del(lockKey)
 }
+
+// Per-post sandbox for build mode
+
+const POST_SANDBOX_VERSION = "v1"
+
+const postSandboxKey = (owner: string, repo: string, postId: string) =>
+  `sandbox-build:${POST_SANDBOX_VERSION}:${owner}:${repo}:${postId}`
+const postSandboxLockKey = (owner: string, repo: string, postId: string) =>
+  `sandbox-build:${POST_SANDBOX_VERSION}:${owner}:${repo}:${postId}:lock`
+
+export async function getOrLockPostSandbox(
+  owner: string,
+  repo: string,
+  postId: string,
+  lockTtlMs = 30_000
+): Promise<
+  | { type: "existing"; sandboxId: string }
+  | { type: "create"; lockAcquired: true }
+  | { type: "locked" }
+> {
+  const dataKey = postSandboxKey(owner, repo, postId)
+  const lockKey = postSandboxLockKey(owner, repo, postId)
+  const lockTtlSeconds = Math.ceil(lockTtlMs / 1000)
+
+  const result = await redis.eval(
+    `local sandboxData = redis.call('GET', KEYS[1])
+    if sandboxData then
+      return sandboxData
+    end
+
+    local lockAcquired = redis.call('SET', KEYS[2], '1', 'NX', 'EX', ARGV[1])
+    if lockAcquired then
+      return 'LOCK_ACQUIRED'
+    else
+      return 'LOCKED'
+    end`,
+    [dataKey, lockKey],
+    [String(lockTtlSeconds)]
+  )
+
+  if (result === "LOCK_ACQUIRED") {
+    return { type: "create", lockAcquired: true }
+  }
+  if (result === "LOCKED") {
+    return { type: "locked" }
+  }
+  if (result) {
+    const parsed =
+      typeof result === "string"
+        ? (JSON.parse(result) as StoredSandbox)
+        : (result as StoredSandbox)
+    return { type: "existing", sandboxId: parsed.sandboxId }
+  }
+  return { type: "locked" }
+}
+
+export async function storePostSandbox(
+  owner: string,
+  repo: string,
+  postId: string,
+  sandboxId: string,
+  ttlMs = 600_000
+): Promise<void> {
+  const dataKey = postSandboxKey(owner, repo, postId)
+  const lockKey = postSandboxLockKey(owner, repo, postId)
+  const ttlSeconds = Math.ceil(ttlMs / 1000)
+
+  const data: StoredSandbox = {
+    sandboxId,
+    createdAt: Date.now(),
+  }
+
+  await redis.eval(
+    `redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+    redis.call('DEL', KEYS[2])
+    return 1`,
+    [dataKey, lockKey],
+    [JSON.stringify(data), String(ttlSeconds)]
+  )
+}
+
+export async function removePostSandboxIf(
+  owner: string,
+  repo: string,
+  postId: string,
+  expectedSandboxId: string
+): Promise<boolean> {
+  const dataKey = postSandboxKey(owner, repo, postId)
+
+  const result = (await redis.eval(
+    `local current = redis.call('GET', KEYS[1])
+    if current then
+      local parsed = cjson.decode(current)
+      if parsed.sandboxId == ARGV[1] then
+        redis.call('DEL', KEYS[1])
+        return 1
+      end
+    end
+    return 0`,
+    [dataKey],
+    [expectedSandboxId]
+  )) as number
+
+  return result === 1
+}
+
+export async function extendPostSandboxTTL(
+  owner: string,
+  repo: string,
+  postId: string,
+  ttlMs = 600_000
+): Promise<void> {
+  const dataKey = postSandboxKey(owner, repo, postId)
+  const ttlSeconds = Math.ceil(ttlMs / 1000)
+
+  await redis.expire(dataKey, ttlSeconds)
+}
+
+export async function releasePostSandboxLock(
+  owner: string,
+  repo: string,
+  postId: string
+): Promise<void> {
+  const lockKey = postSandboxLockKey(owner, repo, postId)
+  await redis.del(lockKey)
+}

@@ -178,7 +178,9 @@ function CommentItem({
                 askingOptions={askingOptions}
                 autoFocus
                 onCancel={onCancelReply}
+                owner={owner}
                 postId={comment.postId}
+                repo={repo}
                 storageKey={`reply:${comment.id}`}
                 threadCommentId={comment.id}
               />

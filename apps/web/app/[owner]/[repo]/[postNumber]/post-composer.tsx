@@ -1,8 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Composer } from "@/components/composer"
 import { UserAvatar } from "@/components/user-avatar"
-import { createComment } from "@/lib/actions/posts"
+import { checkCanModerate, createComment } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 
@@ -18,6 +19,8 @@ export function PostComposer({
   askingOptions,
   threadCommentId,
   defaultLlmId,
+  owner,
+  repo,
 }: {
   postId: string
   askingOptions: AskingOption[]
@@ -26,7 +29,16 @@ export function PostComposer({
   onCancel?: () => void
   storageKey?: string
   defaultLlmId?: string
+  owner?: string
+  repo?: string
 }) {
+  const [canModerate, setCanModerate] = useState(false)
+
+  useEffect(() => {
+    if (owner && repo) {
+      checkCanModerate(owner, repo).then(setCanModerate)
+    }
+  }, [owner, repo])
   const { data, isPending: isAuthLoading } = authClient.useSession()
 
   return (
@@ -56,8 +68,9 @@ export function PostComposer({
       )}
 
       <Composer
+        canModerate={canModerate}
         defaultAskingId={defaultLlmId}
-        onSubmit={async ({ value, options }) => {
+        onSubmit={async ({ value, options, mode }) => {
           await createComment({
             postId,
             content: {
@@ -67,6 +80,7 @@ export function PostComposer({
             },
             threadCommentId,
             seekingAnswerFrom: options.asking.id,
+            mode,
           })
         }}
         options={{ asking: askingOptions }}

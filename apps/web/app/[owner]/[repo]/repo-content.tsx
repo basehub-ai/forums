@@ -4,7 +4,7 @@ import type { InferSelectModel } from "drizzle-orm"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Composer, type ComposerProps } from "@/components/composer"
-import { createPost } from "@/lib/actions/posts"
+import { checkCanModerate, createPost } from "@/lib/actions/posts"
 import type { categories } from "@/lib/db/schema"
 import { RepoPostsSection } from "./repo-posts-section"
 
@@ -50,6 +50,11 @@ export function RepoContent({
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [defaultLlmId, setDefaultLlmId] = useState<string | undefined>()
+  const [canModerate, setCanModerate] = useState(false)
+
+  useEffect(() => {
+    checkCanModerate(owner, repo).then(setCanModerate)
+  }, [owner, repo])
 
   useEffect(() => {
     const saved = localStorage.getItem(PREFERRED_LLM_KEY)
@@ -63,13 +68,14 @@ export function RepoContent({
       <div className="mb-8">
         <Composer
           autoFocus
+          canModerate={canModerate}
           defaultAskingId={defaultLlmId}
           defaultBranch={defaultBranch}
           onAskingChange={(asking) => {
             localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
           }}
           onChange={setSearchQuery}
-          onSubmit={async ({ value, options, branch }) => {
+          onSubmit={async ({ value, options, branch, mode }) => {
             const result = await createPost({
               owner,
               repo,
@@ -81,6 +87,7 @@ export function RepoContent({
               seekingAnswerFrom: options.asking.id,
               categoryId,
               branch,
+              mode,
             })
             router.push(`/${owner}/${repo}/${result.postNumber}`)
           }}

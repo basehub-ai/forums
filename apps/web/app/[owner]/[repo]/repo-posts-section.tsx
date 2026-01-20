@@ -23,6 +23,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  updatedAt: number
   pinned: boolean
   commentCount: number
   reactionCount: number
@@ -224,7 +225,7 @@ function PinnedPosts({
         {posts.map((post) => (
           <ListItem key={post.id}>
             <Link
-              className="group flex grow items-start gap-1 overflow-hidden"
+              className="group flex h-5 grow items-start gap-1 overflow-hidden"
               href={`/${owner}/${repo}/${post.number}`}
             >
               <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
@@ -265,7 +266,7 @@ function LatestPosts({
             </div>
             <div className="flex shrink-0">
               <TableColumnTitle className="mr-17.5">OP</TableColumnTitle>
-              <TableColumnTitle className="px-0 pl-2">Created</TableColumnTitle>
+              <TableColumnTitle className="px-0 pl-2">Updated</TableColumnTitle>
             </div>
           </div>
         </div>
@@ -293,7 +294,7 @@ function LatestPosts({
                   )}
                 </TableCellText>
                 <TableCellText className="w-(--col-w-created) text-end">
-                  <RelativeTime timestamp={post.createdAt} />
+                  <RelativeTime timestamp={post.updatedAt} />
                 </TableCellText>
               </div>
             </ListItem>
@@ -322,7 +323,7 @@ function RelatedPostsSection({
     .slice(0, 2)
 
   return (
-    <div className="h-[104px] border-muted border-l-2 border-dotted pl-4">
+    <div className="h-26 border-muted border-l-2 border-dotted pl-4">
       <div className="mb-2 flex items-center gap-1.5 text-faint text-xs uppercase">
         <SparklesIcon className="h-3 w-3" />
         Related Posts
@@ -387,7 +388,7 @@ function TextSearchResults({
             </div>
             <div className="flex shrink-0">
               <TableColumnTitle className="mr-17.5">OP</TableColumnTitle>
-              <TableColumnTitle className="px-0 pl-2">Created</TableColumnTitle>
+              <TableColumnTitle className="px-0 pl-2">Updated</TableColumnTitle>
             </div>
           </div>
         </div>
@@ -416,7 +417,7 @@ function TextSearchResults({
                     )}
                   </TableCellText>
                   <TableCellText className="w-(--col-w-created) text-end">
-                    <RelativeTime timestamp={post.createdAt} />
+                    <RelativeTime timestamp={post.updatedAt} />
                   </TableCellText>
                 </div>
               </div>
@@ -438,6 +439,7 @@ function HighlightedText({ html }: { html: string }) {
   return (
     <span
       className="[&_mark]:bg-highlight-yellow [&_mark]:text-background"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: .
       dangerouslySetInnerHTML={{ __html: cleaned }}
     />
   )

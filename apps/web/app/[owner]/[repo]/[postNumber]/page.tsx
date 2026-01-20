@@ -329,7 +329,6 @@ export default async function PostPage({
     <PostMetadataProvider
       archivedRefs={archivedRefs}
       authorId={post.authorId}
-      canModerate={false}
       categories={repoCategories}
       initialCategory={category?.id ? category : null}
       initialGitContext={gitContext}
@@ -367,7 +366,9 @@ export default async function PostPage({
         <PostComposer
           askingOptions={askingOptions}
           defaultLlmId={lastLlmAuthorId}
+          owner={owner}
           postId={post.id}
+          repo={repo}
         />
       </Container>
     </PostMetadataProvider>
