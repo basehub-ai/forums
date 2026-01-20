@@ -194,7 +194,7 @@ export function RepoListWithSearch({
         className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
         onSubmit={handleSubmit}
       >
-        <div className="relative flex w-full items-center sm:w-80">
+        <div className="relative flex w-full items-center sm:w-sm">
           <SearchIcon
             className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-accent"
             size={18}
@@ -209,9 +209,19 @@ export function RepoListWithSearch({
             value={value}
           />
         </div>
+        <div className="text-sm">
+          <span className="text-faint">or </span>
+          <Link
+            className="text-muted hover:text-bright hover:underline"
+            href="/lucky"
+          >
+            I'm feeling lucky
+          </Link>
+          .
+        </div>
       </form>
 
-      <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:100px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
+      <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
         <div
           className="min-w-fit px-4 sm:px-0"
           ref={containerRef}
@@ -229,11 +239,7 @@ export function RepoListWithSearch({
                 {!displayedQuery && (
                   <TableColumnTitle className="mr-8">Stars</TableColumnTitle>
                 )}
-                <TableColumnTitle
-                  className={displayedQuery ? "px-0 pl-2" : "mr-13.5"}
-                >
-                  Questions
-                </TableColumnTitle>
+                <TableColumnTitle className="mr-13.5">Posts</TableColumnTitle>
                 {!displayedQuery && (
                   <TableColumnTitle className="px-0 pl-2">
                     Last Active

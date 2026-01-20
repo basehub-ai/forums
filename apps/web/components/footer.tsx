@@ -7,7 +7,7 @@ export function Footer() {
       <Container>
         <nav className="flex w-full justify-between">
           <span className="text-sm">
-            Built by{" "}
+            Made by{" "}
             <a
               className="underline underline-offset-2"
               href="https://basehub.com"
@@ -33,6 +33,13 @@ export function Footer() {
             >
               GitHub
             </Link>
+            {/* <Link
+              className="text-sm underline underline-offset-2"
+              href="https://www.npmjs.com/package/"
+              target="_blank"
+            >
+              NPM
+            </Link> */}
             <Link
               className="text-sm underline underline-offset-2"
               href="https://x.com/basehub_ai"

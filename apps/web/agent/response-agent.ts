@@ -267,6 +267,12 @@ Users might ask you anything, but generally, your goal should be to ground your 
 
 Explore freely but not eagerly: let the user direct you, don't waste your context by being over-eager.`,
     model,
+    providerOptions: {
+      gateway: {
+        // Try Cerebras first, then Groq, then others
+        order: ["cerebras", "groq"],
+      },
+    },
   })
 
   const stepNewMessages: AgentUIMessage[] = []
