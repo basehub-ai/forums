@@ -19,11 +19,15 @@ export async function generateMetadata({
   params: Promise<{ owner: string; repo: string }>
 }): Promise<Metadata> {
   const { owner, repo } = await params
-  const origin = getSiteOrigin()
   const repoData = await getGithubRepo(owner, repo)
 
+  if (!repoData) {
+    notFound()
+  }
+
+  const origin = getSiteOrigin()
   const title = `${owner}/${repo} — Forums`
-  const description = repoData?.description
+  const description = repoData.description
     ? `Forum of ${owner}/${repo}. ${repoData.description}`
     : `Forum of ${owner}/${repo}.`
 

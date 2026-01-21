@@ -31,6 +31,9 @@
 				".env"
 			],
 			"outputs": [".next/**", "!.next/cache/**"]
+		},
+		"lint": {
+			"dependsOn": ["^lint"]
 		}
 	}
 }
