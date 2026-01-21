@@ -51,8 +51,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   entries.push({
     url: origin,
     lastModified: latestPostUpdate ? new Date(latestPostUpdate) : new Date(),
-    changeFrequency: "daily",
-    priority: 1,
   })
 
   // Repository pages
@@ -64,8 +62,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({
       url: `${origin}/${owner}/${repo}`,
       lastModified: repoLatest ? new Date(repoLatest) : new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
     })
   }
 
@@ -74,8 +70,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({
       url: `${origin}/${p.owner}/${p.repo}/${p.number}`,
       lastModified: new Date(p.updatedAt),
-      changeFrequency: "weekly",
-      priority: 0.9,
     })
   }
 
@@ -84,8 +78,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({
       url: `${origin}/${c.owner}/${c.repo}/category/${slugify(c.title, { lower: true, strict: true })}`,
       lastModified: new Date(c.createdAt),
-      changeFrequency: "weekly",
-      priority: 0.7,
     })
   }
 
@@ -94,8 +86,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (u.username) {
       entries.push({
         url: `${origin}/user/${u.username}`,
-        changeFrequency: "weekly",
-        priority: 0.6,
       })
     }
   }
@@ -105,8 +95,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({
       url: `${origin}/llm/${m.model}`,
       lastModified: new Date(m.createdAt),
-      changeFrequency: "monthly",
-      priority: 0.5,
     })
   }
 
