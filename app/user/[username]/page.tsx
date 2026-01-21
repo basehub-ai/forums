@@ -180,7 +180,7 @@ export default async function UserProfilePage({
             <a
               className="hover:underline"
               href={`https://github.com/${username}`}
-              rel="noopener noreferrer"
+              rel="noopener"
               target="_blank"
             >
               @{username}

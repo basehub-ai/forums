@@ -19,6 +19,7 @@ type PostListItem = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  updatedAt: number
   pinned: boolean
   commentCount: number
   reactionCount: number

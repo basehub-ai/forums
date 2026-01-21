@@ -213,6 +213,7 @@ export type RepoSearchResult = {
   posts: number
   lastActive: number
   highlight?: string
+  isIndexed?: boolean
 }
 
 export async function indexAllRepos(): Promise<number> {
@@ -334,6 +335,7 @@ export async function searchRepos(query: string): Promise<RepoSearchResult[]> {
       posts: Number(doc.posts) || 0,
       lastActive: doc.lastActive,
       highlight: highlightedName,
+      isIndexed: true,
     }
   })
 }
