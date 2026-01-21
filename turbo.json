@@ -8,6 +8,21 @@
 		},
 		"build": {
 			"dependsOn": ["^build"],
+			"env": [
+				"ADMIN_USER_EMAILS",
+				"AUTUMN_SECRET_KEY",
+				"BETTER_AUTH_SECRET",
+				"DATABASE_URL",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_CLIENT_SECRET",
+				"GITHUB_TOKEN",
+				"PARALLEL_API_KEY",
+				"REVALIDATE_SECRET",
+				"TYPESENSE_API_KEY",
+				"TYPESENSE_HOST",
+				"UPSTASH_REDIS_REST_TOKEN",
+				"UPSTASH_REDIS_REST_URL"
+			],
 			"inputs": [
 				"$TURBO_DEFAULT$",
 				".env.production.local",
