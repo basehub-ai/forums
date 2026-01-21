@@ -5,5 +5,46 @@
     "formatter": {
       "semicolons": "asNeeded"
     }
-  }
+  },
+  "linter": {
+    "rules": {
+      "a11y": {
+        "noNoninteractiveElementInteractions": "off"
+      },
+      "performance": {
+        "noNamespaceImport": "off",
+        "noImgElement": "off"
+      },
+      "nursery": {
+        "useConsistentArrowReturn": "off"
+      },
+      "style": {
+        "useNodejsImportProtocol": "off",
+        "useConsistentArrayType": "off",
+        "noNestedTernary": "off",
+        "useConsistentTypeDefinitions": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off"
+      },
+      "correctness": {
+        "useImageSize": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/basehub/src/**/*"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          },
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }
