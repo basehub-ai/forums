@@ -185,7 +185,7 @@ export function RepoListWithSearch({
 
   const headerText = searchQuery
     ? `Searching "${searchQuery}"`
-    : "Top Repositories"
+    : "Popular Repos"
 
   return (
     <>

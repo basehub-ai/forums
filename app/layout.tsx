@@ -15,6 +15,23 @@ export const metadata: Metadata = {
   openGraph: {
     images: [`${getSiteOrigin()}/api/og/home`],
   },
+  icons: {
+    icon: {
+      url: "/icon.svg",
+      sizes: "any",
+      rel: "icon",
+      type: "image/svg+xml",
+    },
+    apple: {
+      url: "/icon-180.png",
+      rel: "apple-touch-icon",
+    },
+    shortcut: {
+      url: "/favicon.ico",
+      rel: "icon",
+      sizes: "32x32",
+    },
+  },
   appleWebApp: {
     capable: true,
     title: "Forums",

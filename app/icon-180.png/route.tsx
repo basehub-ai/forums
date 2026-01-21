@@ -1,12 +1,6 @@
 import { ImageResponse } from "next/og"
 
-export const size = {
-  width: 512,
-  height: 512,
-}
-export const contentType = "image/png"
-
-export default function Icon() {
+export function GET() {
   return new ImageResponse(
     <div
       style={{
@@ -15,19 +9,19 @@ export default function Icon() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#ffffff",
+        background: "#fafafa",
       }}
     >
       <svg
         aria-hidden="true"
         fill="none"
-        height="384"
+        height="132"
         style={{
           // adjust visual center
-          transform: "translate(1px, 0)",
+          transform: "translate(0.5px, 0)",
         }}
         viewBox="0 0 22 22"
-        width="384"
+        width="132"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
@@ -123,6 +117,9 @@ export default function Icon() {
         </g>
       </svg>
     </div>,
-    { ...size }
+    {
+      width: 180,
+      height: 180,
+    }
   )
 }

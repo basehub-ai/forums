@@ -37,7 +37,7 @@ export default async function Home() {
           <div className="relative mb-2">
             <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
             <h2 className="relative z-10 w-fit bg-background pr-2 font-medium text-sm uppercase">
-              Recent Questions
+              Recent Posts
             </h2>
           </div>
           <List className="mt-2">
