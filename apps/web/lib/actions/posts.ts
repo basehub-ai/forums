@@ -189,8 +189,10 @@ export async function createPost(data: {
     if (!userAccessToken) {
       throw new Error("Could not retrieve GitHub access token for build mode")
     }
-    if (!session.user.email || !session.user.name) {
-      throw new Error("Build mode requires email and name from your GitHub profile")
+    if (!(session.user.email && session.user.name)) {
+      throw new Error(
+        "Build mode requires email and name from your GitHub profile"
+      )
     }
   }
 
@@ -447,8 +449,10 @@ export async function createComment(data: {
     if (!userAccessToken) {
       throw new Error("Could not retrieve GitHub access token for build mode")
     }
-    if (!session.user.email || !session.user.name) {
-      throw new Error("Build mode requires email and name from your GitHub profile")
+    if (!(session.user.email && session.user.name)) {
+      throw new Error(
+        "Build mode requires email and name from your GitHub profile"
+      )
     }
   }
 
