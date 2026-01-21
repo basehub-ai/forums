@@ -8,7 +8,9 @@ function isValidTimestamp(timestamp: unknown): timestamp is number | Date {
   if (timestamp === null || timestamp === undefined) return false
   if (timestamp instanceof Date) return !Number.isNaN(timestamp.getTime())
   if (typeof timestamp === "number")
-    return !Number.isNaN(timestamp) && Number.isFinite(timestamp) && timestamp > 0
+    return (
+      !Number.isNaN(timestamp) && Number.isFinite(timestamp) && timestamp > 0
+    )
   return false
 }
 
@@ -37,7 +39,7 @@ export function RelativeTime({
     return () => clearInterval(interval)
   }, [timestamp, isValid])
 
-  if (!isValid || !relativeTime || !date) {
+  if (!(isValid && relativeTime && date)) {
     return null
   }
 
