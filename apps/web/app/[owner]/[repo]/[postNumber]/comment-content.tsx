@@ -479,7 +479,12 @@ type GroupedPart =
       idx: number
       isLast: boolean
     }
-  | { type: "tool-group"; tools: ToolUIPart[]; msgId: string; startIdx: number }
+  | {
+      type: "tool-group"
+      tools: ToolUIPart[]
+      msgId: string
+      startIdx: number
+    }
 
 function groupParts(content: AgentUIMessage[]): GroupedPart[] {
   const result: GroupedPart[] = []
@@ -499,7 +504,7 @@ function groupParts(content: AgentUIMessage[]): GroupedPart[] {
           toolGroupStartIdx = idx
         }
         currentToolGroup.push(toolPart)
-      } else if (part.type === "text") {
+      } else if (part.type === "text" && part.text.trim() !== "") {
         if (currentToolGroup) {
           result.push({
             type: "tool-group",
@@ -517,7 +522,7 @@ function groupParts(content: AgentUIMessage[]): GroupedPart[] {
           hasError: msg.metadata?.errorCode === ERROR_CODES.STREAM_STEP_ERROR,
           msg,
         })
-      } else if (part.type === "reasoning") {
+      } else if (part.type === "reasoning" && part.text.trim() !== "") {
         if (currentToolGroup) {
           result.push({
             type: "tool-group",
@@ -589,7 +594,6 @@ export function CommentContent({
                   mode={isStreaming ? "streaming" : "static"}
                   rehypePlugins={[
                     defaultRehypePlugins.raw,
-                    defaultRehypePlugins.katex,
                     [
                       harden,
                       {
