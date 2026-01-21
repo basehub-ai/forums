@@ -10,7 +10,7 @@ export const Title = ({
   return (
     <h1
       className={cn(
-        "text-pretty font-bold text-bright text-lg tracking-normal underline",
+        "text-pretty font-bold text-dim text-lg tracking-normal sm:text-base",
         className
       )}
     >
