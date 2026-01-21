@@ -118,7 +118,7 @@ export default async function RepoPage({
           {owner}/{repo}
         </Title>
         {!!repoData.description && (
-          <Subtitle className="mt-2">{repoData.description}</Subtitle>
+          <Subtitle className="mt-0.5">{repoData.description}</Subtitle>
         )}
         <div className="mt-2 flex items-center gap-4 text-sm">
           <Link

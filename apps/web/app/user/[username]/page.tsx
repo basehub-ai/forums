@@ -174,9 +174,9 @@ export default async function UserProfilePage({
           src={githubUser.image}
           width={56}
         />
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col">
           <Title>{githubUser.name ?? username}</Title>
-          <Subtitle className="text-dim">
+          <Subtitle className="mt-0.5 text-dim">
             <a
               className="hover:underline"
               href={`https://github.com/${username}`}
