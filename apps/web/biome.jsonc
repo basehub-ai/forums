@@ -1,11 +1,10 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["ultracite/core", "ultracite/next", "ultracite/biome/core"],
-  "javascript": {
-    "formatter": {
-      "semicolons": "asNeeded"
-    }
-  },
+  "extends": [
+    "../../biome.jsonc",
+    "ultracite/biome/react",
+    "ultracite/biome/next"
+  ],
   "linter": {
     "rules": {
       "a11y": {
