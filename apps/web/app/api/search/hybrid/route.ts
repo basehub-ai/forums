@@ -16,6 +16,8 @@ type PostWithHighlight = {
   authorUsername: string | null
   rootCommentId: string | null
   createdAt: number
+  updatedAt: number
+  pinned: boolean
   commentCount: number
   reactionCount: number
   highlight: string | null
@@ -40,6 +42,8 @@ async function enrichPosts(
       authorUsername: comments.authorUsername,
       rootCommentId: posts.rootCommentId,
       createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      pinned: posts.pinned,
       commentCount: sql<number>`(
         SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
       )`.as("comment_count"),
