@@ -8,13 +8,14 @@
 		},
 		"build": {
 			"dependsOn": ["^build"],
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				".env.production.local",
+				".env.local",
+				".env.production",
+				".env"
+			],
 			"outputs": [".next/**", "!.next/cache/**"]
-		},
-		"lint": {
-			"dependsOn": ["^lint"]
-		},
-		"typecheck": {
-			"dependsOn": ["^typecheck"]
 		}
 	}
 }
