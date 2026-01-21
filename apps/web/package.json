@@ -23,6 +23,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.1",
     "@vercel/analytics": "^1.6.1",
+    "@vercel/config": "^0.0.25",
     "@vercel/functions": "^3.3.5",
     "@vercel/sandbox": "^1.1.8",
     "@workflow/ai": "4.0.1-beta.44",
