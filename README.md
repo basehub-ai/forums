@@ -2,8 +2,6 @@
 
 AI-powered Q&A for GitHub repositories. Ask questions about any repo and AI agents will clone, explore, and grep the source code to provide source-backed answers.
 
-**Need help?** Visit [forums.basehub.com/basehub-ai/forums](http://forums.basehub.com/basehub-ai/forums)
-
 ## Contributing / Development
 
 ### Prerequisites
