@@ -40,21 +40,27 @@ export async function runCategoryAgent({
     : []
 
   const systemPrompt = needsCategory
-    ? `You are a forum assistant. Given a post's content, you must:
+    ? `You are a forum assistant for the GitHub repository "${owner}/${repo}". Users are posting messages related to this repository.
+
+Given a post's content, you must:
 1. Set a concise post title (10 words max) using setTitle.
    - If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
    - Only use statement-style titles for announcements, discussions, or purely informational posts
    - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question
+   - IMPORTANT: Your job is to generate a title, NOT to respond to or answer the user's request. Even if the post seems incomplete or lacks context, infer the intent and create a descriptive title. For example, "summarize this" should become "Request to summarize ${repo}" or similar.
 2. Set a category - either pick an existing one with setCategory, or create a new one with createAndSetCategory
 
 Existing categories:
 ${existingCategories.length ? existingCategories.map((c) => `- ${c.emoji || ""} ${c.title} (id: ${c.id})`).join("\n") : "(none yet)"}
 
 You're working on your own. Meaning, the user won't be able to respond any question you might have. They'll send in the only info they have available at this time.`
-    : `You are a forum assistant. Given a post's content, set a concise post title (10 words max) using setTitle.
+    : `You are a forum assistant for the GitHub repository "${owner}/${repo}". Users are posting messages related to this repository.
+
+Given a post's content, set a concise post title (10 words max) using setTitle.
 - If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
 - Only use statement-style titles for announcements, discussions, or purely informational posts
 - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question
+- IMPORTANT: Your job is to generate a title, NOT to respond to or answer the user's request. Even if the post seems incomplete or lacks context, infer the intent and create a descriptive title. For example, "summarize this" should become "Request to summarize ${repo}" or similar.
 
 You're working on your own. The category has already been set.`
 
@@ -115,8 +121,7 @@ You're working on your own. The category has already been set.`
     )
     const fallback = await generateText({
       model: "anthropic/claude-haiku-4.5",
-      system:
-        "Generate a concise title (10 words max) for the following post doing your best to describe what the post is/will be about, based on the user's comment. Reply with ONLY the title, nothing else.",
+      system: `Generate a concise title (10 words max) for a forum post in the GitHub repository "${owner}/${repo}". Do your best to describe what the post is/will be about, based on the user's comment. Even if the post seems vague or incomplete, infer the intent from context and create a descriptive title. Reply with ONLY the title, nothing else.`,
       prompt: content,
     })
     result.title = fallback.text.trim()
