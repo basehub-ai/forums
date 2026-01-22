@@ -80,6 +80,8 @@ function CommentItem({
 
   const actionLabel = isRootComment ? "posted" : "commented"
 
+  const createdByLabel = comment.createdBy === "mcp" ? "via MCP" : ""
+
   const header = (
     <div
       className={cn(
@@ -105,6 +107,17 @@ function CommentItem({
               timestamp={comment.createdAt}
             />
           </Suspense>
+          {createdByLabel && !author.isLlm && (
+            <span className="text-muted-foreground text-sm">
+              {" "}
+              <Link
+                className="text-muted-foreground text-sm hover:underline"
+                href="/install-mcp"
+              >
+                {createdByLabel}
+              </Link>
+            </span>
+          )}
         </span>
         <CopyLinkButton
           commentNumber={commentNumber}

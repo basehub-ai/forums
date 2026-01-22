@@ -55,6 +55,8 @@ export const comments = pgTable(
 
     seekingAnswerFrom: varchar("seeking_answer_from", { length: 32 }),
 
+    createdBy: varchar("created_by", { length: 32 }).notNull().default("web"),
+
     content: jsonb().$type<AgentUIMessage[]>().notNull(),
 
     runId: varchar("run_id", { length: 255 }),
