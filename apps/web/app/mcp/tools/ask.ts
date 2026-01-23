@@ -1,7 +1,7 @@
-import { waitUntil } from "@vercel/functions"
 import { asc, eq, sql } from "drizzle-orm"
 import { revalidateTag } from "next/cache"
 import { headers } from "next/headers"
+import { after } from "next/server"
 import type { InferSchema } from "xmcp"
 import { z } from "zod"
 import { runCategoryAgent } from "@/agent/category-agent"
@@ -11,7 +11,14 @@ import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
 import { autumn, CREDIT_COSTS, checkIsPro } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers, postCounters, posts, user } from "@/lib/db/schema"
+import { checkMessageRateLimit } from "@/lib/rate-limit"
 import { resolveRepoInput } from "@/lib/resolve-repo-input"
+import {
+  indexComment,
+  indexPost,
+  indexRepo,
+  updatePostIndex,
+} from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 
 export const schema = {
@@ -36,7 +43,7 @@ export const schema = {
 export const metadata = {
   name: "ask",
   description:
-    "Ask a question about a repository's codebase. Can start a new conversation or continue an existing one.",
+    "Ask a question about any public repository's source code. Use when you need to understand how an external library, framework, or dependency works. Especially for implementation details, edge cases, or behavior not covered in docs.",
   annotations: {
     title: "Ask about repository",
     readOnlyHint: true,
@@ -73,6 +80,9 @@ export default async function ask({
   }
 
   const userId = session.userId
+
+  // Rate limit check
+  await checkMessageRateLimit(userId)
 
   // Resolve repo input (GitHub URL, owner/repo, or npm package)
   let owner: string
@@ -161,6 +171,8 @@ export default async function ask({
     let postId: string
     let postNumber: number
     let isNewPost = false
+    let userCommentId: string
+    let categoryId: string | null = null
 
     if (existingPostId) {
       // Continue existing conversation
@@ -170,6 +182,7 @@ export default async function ask({
           number: posts.number,
           owner: posts.owner,
           repo: posts.repo,
+          categoryId: posts.categoryId,
         })
         .from(posts)
         .where(eq(posts.id, existingPostId))
@@ -188,7 +201,8 @@ export default async function ask({
 
       postId = existingPost.id
       postNumber = existingPost.number
-      const userCommentId = nanoid()
+      categoryId = existingPost.categoryId
+      userCommentId = nanoid()
 
       // Add user comment to existing post
       await tx.insert(comments).values({
@@ -206,7 +220,7 @@ export default async function ask({
       // Create new post
       isNewPost = true
       postId = nanoid()
-      const userCommentId = nanoid()
+      userCommentId = nanoid()
 
       const counterResult = await tx
         .insert(postCounters)
@@ -310,29 +324,41 @@ export default async function ask({
         .where(eq(posts.id, postId))
     }
 
-    return { postId, postNumber, response, isNewPost }
+    return {
+      postId,
+      postNumber,
+      response,
+      isNewPost,
+      userCommentId,
+      llmCommentId,
+      categoryId,
+      resolvedGitRef,
+    }
   })
 
   const postUrl = `${getSiteOrigin()}/${owner}/${repo}/${result.postNumber}`
 
+  // Index post first (required before category agent can update it)
   if (result.isNewPost) {
-    waitUntil(
-      (async () => {
-        try {
-          await runCategoryAgent({
-            postId: result.postId,
-            owner,
-            repo,
-            content: query,
-          })
-        } catch (error) {
-          console.error("Failed to generate MCP post title:", error)
-        }
-      })()
+    await indexPost(
+      {
+        id: result.postId,
+        number: result.postNumber,
+        owner,
+        repo,
+        title: null,
+        categoryId: null,
+        authorId: userId,
+        rootCommentId: result.userCommentId,
+        gitContexts: null,
+        pinned: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+      2 // user comment + llm comment
     )
   }
 
-  // Revalidate caches after transaction commits successfully
   revalidateTag(`repo:${owner}:${repo}`, "max")
   revalidateTag(`post:${result.postId}`, "max")
 
@@ -345,7 +371,80 @@ export default async function ask({
     },
   }
 
-  console.log("MCP Ask Tool Response:", response)
+  // Background tasks: index comments, update counts, run category agent
+  after(async () => {
+    try {
+      // Fetch the comments we just created for indexing
+      const [userComment, llmComment] = await Promise.all([
+        db
+          .select()
+          .from(comments)
+          .where(eq(comments.id, result.userCommentId))
+          .limit(1)
+          .then((r) => r[0]),
+        db
+          .select()
+          .from(comments)
+          .where(eq(comments.id, result.llmCommentId))
+          .limit(1)
+          .then((r) => r[0]),
+      ])
+
+      // Index comments
+      const indexPromises: Promise<void>[] = []
+      if (userComment) {
+        indexPromises.push(
+          indexComment(
+            userComment,
+            owner,
+            repo,
+            result.postNumber,
+            result.categoryId,
+            result.isNewPost // isRootComment only for new posts
+          )
+        )
+      }
+      if (llmComment) {
+        indexPromises.push(
+          indexComment(
+            llmComment,
+            owner,
+            repo,
+            result.postNumber,
+            result.categoryId,
+            false
+          )
+        )
+      }
+
+      // Update comment count for existing posts
+      if (!result.isNewPost) {
+        const commentCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(comments)
+          .where(eq(comments.postId, result.postId))
+          .then((r) => Number(r[0]?.count ?? 0))
+        indexPromises.push(updatePostIndex(result.postId, { commentCount }))
+      }
+
+      // Index repo stats
+      indexPromises.push(indexRepo(owner, repo))
+
+      await Promise.all(indexPromises)
+
+      // Run category agent for new posts (generates title)
+      if (result.isNewPost) {
+        await runCategoryAgent({
+          postId: result.postId,
+          owner,
+          repo,
+          content: query,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to run post-creation tasks:", error)
+    }
+  })
 
   return response as {
     content: { type: "text"; text: string }[]
