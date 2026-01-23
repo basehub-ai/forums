@@ -21,7 +21,10 @@ export function NavLink({
   const isActive = exact ? pathname === href : pathname.startsWith(href)
 
   return (
-    <Link className={`relative z-10 bg-background ${className}`} href={href}>
+    <Link
+      className={`relative z-10 bg-background ${className} animate-fade-in`}
+      href={href}
+    >
       <span
         className={`whitespace-nowrap font-semibold text-[15px] uppercase leading-5 tracking-tight hover:text-bright hover:underline ${
           isActive ? "text-bright" : "text-faint"
