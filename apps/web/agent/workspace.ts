@@ -397,7 +397,7 @@ async function initializeAskWorkspace({
   }
 
   if (stderr) {
-    throw new Error(`Workspace initialization stderr: ${stderr}`)
+    console.warn(`Workspace initialization warning: ${stderr}`)
   }
 
   const lines = stdout.trim().split("\n")
@@ -408,7 +408,9 @@ async function initializeAskWorkspace({
     console.error(
       `Invalid workspace output! stdout: "${stdout}", stderr: "${stderr}"`
     )
-    throw new Error("Failed to initialize git worktree")
+    throw new Error(
+      `Failed to initialize git worktree. stderr: ${stderr || "none"}`
+    )
   }
 
   let gitContextData: GitContextData

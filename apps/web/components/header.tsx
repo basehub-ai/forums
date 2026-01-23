@@ -9,6 +9,7 @@ import { checkIsPro } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { user } from "@/lib/db/schema"
 import { Container } from "./container"
+import { NavLink } from "./nav-link"
 import { SignInButton } from "./sign-in-button"
 import { UserDropdown } from "./user-dropdown"
 
@@ -125,11 +126,10 @@ export function Header() {
         </div>
 
         <div className="relative flex items-center gap-x-5">
-          {/* <Link className="relative z-10 bg-background" href="/mcp">
-            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
-              MCP
-            </span>
-          </Link>
+          <Suspense>
+            <NavLink href="/install-mcp">MCP</NavLink>
+          </Suspense>
+          {/*
           <Link className="relative z-10 bg-background" href="/cli">
             <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
               CLI

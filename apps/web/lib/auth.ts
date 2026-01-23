@@ -3,7 +3,7 @@ import { autumn } from "autumn-js/better-auth"
 import type { User } from "better-auth"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { oAuthProxy } from "better-auth/plugins"
+import { mcp, oAuthProxy } from "better-auth/plugins"
 import DataLoader from "dataloader"
 import { eq } from "drizzle-orm"
 import { cacheLife } from "next/cache"
@@ -54,7 +54,14 @@ export const auth = betterAuth({
   },
   baseURL: getSiteOrigin(),
   trustedOrigins: ["forums://"],
-  plugins: [expo(), oAuthProxy({ productionURL: productionOrigin }), autumn()],
+  plugins: [
+    expo(),
+    oAuthProxy({ productionURL: productionOrigin }),
+    autumn(),
+    mcp({
+      loginPage: "/login",
+    }),
+  ],
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,

@@ -48,7 +48,6 @@ export default async function Home() {
                   href={`/${post.owner}/${post.repo}/${post.number}`}
                 >
                   <AsteriskIcon
-                    absoluteStrokeWidth
                     className="mt-0.5 shrink-0 text-faint"
                     size={16}
                   />

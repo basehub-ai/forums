@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vercel env run -- next dev",
-    "build": "next build",
+    "dev": "xmcp dev & vercel env run -- next dev",
+    "build": "xmcp build && next build",
     "start": "next start",
     "test": "vercel env run -- bun test",
     "lint": "ultracite fix",
@@ -54,6 +54,7 @@
     "tailwind-merge": "^3.4.0",
     "typesense": "^2.1.0",
     "workflow": "4.0.1-beta.49",
+    "xmcp": "0.6.0",
     "zod": "^4.3.5",
     "zustand": "^5.0.10"
   },
