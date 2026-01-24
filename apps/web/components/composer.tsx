@@ -66,6 +66,7 @@ export type ComposerProps = {
   owner?: string
   repo?: string
   canModerate?: boolean
+  isStreaming?: boolean
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -83,6 +84,7 @@ export const Composer = ({
   owner,
   repo,
   canModerate,
+  isStreaming,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
@@ -225,6 +227,9 @@ export const Composer = ({
           }
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault()
+            if (isStreaming) {
+              return
+            }
             if (isSignedIn) {
               e.currentTarget.form?.requestSubmit()
             } else {
@@ -380,6 +385,7 @@ export const Composer = ({
                 className="cursor-pointer"
                 disabled={
                   isPending ||
+                  isStreaming ||
                   (isSignedIn &&
                     selectedAsking.id !== "human" &&
                     creditBalance < (selectedAsking.isProModel ? 5 : 1))
