@@ -1,0 +1,1 @@
+ALTER TABLE "comments" ADD COLUMN "created_by" varchar(32) DEFAULT 'web' NOT NULL;

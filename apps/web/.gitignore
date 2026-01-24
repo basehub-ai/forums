@@ -44,3 +44,7 @@ package-lock.json
 
 # turborepo
 .turbo
+
+# xmcp
+.xmcp
+xmcp-env.d.ts
