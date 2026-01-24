@@ -366,6 +366,9 @@ export default async function PostPage({
         <PostComposer
           askingOptions={askingOptions}
           defaultLlmId={lastLlmAuthorId}
+          hasStreamingComment={postComments.some(
+            (c) => c.streamStatus === "streaming"
+          )}
           owner={owner}
           postId={post.id}
           repo={repo}

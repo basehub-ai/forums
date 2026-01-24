@@ -400,6 +400,22 @@ export async function createComment(data: {
   const commentId = nanoid()
   const mode = data.mode ?? "ask"
 
+  const existingStream = await db
+    .select({ id: comments.id })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.postId, data.postId),
+        eq(comments.streamStatus, "streaming")
+      )
+    )
+    .limit(1)
+    .then((r) => r[0])
+
+  if (existingStream) {
+    throw new Error("A response is already being generated")
+  }
+
   const [post, llm] = await Promise.all([
     db
       .select()

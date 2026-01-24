@@ -21,6 +21,7 @@ export function PostComposer({
   defaultLlmId,
   owner,
   repo,
+  hasStreamingComment,
 }: {
   postId: string
   askingOptions: AskingOption[]
@@ -31,6 +32,7 @@ export function PostComposer({
   defaultLlmId?: string
   owner?: string
   repo?: string
+  hasStreamingComment?: boolean
 }) {
   const [canModerate, setCanModerate] = useState(false)
 
@@ -70,6 +72,7 @@ export function PostComposer({
       <Composer
         canModerate={canModerate}
         defaultAskingId={defaultLlmId}
+        isStreaming={hasStreamingComment}
         onSubmit={async ({ value, options, mode }) => {
           await createComment({
             postId,
