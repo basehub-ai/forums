@@ -108,8 +108,11 @@ export async function resolveNpmPackage(packageName: string, version?: string) {
     )
   }
 
-  // Determine git tag - try common patterns
-  // Most packages use v1.2.3, some use 1.2.3
+  // Get gitHead (exact commit SHA) from version metadata - most reliable
+  const versionInfo = info.versions[resolvedVersion]
+  const gitHead: string | undefined = versionInfo?.gitHead
+
+  // Fallback git tag pattern if no gitHead
   const gitTag = `v${resolvedVersion}`
 
   return {
@@ -118,6 +121,7 @@ export async function resolveNpmPackage(packageName: string, version?: string) {
     version: resolvedVersion,
     repoUrl: repo.url,
     repoDirectory: repo.directory,
+    gitHead,
     gitTag,
   }
 }

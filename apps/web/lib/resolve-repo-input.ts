@@ -12,7 +12,7 @@ export type ResolvedRepoInput = {
  * Parse a GitHub URL or owner/repo format to extract owner and repo.
  * Returns null if the input doesn't match these formats.
  */
-function parseGitHubInput(
+export function parseGitHubInput(
   input: string
 ): { owner: string; repo: string } | null {
   const trimmed = input.trim()
