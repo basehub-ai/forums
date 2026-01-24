@@ -3,19 +3,52 @@ import { cn } from "@/lib/utils"
 export const Title = ({
   className,
   children,
+  underline,
 }: {
   className?: string
   children: React.ReactNode
+  underline?: boolean
 }) => {
   return (
     <h1
       className={cn(
         "text-pretty font-bold text-dim text-lg tracking-normal sm:text-base",
+        underline && "underline decoration-1 underline-offset-4",
         className
       )}
     >
       {children}
     </h1>
+  )
+}
+
+export const Section = ({
+  className,
+  children,
+  title,
+  id,
+}: {
+  className?: string
+  children: React.ReactNode
+  title: string
+  id?: string
+}) => {
+  return (
+    <section className={cn("mt-10", className)} id={id}>
+      {id ? (
+        <a
+          className="text-pretty font-bold text-dim text-lg tracking-normal hover:underline sm:text-base"
+          href={`#${id}`}
+        >
+          {title}
+        </a>
+      ) : (
+        <h2 className="text-pretty font-bold text-dim text-lg tracking-normal sm:text-base">
+          {title}
+        </h2>
+      )}
+      {children}
+    </section>
   )
 }
 
@@ -50,7 +83,7 @@ export const ListItem = ({
   className?: string
   children: React.ReactNode
 }) => {
-  return <div className={cn("flex", className)}>{children}</div>
+  return <div className={cn("flex h-4.5", className)}>{children}</div>
 }
 
 export const TableColumnTitle = ({

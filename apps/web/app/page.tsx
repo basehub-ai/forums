@@ -1,12 +1,71 @@
+import { and, desc, eq, exists } from "drizzle-orm"
 import { AsteriskIcon } from "lucide-react"
 import { cacheLife } from "next/cache"
 import Link from "next/link"
+import { InstallationTable } from "@/app/install-mcp/installation-table"
+import { CodeBlock } from "@/components/code-block"
 import { Container } from "@/components/container"
 import { FlowDiagram, type FlowStep } from "@/components/flow-diagram"
 import { RepoListWithSearch } from "@/components/repo-list-with-search"
-import { List, ListItem, Subtitle, Title } from "@/components/typography"
+import {
+  List,
+  ListItem,
+  Section,
+  Subtitle,
+  Title,
+} from "@/components/typography"
+import { db } from "@/lib/db/client"
+import { comments, posts } from "@/lib/db/schema"
 import { getLatestPosts } from "@/lib/latest-posts"
 import { getTopRepositories } from "@/lib/top-repos"
+
+function getPostsWithMCPComments(limit = 5) {
+  return db
+    .select({
+      id: posts.id,
+      number: posts.number,
+      title: posts.title,
+      owner: posts.owner,
+      repo: posts.repo,
+      createdAt: posts.createdAt,
+    })
+    .from(posts)
+    .where(
+      exists(
+        db
+          .select()
+          .from(comments)
+          .where(
+            and(eq(comments.postId, posts.id), eq(comments.createdBy, "mcp"))
+          )
+      )
+    )
+    .orderBy(desc(posts.createdAt))
+    .limit(limit)
+}
+
+const askTool = {
+  name: "ask",
+  description:
+    "Ask a question about any public repository's source code. Use when you need to understand how an external library, framework, or dependency works.",
+  parameters: [
+    // {
+    //   name: "repo",
+    //   description: "GitHub URL, owner/repo, or npm package name",
+    // },
+    // { name: "query", description: "Your question about the repository" },
+    // {
+    //   name: "ref",
+    //   description: "Git ref (branch, tag, commit)",
+    //   optional: true,
+    // },
+    // {
+    //   name: "postId",
+    //   description: "Continue an existing conversation",
+    //   optional: true,
+    // },
+  ],
+}
 
 const flowSteps: FlowStep[] = [
   { title: "Ask a question" },
@@ -14,59 +73,153 @@ const flowSteps: FlowStep[] = [
   { title: "Get source-backed answer" },
 ]
 
+const cliExample = `# Search for exports in Next.js
+npx remote-bash vercel/next.js -- grep "export default"
+
+# Target a specific branch
+npx remote-bash vercel/next.js -ref main -- find . -name "*.ts"
+
+# Target a specific version tag
+npx remote-bash vercel/next.js -v 13.0.0 -- ls -la src/`
+
 export default async function Home() {
   "use cache"
   cacheLife("minutes")
 
-  const [topRepos, latestPosts] = await Promise.all([
+  const [topRepos, latestPosts, mcpPosts] = await Promise.all([
     getTopRepositories(5),
     getLatestPosts(5),
+    getPostsWithMCPComments(5),
   ])
 
   return (
-    <Container>
-      <Title>Ask any repo. Get source-backed answers.</Title>
-      <Subtitle className="mt-0.5">
-        Straight from the code. No stale docs. No cloning.
-      </Subtitle>
+    <>
+      <Container>
+        <Title underline>Get to the source!</Title>
+        <Subtitle className="mt-0.5">
+          Ask any GitHub repo a question. Get source-backed answers from a
+          frontier LLM.
+        </Subtitle>
 
-      <RepoListWithSearch now={Date.now()} topRepos={topRepos} />
+        <RepoListWithSearch now={Date.now()} topRepos={topRepos} />
 
-      {latestPosts.length > 0 && (
-        <div className="mt-10">
-          <div className="relative mb-2">
-            <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
-            <h2 className="relative z-10 w-fit bg-background pr-2 font-medium text-sm uppercase">
-              Recent Posts
-            </h2>
+        {latestPosts.length > 0 && (
+          <div className="mt-10">
+            <div className="relative mb-2">
+              <h2 className="relative z-10 w-fit bg-background pr-2 font-medium text-sm uppercase">
+                Recent Posts
+              </h2>
+            </div>
+            <List className="mt-2">
+              {latestPosts.map((post) => (
+                <ListItem key={post.id}>
+                  <Link
+                    className="group flex grow items-center gap-1 overflow-hidden"
+                    href={`/${post.owner}/${post.repo}/${post.number}`}
+                  >
+                    <AsteriskIcon className="shrink-0 text-faint" size={16} />
+                    <div className="min-w-0">
+                      <span className="text-dim leading-none group-hover:text-bright group-hover:underline">
+                        {post.title || `Post #${post.number}`}
+                      </span>
+                      <span className="ml-2 text-faint text-sm leading-none">
+                        {post.owner}/{post.repo}
+                      </span>
+                    </div>
+                  </Link>
+                </ListItem>
+              ))}
+            </List>
           </div>
-          <List className="mt-2">
-            {latestPosts.map((post) => (
-              <ListItem key={post.id}>
-                <Link
-                  className="group flex grow items-start gap-1 overflow-hidden"
-                  href={`/${post.owner}/${post.repo}/${post.number}`}
-                >
+        )}
+      </Container>
+
+      <hr className="divider-md my-14 h-px border-0 opacity-40" />
+
+      <Container>
+        <Section id="cli" title="CLI">
+          <p className="mt-1 text-muted">
+            Use the `remote-bash` CLI (also available as a skill) to run bash
+            commands against any public GitHub repository without cloning it.
+          </p>
+          <div className="mt-4">
+            <CodeBlock code={cliExample} language="bash" />
+          </div>
+        </Section>
+      </Container>
+
+      <hr className="divider-md my-14 h-px border-0 opacity-40" />
+
+      <Container>
+        <Section id="mcp" title="MCP">
+          <p className="mt-1 text-muted">
+            Install the Forums MCP and let your agent post questions in your
+            behalf.
+          </p>
+
+          <div className="mt-3">
+            <InstallationTable />
+          </div>
+
+          <div className="mt-6">
+            <h3 className="font-medium text-sm uppercase">Tools</h3>
+            <List className="mt-2">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
                   <AsteriskIcon
                     className="mt-0.5 shrink-0 text-faint"
                     size={16}
                   />
-                  <div className="min-w-0">
-                    <span className="text-dim group-hover:text-bright group-hover:underline">
-                      {post.title || `Post #${post.number}`}
+                  <span className="font-mono text-dim">{askTool.name}</span>
+                </div>
+                <p className="ml-5.5 text-muted text-sm">
+                  {askTool.description}
+                </p>
+                {/* <div className="mt-1 ml-5.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  {askTool.parameters.map((param) => (
+                    <span className="text-faint" key={param.name}>
+                      <span className="font-mono text-highlight-yellow">
+                        {param.name}
+                      </span>
+                      {param.optional && "?"}
+                      <span className="ml-1">{param.description}</span>
                     </span>
-                    <span className="ml-2 text-faint text-sm">
-                      {post.owner}/{post.repo}
-                    </span>
-                  </div>
-                </Link>
-              </ListItem>
-            ))}
-          </List>
-        </div>
-      )}
+                  ))}
+                </div> */}
+              </div>
+            </List>
+          </div>
 
+          {mcpPosts.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-medium text-sm uppercase">
+                Recent MCP Posts
+              </h3>
+              <List className="mt-2">
+                {mcpPosts.map((post) => (
+                  <ListItem key={post.id}>
+                    <Link
+                      className="group flex grow items-center gap-1 overflow-hidden"
+                      href={`/${post.owner}/${post.repo}/${post.number}`}
+                    >
+                      <AsteriskIcon className="shrink-0 text-faint" size={16} />
+                      <div className="min-w-0">
+                        <span className="text-dim leading-none group-hover:text-bright group-hover:underline">
+                          {post.title || `Post #${post.number}`}
+                        </span>
+                        <span className="ml-2 text-faint text-sm leading-none">
+                          {post.owner}/{post.repo}
+                        </span>
+                      </div>
+                    </Link>
+                  </ListItem>
+                ))}
+              </List>
+            </div>
+          )}
+        </Section>
+      </Container>
       <FlowDiagram className="mt-10" steps={flowSteps} />
-    </Container>
+    </>
   )
 }
