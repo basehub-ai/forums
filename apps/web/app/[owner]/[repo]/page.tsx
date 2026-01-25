@@ -18,7 +18,11 @@ export async function generateMetadata({
 }: {
   params: Promise<{ owner: string; repo: string }>
 }): Promise<Metadata> {
+  "use cache"
+
   const { owner, repo } = await params
+  cacheTag(`repo:${owner}:${repo}`)
+
   const repoData = await getGithubRepo(owner, repo)
 
   if (!repoData) {

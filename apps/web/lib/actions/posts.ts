@@ -22,7 +22,6 @@ import {
   comments,
   llmUsers,
   mentions,
-  postCounters,
   posts,
   reactions,
 } from "@/lib/db/schema"

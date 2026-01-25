@@ -5,6 +5,7 @@ import { after } from "next/server"
 import type { InferSchema } from "xmcp"
 import { z } from "zod"
 import type { AgentUIMessage } from "@/agent/types"
+import { createPostCore } from "@/lib/actions/posts-internal"
 import { auth } from "@/lib/auth"
 import { autumn, CREDIT_COSTS, checkIsPro } from "@/lib/autumn"
 import { getUserAccessToken } from "@/lib/data/github"
@@ -14,7 +15,6 @@ import { checkMessageRateLimit } from "@/lib/rate-limit"
 import { resolveRepoInput } from "@/lib/resolve-repo-input"
 import { indexRepo } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
-import { createPostCore } from "@/lib/actions/posts-internal"
 
 export const schema = {
   repo: z
@@ -148,7 +148,8 @@ export default async function ask({
   const { data: checkResult, error: checkError } = await autumn.check({
     customer_id: userId,
     feature_id: "standard_credits",
-    required_balance: CREDIT_COSTS[billingCategory as keyof typeof CREDIT_COSTS],
+    required_balance:
+      CREDIT_COSTS[billingCategory as keyof typeof CREDIT_COSTS],
   })
 
   if (checkError || !checkResult) {
