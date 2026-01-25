@@ -44,28 +44,18 @@ function getPostsWithMCPComments(limit = 5) {
     .limit(limit)
 }
 
-const askTool = {
-  name: "ask",
-  description:
-    "Ask a question about any public repository's source code. Use when you need to understand how an external library, framework, or dependency works.",
-  parameters: [
-    // {
-    //   name: "repo",
-    //   description: "GitHub URL, owner/repo, or npm package name",
-    // },
-    // { name: "query", description: "Your question about the repository" },
-    // {
-    //   name: "ref",
-    //   description: "Git ref (branch, tag, commit)",
-    //   optional: true,
-    // },
-    // {
-    //   name: "postId",
-    //   description: "Continue an existing conversation",
-    //   optional: true,
-    // },
-  ],
-}
+const mcpTools = [
+  {
+    name: "ask",
+    description:
+      "Ask a question about any public repository's source code. Use when you need to understand how an external library, framework, or dependency works.",
+  },
+  {
+    name: "bash",
+    description:
+      "Execute bash commands against any public repository's source code. Runs in a sandboxed environment with read-only access to the repository. Use for exploring codebases, running analysis tools, checking dependencies, or any read-only operations.",
+  },
+]
 
 const flowSteps: FlowStep[] = [
   { title: "Ask a question" },
@@ -163,30 +153,21 @@ export default async function Home() {
 
           <div className="mt-6">
             <h3 className="font-medium text-sm uppercase">Tools</h3>
-            <List className="mt-2">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5">
-                  <AsteriskIcon
-                    className="mt-0.5 shrink-0 text-faint"
-                    size={16}
-                  />
-                  <span className="font-mono text-dim">{askTool.name}</span>
+            <List className="mt-2 space-y-3">
+              {mcpTools.map((tool) => (
+                <div className="flex flex-col gap-1" key={tool.name}>
+                  <div className="flex items-center gap-1.5">
+                    <AsteriskIcon
+                      className="mt-0.5 shrink-0 text-faint"
+                      size={16}
+                    />
+                    <span className="font-mono text-dim">{tool.name}</span>
+                  </div>
+                  <p className="ml-5.5 text-muted text-sm">
+                    {tool.description}
+                  </p>
                 </div>
-                <p className="ml-5.5 text-muted text-sm">
-                  {askTool.description}
-                </p>
-                {/* <div className="mt-1 ml-5.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                  {askTool.parameters.map((param) => (
-                    <span className="text-faint" key={param.name}>
-                      <span className="font-mono text-highlight-yellow">
-                        {param.name}
-                      </span>
-                      {param.optional && "?"}
-                      <span className="ml-1">{param.description}</span>
-                    </span>
-                  ))}
-                </div> */}
-              </div>
+              ))}
             </List>
           </div>
 
