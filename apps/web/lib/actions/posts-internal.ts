@@ -1,6 +1,6 @@
 import { waitUntil } from "@vercel/functions"
 import { eq, sql } from "drizzle-orm"
-import { updateTag } from "next/cache"
+import { revalidateTag, updateTag } from "next/cache"
 import { start } from "workflow/api"
 import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
@@ -14,6 +14,14 @@ import { indexComment, indexPost, indexRepo } from "@/lib/typesense-index"
 import { nanoid } from "@/lib/utils"
 import { run } from "../run"
 import { createMentions } from "./posts"
+
+function invalidateTag(tag: string, createdBy: "web" | "mcp" = "web") {
+  if (createdBy === "mcp") {
+    revalidateTag(tag, "max")
+  } else {
+    updateTag(tag)
+  }
+}
 
 async function getGitHubUsername(
   image: string | null | undefined
@@ -235,10 +243,11 @@ export async function createPostCore(data: {
 
   waitUntil(indexRepo(data.owner, data.repo))
 
-  updateTag(`repo:${data.owner}:${data.repo}`)
-  updateTag(`post:${postId}`)
+  const createdBy = data.createdBy ?? "web"
+  invalidateTag(`repo:${data.owner}:${data.repo}`, createdBy)
+  invalidateTag(`post:${postId}`, createdBy)
   if (authorUsername) {
-    updateTag(`user:${authorUsername}`)
+    invalidateTag(`user:${authorUsername}`, createdBy)
   }
 
   return {

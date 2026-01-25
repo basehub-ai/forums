@@ -145,7 +145,7 @@ export default async function Home() {
               Also available as a{" "}
               <a
                 className="underline decoration-dashed underline-offset-2 hover:decoration-solid"
-                href="https://skills.sh/basehub-ai/forums"
+                href="https://skills.sh/basehub-ai/forums/remote-bash"
                 rel="noreferrer"
                 target="_blank"
               >
@@ -155,7 +155,7 @@ export default async function Home() {
             <div className="mt-2 flex items-center gap-1.5">
               <AsteriskIcon className="shrink-0 text-faint" size={16} />
               <code className="font-mono text-accent">
-                npx skills add basehub-ai/forums
+                npx skills add basehub-ai/forums --skill remote-bash
               </code>
             </div>
           </div>
