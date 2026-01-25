@@ -2,6 +2,7 @@
   "$schema": "./.next-term/next-term.config.schema.json",
   "cliName": "remote-bash",
   "localBaseUrl": "http://localhost:3000",
+  "backendUrl": "https://forums.basehub.com",
   "buildType": "registry",
   "npmInfo": {
     "repository": {
