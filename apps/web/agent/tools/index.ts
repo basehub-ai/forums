@@ -563,7 +563,10 @@ export function getTools(context: ToolContext) {
         let cwd = context.workspace.path
 
         if (workdir) {
-          const normalizedWorkdir = normalizePath(workdir, context.workspace.path)
+          const normalizedWorkdir = normalizePath(
+            workdir,
+            context.workspace.path
+          )
           cwd = join(context.workspace.path, normalizedWorkdir)
         }
 
