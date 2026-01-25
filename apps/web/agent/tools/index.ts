@@ -26,6 +26,9 @@ function runCommand(
 }
 
 const normalizationRegex = /^\//
+const exitCodeMatchRegex = /___EXIT_CODE___(\d+)/m
+const exitCodeReplaceRegex = /___EXIT_CODE___\d+\s*$/
+
 function normalizePath(inputPath: string, workspacePath: string): string {
   if (inputPath.startsWith(workspacePath)) {
     return (
@@ -541,6 +544,68 @@ export function getTools(context: ToolContext) {
       },
     }),
 
+    Bash: tool({
+      description:
+        "Execute a shell command in the workspace. Use this for running scripts, searching with grep, installing dependencies, running tests, and other shell tasks.",
+      inputSchema: z.object({
+        command: z.string().describe("The shell command to execute"),
+        workdir: z
+          .string()
+          .optional()
+          .describe(
+            "Working directory relative to workspace root (defaults to workspace root)"
+          ),
+      }),
+      outputSchema: z.object({
+        stdout: z.string().describe("Standard output from the command"),
+        stderr: z.string().describe("Standard error from the command"),
+        exitCode: z.number().describe("Exit code of the command"),
+      }),
+      execute: async ({ command, workdir }) => {
+        let cwd = context.workspace.path
+
+        if (workdir) {
+          const normalizedWorkdir = normalizePath(workdir, context.workspace.path)
+          cwd = join(context.workspace.path, normalizedWorkdir)
+        }
+
+        const result = await runCommand(context.workspace, "bash", [
+          "-c",
+          `
+            cd "$1" || exit 1
+
+            # Run the command and capture exit code
+            bash -c "$2"
+            EXIT_CODE=$?
+
+            # Output exit code marker
+            echo "___EXIT_CODE___$EXIT_CODE"
+          `,
+          "--",
+          cwd,
+          command,
+        ])
+
+        const [rawStdout, stderr] = await Promise.all([
+          result.stdout(),
+          result.stderr(),
+        ])
+
+        // Parse exit code from output
+        const exitCodeMatch = rawStdout.match(exitCodeMatchRegex)
+        const exitCode = exitCodeMatch
+          ? Number.parseInt(exitCodeMatch[1], 10)
+          : 1
+        const stdout = rawStdout.replace(exitCodeReplaceRegex, "")
+
+        return {
+          stdout,
+          stderr,
+          exitCode,
+        }
+      },
+    }),
+
     RemoteBash: tool({
       description:
         "Execute a bash command against a different GitHub repository (not the current workspace). Use this when the user references another GitHub repository and you need to explore or run commands against it. Supports GitHub URLs, owner/repo format, or npm package names.",
@@ -567,69 +632,41 @@ export function getTools(context: ToolContext) {
           ),
       }),
       outputSchema: z.object({
-        success: z.boolean().describe("Whether the command succeeded"),
         stdout: z.string().describe("Standard output from the command"),
         stderr: z.string().describe("Standard error from the command"),
         exitCode: z.number().describe("Exit code of the command"),
-        resolvedRef: z.string().describe("Actual git SHA that was used"),
-        resolvedVersion: z
-          .string()
-          .optional()
-          .describe("Resolved version (if version was provided)"),
-        executionTimeMs: z
-          .number()
-          .describe("Time taken to execute the command in milliseconds"),
-        truncated: z
-          .boolean()
-          .describe("Whether the output was truncated due to size limits"),
-        error: z.string().optional().describe("Error message if request failed"),
       }),
       execute: async ({ repo, command, ref, version }) => {
-        const url = `${getSiteOrigin()}/api/remote-bash`
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ repo, command, ref, version }),
-        })
-
-        const data = (await response.json()) as
-          | {
-              success: true
-              stdout: string
-              stderr: string
-              exitCode: number
-              resolvedRef: string
-              resolvedVersion?: string
-              executionTimeMs: number
-              truncated: boolean
-            }
-          | {
-              success: false
-              error: { message: string; code: string }
-            }
-
-        if (!data.success) {
-          return {
-            success: false,
-            stdout: "",
-            stderr: "",
-            exitCode: 1,
-            resolvedRef: "",
-            executionTimeMs: 0,
-            truncated: false,
-            error: data.error.message,
-          }
+        // Build the npx remote-bash command
+        const args = [repo]
+        if (ref) {
+          args.push("-ref", ref)
         }
+        if (version) {
+          args.push("-v", version)
+        }
+        args.push("--", command)
+
+        const result = await runCommand(context.workspace, "npx", [
+          "-y",
+          "remote-bash",
+          ...args,
+        ])
+
+        const [stdout, stderr] = await Promise.all([
+          result.stdout(),
+          result.stderr(),
+        ])
+
+        // npx remote-bash returns exit code 0 on success, non-zero on failure
+        // We need to check the result to determine success
+        const hasError = stderr.includes("Error:") || stderr.includes("error:")
+        const exitCode = hasError ? 1 : 0
 
         return {
-          success: data.success,
-          stdout: data.stdout,
-          stderr: data.stderr,
-          exitCode: data.exitCode,
-          resolvedRef: data.resolvedRef,
-          resolvedVersion: data.resolvedVersion,
-          executionTimeMs: data.executionTimeMs,
-          truncated: data.truncated,
+          stdout,
+          stderr,
+          exitCode,
         }
       },
     }),
