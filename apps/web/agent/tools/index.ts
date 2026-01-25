@@ -541,6 +541,99 @@ export function getTools(context: ToolContext) {
       },
     }),
 
+    RemoteBash: tool({
+      description:
+        "Execute a bash command against a different GitHub repository (not the current workspace). Use this when the user references another GitHub repository and you need to explore or run commands against it. Supports GitHub URLs, owner/repo format, or npm package names.",
+      inputSchema: z.object({
+        repo: z
+          .string()
+          .describe(
+            "Target repository: GitHub URL (https://github.com/owner/repo), owner/repo format, or npm package name"
+          ),
+        command: z
+          .string()
+          .describe(
+            "Bash command to execute (e.g., 'ls -la', 'cat package.json', 'grep -r pattern')"
+          ),
+        ref: z
+          .string()
+          .optional()
+          .describe("Git ref (branch, tag, or commit SHA) to checkout"),
+        version: z
+          .string()
+          .optional()
+          .describe(
+            "Package version (for npm packages or GitHub repos with version tags)"
+          ),
+      }),
+      outputSchema: z.object({
+        success: z.boolean().describe("Whether the command succeeded"),
+        stdout: z.string().describe("Standard output from the command"),
+        stderr: z.string().describe("Standard error from the command"),
+        exitCode: z.number().describe("Exit code of the command"),
+        resolvedRef: z.string().describe("Actual git SHA that was used"),
+        resolvedVersion: z
+          .string()
+          .optional()
+          .describe("Resolved version (if version was provided)"),
+        executionTimeMs: z
+          .number()
+          .describe("Time taken to execute the command in milliseconds"),
+        truncated: z
+          .boolean()
+          .describe("Whether the output was truncated due to size limits"),
+        error: z.string().optional().describe("Error message if request failed"),
+      }),
+      execute: async ({ repo, command, ref, version }) => {
+        const url = `${getSiteOrigin()}/api/remote-bash`
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ repo, command, ref, version }),
+        })
+
+        const data = (await response.json()) as
+          | {
+              success: true
+              stdout: string
+              stderr: string
+              exitCode: number
+              resolvedRef: string
+              resolvedVersion?: string
+              executionTimeMs: number
+              truncated: boolean
+            }
+          | {
+              success: false
+              error: { message: string; code: string }
+            }
+
+        if (!data.success) {
+          return {
+            success: false,
+            stdout: "",
+            stderr: "",
+            exitCode: 1,
+            resolvedRef: "",
+            executionTimeMs: 0,
+            truncated: false,
+            error: data.error.message,
+          }
+        }
+
+        return {
+          success: data.success,
+          stdout: data.stdout,
+          stderr: data.stderr,
+          exitCode: data.exitCode,
+          resolvedRef: data.resolvedRef,
+          resolvedVersion: data.resolvedVersion,
+          executionTimeMs: data.executionTimeMs,
+          truncated: data.truncated,
+        }
+      },
+    }),
+
     // biome-ignore lint/suspicious/noExplicitAny: .
     WebSearch: searchTool as any,
     // biome-ignore lint/suspicious/noExplicitAny: .
