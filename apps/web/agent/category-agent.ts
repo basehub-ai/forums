@@ -8,7 +8,7 @@ import { updatePostIndex } from "@/lib/typesense-index"
 import { nanoid } from "@/lib/utils"
 import type { AgentMode } from "./types"
 
-const titleGuidelines = {
+const titleGuidelines: Record<AgentMode, string> = {
   ask: `- If the user is asking something, seeking help, or describing a problem they want solved, frame the title as a question (e.g. "How can I do X with Y?" or "Why does X happen when Y?")
 - Only use statement-style titles for announcements, discussions, or purely informational posts
 - Try to always set a title that accurately reflects the post content, even if you can't possibly frame it as a question`,

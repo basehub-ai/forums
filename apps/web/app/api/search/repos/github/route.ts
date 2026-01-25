@@ -1,4 +1,4 @@
-import { githubFetch } from "@/lib/data/github"
+import { githubFetch } from "@/lib/github-fetch"
 
 /**
  * Server-side proxy for GitHub search to use authenticated requests (5000 req/hour)

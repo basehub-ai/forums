@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/performance/useTopLevelRegex: we are good here */
-import { githubFetch } from "@/lib/data/github"
+import { githubFetch } from "@/lib/github-fetch"
 import { resolveNpmPackage } from "@/lib/utils/match-package-with-repo"
 
 export type ResolvedRepoInput = {
@@ -12,7 +12,7 @@ export type ResolvedRepoInput = {
  * Parse a GitHub URL or owner/repo format to extract owner and repo.
  * Returns null if the input doesn't match these formats.
  */
-function parseGitHubInput(
+export function parseGitHubInput(
   input: string
 ): { owner: string; repo: string } | null {
   const trimmed = input.trim()
@@ -126,10 +126,10 @@ export async function resolveRepoInput(
   }
 
   try {
-    const resolved = await resolveNpmPackage(
-      npmParsed.packageName,
-      npmParsed.version
-    )
+    const resolved = await resolveNpmPackage({
+      packageName: npmParsed.packageName,
+      version: npmParsed.version,
+    })
 
     // Parse the GitHub URL from the npm package
     const githubUrl = parseGitHubInput(resolved.repoUrl)

@@ -174,7 +174,9 @@ export async function createPost(data: {
   await checkMessageRateLimit(session.user.id)
 
   const mode = data.mode ?? "ask"
-  let userAccessToken: string | null = null
+
+  // Start fetching token early (non-blocking) - used for GitHub API rate limits
+  const userAccessTokenPromise = getUserAccessToken(session.user.id)
 
   if (mode === "build") {
     const hasPermission = await canModerate(
@@ -185,8 +187,8 @@ export async function createPost(data: {
     if (!hasPermission) {
       throw new Error("Build mode requires write access to this repository")
     }
-    userAccessToken = await getUserAccessToken(session.user.id)
-    if (!userAccessToken) {
+    const token = await userAccessTokenPromise
+    if (!token) {
       throw new Error("Could not retrieve GitHub access token for build mode")
     }
     if (!(session.user.email && session.user.name)) {
@@ -298,7 +300,7 @@ export async function createPost(data: {
         billingCategory,
         branch: data.branch,
         mode,
-        userAccessToken,
+        userAccessToken: await userAccessTokenPromise,
         userEmail: session.user.email,
         userName: session.user.name,
       },
@@ -395,6 +397,10 @@ export async function createComment(data: {
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
+
+  // Start fetching token early (non-blocking) - used for GitHub API rate limits
+  const userAccessTokenPromise = getUserAccessToken(session.user.id)
+
   const authorUsername = await getGitHubUsername(session.user.image)
   const now = Date.now()
   const commentId = nanoid()
@@ -451,8 +457,6 @@ export async function createComment(data: {
     throw new Error("Post not found")
   }
 
-  let userAccessToken: string | null = null
-
   if (mode === "build") {
     const hasPermission = await canModerate(
       session.user.id,
@@ -462,8 +466,8 @@ export async function createComment(data: {
     if (!hasPermission) {
       throw new Error("Build mode requires write access to this repository")
     }
-    userAccessToken = await getUserAccessToken(session.user.id)
-    if (!userAccessToken) {
+    const token = await userAccessTokenPromise
+    if (!token) {
       throw new Error("Could not retrieve GitHub access token for build mode")
     }
     if (!(session.user.email && session.user.name)) {
@@ -529,7 +533,7 @@ export async function createComment(data: {
         userId: session.user.id,
         billingCategory,
         mode,
-        userAccessToken,
+        userAccessToken: await userAccessTokenPromise,
         userEmail: session.user.email,
         userName: session.user.name,
       },
