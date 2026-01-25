@@ -1,4 +1,5 @@
 import { track } from "@vercel/analytics/server"
+import { waitUntil } from "@vercel/functions"
 import {
   convertToModelMessages,
   type FinishReason,
@@ -17,7 +18,7 @@ import { comments, posts } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
 import { getAllTools, getTools } from "./tools"
 import type { AgentMode, AgentUIMessage } from "./types"
-import { getWorkspace } from "./workspace"
+import { startWorkspace } from "./workspace"
 
 export async function responseAgent({
   commentId,
@@ -224,7 +225,12 @@ async function setupStep({
 
   const existingGitContext = post?.gitContexts?.[0]
 
-  const workspace = await getWorkspace({
+  if (!post) {
+    throw new Error("Post not found")
+  }
+
+  // Start workspace setup in background - doesn't block
+  const lazyWorkspace = await startWorkspace({
     sandboxId: null,
     gitContext: { owner, repo, ref: existingGitContext?.sha ?? branch },
     mode,
@@ -234,21 +240,21 @@ async function setupStep({
     userAccessToken,
   })
 
+  // Store gitContextData in DB asynchronously (don't block on it)
   if (!existingGitContext) {
-    await db
-      .update(posts)
-      .set({ gitContexts: [workspace.gitContextData] })
-      .where(eq(posts.id, postId))
-  }
-
-  if (!post) {
-    throw new Error("Post not found")
+    waitUntil(
+      lazyWorkspace.gitContextData.then((data) => {
+        db.update(posts)
+          .set({ gitContexts: [data] })
+          .where(eq(posts.id, postId))
+      })
+    )
   }
 
   return {
     initialMessages: allComments.flatMap((c) => c.content),
-    sandboxId: workspace.sandbox.sandboxId,
-    gitRef: existingGitContext?.sha ?? workspace.gitContextData.sha,
+    sandboxId: lazyWorkspace.sandboxId,
+    gitRef: existingGitContext?.sha ?? lazyWorkspace.sha,
   }
 }
 
@@ -331,7 +337,9 @@ async function streamTextStep({
 }> {
   "use step"
 
-  const workspace = await getWorkspace({
+  // Start workspace in background - streamText begins immediately
+  // Tools internally wait for setup via bash polling
+  const lazyWorkspace = await startWorkspace({
     sandboxId,
     gitContext: { owner, repo, ref: gitRef },
     mode,
@@ -344,8 +352,8 @@ async function streamTextStep({
 
   const tools =
     mode === "build" && userAccessToken
-      ? getAllTools({ workspace, userAccessToken })
-      : getTools({ workspace })
+      ? getAllTools({ workspace: lazyWorkspace, userAccessToken })
+      : getTools({ workspace: lazyWorkspace })
 
   const systemPrompt =
     mode === "build"

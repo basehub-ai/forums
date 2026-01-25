@@ -15,6 +15,7 @@ import type { AgentUIMessage } from "@/agent/types"
 import { rerunLlmComment } from "@/lib/actions/posts"
 import { WorkflowChatTransport } from "@/lib/workflow-ai/workflow-chat-transport"
 import { CommentContent } from "./comment-content"
+import { useStreamingState } from "./streaming-state-context"
 
 type StreamingContextValue = {
   isStreaming: boolean
@@ -36,6 +37,7 @@ export function StreamingCommentProvider({
   const started = useRef(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { setCommentStreaming } = useStreamingState()
 
   const transport = useMemo(
     () =>
@@ -64,6 +66,15 @@ export function StreamingCommentProvider({
 
   const isStreaming = status === "streaming" || status === "submitted"
   const hasStreamError = status === "error"
+
+  // Sync streaming state with the global context
+  useEffect(() => {
+    setCommentStreaming(commentId, isStreaming)
+    return () => {
+      // Clean up when unmounted
+      setCommentStreaming(commentId, false)
+    }
+  }, [commentId, isStreaming, setCommentStreaming])
 
   function handleRetry() {
     startTransition(async () => {

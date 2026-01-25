@@ -1,11 +1,26 @@
 import { type ToolSet, tool } from "ai"
 import { join, resolve } from "path"
 import { z } from "zod"
-import type { Workspace } from "../workspace"
+import type { LazyWorkspace, Workspace } from "../workspace"
 
 export type BuildToolContext = {
-  workspace: Workspace
+  workspace: Workspace | LazyWorkspace
   userAccessToken: string
+}
+
+/**
+ * Runs a command in the workspace sandbox.
+ * Handles both Workspace (direct) and LazyWorkspace (waits for setup).
+ */
+function runCommand(
+  workspace: Workspace | LazyWorkspace,
+  cmd: string,
+  args: string[]
+) {
+  if ("runCommand" in workspace) {
+    return workspace.runCommand(cmd, args)
+  }
+  return workspace.sandbox.runCommand(cmd, args)
 }
 
 const normalizationRegex = /^\//
@@ -75,7 +90,7 @@ export function getBuildTools(context: BuildToolContext) {
 
         const contentBase64 = Buffer.from(content).toString("base64")
 
-        const result = await context.workspace.sandbox.runCommand("bash", [
+        const result = await runCommand(context.workspace, "bash", [
           "-c",
           `
             set -e
@@ -151,7 +166,7 @@ export function getBuildTools(context: BuildToolContext) {
 
         const fullPath = join(context.workspace.path, normalizedPath)
 
-        const result = await context.workspace.sandbox.runCommand("node", [
+        const result = await runCommand(context.workspace, "node", [
           "-e",
           `
             const fs = require('fs');
@@ -268,7 +283,7 @@ export function getBuildTools(context: BuildToolContext) {
           }
         }
 
-        const result = await context.workspace.sandbox.runCommand("bash", [
+        const result = await runCommand(context.workspace, "bash", [
           "-c",
           `
             cd "$1" || exit 1
