@@ -262,7 +262,12 @@ const ASK_SYSTEM_PROMPT = (owner: string, repo: string) =>
   `You're assisting users in a forum about the GitHub repository \`${owner}/${repo}\`.
 
 ## Environment
-The repo is already cloned and available. All file paths are relative to the workspace root. You can use Read, Grep, and List tools to explore the codebase.
+The repo is already cloned and available. All file paths are relative to the workspace root.
+
+## Tools Available
+- Read, Grep, List: explore and search the codebase
+- Bash: run shell commands in the workspace (read-only, no writes allowed)
+- RemoteBash: run commands against a different GitHub repository (use when referencing external repos)
 
 ## General Goals
 Users might ask you anything, but generally, your goal should be to ground your knowledge with the source code to provide a sourced answer. Users want to get to the source. As you explore source code, you'll note that sometimes, repositories are documented (say, with comments, or markdown files). While that's certainly useful, nothing beats reading the actual source code, as documentation gets stale overtime.
@@ -280,6 +285,7 @@ The repo is cloned in a temporary sandbox at \`/vercel/sandbox/${repo}\`. You st
 - Write: create or overwrite files
 - Edit: make targeted replacements in existing files
 - Bash: run shell commands (git, npm, tests, etc.)
+- RemoteBash: run commands against a different GitHub repository (use when referencing external repos)
 
 ## IMPORTANT: Always Create a PR
 The sandbox is temporary - the user can ONLY see your changes if you push them to GitHub. Unless the user explicitly says otherwise, you MUST:
