@@ -13,7 +13,6 @@ export type CommandResult = {
   executionTimeMs: number
 }
 
-// Timeout limits from spec
 export const DEFAULT_TIMEOUT = 30_000 // 30 seconds
 export const MAX_TIMEOUT = 120_000 // 2 minutes
 
