@@ -109,25 +109,53 @@ type ParsedArgs = {
   command: string
 }
 
-export function parseArgs({ argv }: { argv: string[] }): ParsedArgs {
+const USAGE = `Usage: remote-bash <repo> [options] -- <command>
+
+Arguments:
+  repo              Repository (owner/repo, URL, or npm package name)
+  command           Shell command to run in the repository
+
+Options:
+  -ref <ref>        Git ref (branch, tag, commit SHA)
+  -v <version>      Package version (resolves to git tag)
+  --help            Show this help message
+
+Examples:
+  remote-bash vercel/next.js -- cat README.md
+  remote-bash next -v 15.0.0 -- ls packages/
+  remote-bash https://github.com/facebook/react -ref main -- find . -name "*.ts"
+`
+
+export function parseArgs({ argv }: { argv: string[] }): ParsedArgs | null {
+  if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
+    console.log(USAGE)
+    return null
+  }
+
   const doubleDashIdx = argv.indexOf("--")
 
   if (doubleDashIdx === -1) {
-    throw new Error("Missing -- separator before command")
+    console.error("Error: Missing -- separator before command\n")
+    console.log(USAGE)
+    return null
   }
 
   const flags = argv.slice(0, doubleDashIdx)
   const commandParts = argv.slice(doubleDashIdx + 1)
 
   if (commandParts.length === 0) {
-    throw new Error("Missing command after --")
+    console.error("Error: Missing command after --\n")
+    console.log(USAGE)
+    return null
   }
 
   const command = commandParts.join(" ")
 
   const repo = flags[0]
   if (!repo) {
-    throw new Error("Missing repo")
+    console.error("Error: Missing repo\n")
+    console.log(USAGE)
+    return null
   }
 
   let ref: string | undefined
@@ -138,15 +166,25 @@ export function parseArgs({ argv }: { argv: string[] }): ParsedArgs {
     const next = flags[i + 1]
 
     if (flag === "-ref") {
-      if (!next) throw new Error("Missing value for -ref")
+      if (!next) {
+        console.error("Error: Missing value for -ref\n")
+        console.log(USAGE)
+        return null
+      }
       ref = next
       i++
     } else if (flag === "-v") {
-      if (!next) throw new Error("Missing value for -v")
+      if (!next) {
+        console.error("Error: Missing value for -v\n")
+        console.log(USAGE)
+        return null
+      }
       version = next
       i++
     } else {
-      throw new Error(`Unknown flag: ${flag}`)
+      console.error(`Error: Unknown flag: ${flag}\n`)
+      console.log(USAGE)
+      return null
     }
   }
 
@@ -164,6 +202,10 @@ function isPackageName(repo: string): boolean {
 export default async function handler() {
   const argv = process.argv.slice(2)
   const args = parseArgs({ argv })
+
+  if (!args) {
+    process.exit(argv.includes("--help") || argv.includes("-h") ? 0 : 1)
+  }
 
   // auto-detect version from lockfile if not specified and repo looks like a package name
   if (!args.version && isPackageName(args.repo)) {
