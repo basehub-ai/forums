@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { Button } from "@/components/button"
 import { CodeBlockSyntaxHighlighted } from "@/components/code-block-syntax-highlighted"
+import { getSiteOrigin } from "@/lib/utils"
 import { Instructions } from "./client-instructions"
 import { CollapsibleItem } from "./collapsible-item"
-import { getSiteOrigin } from "@/lib/utils"
 
 const MCP_URL = getSiteOrigin() + "/mcp"
 

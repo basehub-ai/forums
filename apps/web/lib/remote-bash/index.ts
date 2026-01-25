@@ -14,15 +14,24 @@ export type RemoteBashRequest = {
 }
 
 export type RemoteBashResponse = {
-  success: boolean
+  success: boolean // true if exitCode === 0
   stdout: string
   stderr: string
   exitCode: number
   resolvedRef: string // Actual git SHA used
   resolvedVersion?: string // If version provided
   executionTimeMs: number
-  truncated: boolean
 }
+
+export type RemoteBashErrorResponse = {
+  success: false
+  error: {
+    message: string
+    code: string
+  }
+}
+
+export type RemoteBashAPIResponse = RemoteBashResponse | RemoteBashErrorResponse
 
 /**
  * Resolve repo input with optional version to a GitContext.
@@ -169,7 +178,6 @@ export async function remoteBash(
     resolvedRef: workspace.gitContextData.sha,
     resolvedVersion,
     executionTimeMs: result.executionTimeMs,
-    truncated: result.truncated,
   }
 }
 
