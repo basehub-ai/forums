@@ -26,6 +26,7 @@ function runCommand(
 }
 
 const normalizationRegex = /^\//
+
 function normalizePath(inputPath: string, workspacePath: string): string {
   if (inputPath.startsWith(workspacePath)) {
     return (
@@ -538,6 +539,128 @@ export function getTools(context: ToolContext) {
         }
         const content = await response.text()
         return { content }
+      },
+    }),
+
+    Bash: tool({
+      description:
+        "Execute a shell command in the workspace (read-only mode). Use this for running scripts, searching with grep, and other read operations. Write operations are blocked.",
+      inputSchema: z.object({
+        command: z.string().describe("The shell command to execute"),
+        workdir: z
+          .string()
+          .optional()
+          .describe(
+            "Working directory relative to workspace root (defaults to workspace root)"
+          ),
+      }),
+      outputSchema: z.object({
+        stdout: z.string().describe("Standard output from the command"),
+        stderr: z.string().describe("Standard error from the command"),
+        exitCode: z.number().describe("Exit code of the command"),
+      }),
+      execute: async ({ command, workdir }) => {
+        let cwd = context.workspace.path
+
+        if (workdir) {
+          const normalizedWorkdir = normalizePath(workdir, context.workspace.path)
+          cwd = join(context.workspace.path, normalizedWorkdir)
+        }
+
+        // Escape single quotes in command for safe shell embedding
+        const escapedCommand = command.replace(/'/g, "'\\''")
+
+        // Use just-bash in read-only mode (default) for isolation
+        // First ensure just-bash is installed, then run the command
+        const result = await runCommand(context.workspace, "bash", [
+          "-c",
+          `
+            # Ensure just-bash is installed
+            which just-bash >/dev/null 2>&1 || npm install -g just-bash >/dev/null 2>&1
+
+            # Run command in read-only mode using just-bash
+            cd "${cwd}" && just-bash --root . -c '${escapedCommand}'
+          `,
+        ])
+
+        const [stdout, stderr] = await Promise.all([
+          result.stdout(),
+          result.stderr(),
+        ])
+
+        // just-bash returns the actual exit code
+        const exitCode = result.exitCode ?? 0
+
+        return {
+          stdout,
+          stderr,
+          exitCode,
+        }
+      },
+    }),
+
+    RemoteBash: tool({
+      description:
+        "Execute a bash command against a different GitHub repository (not the current workspace). Use this when the user references another GitHub repository and you need to explore or run commands against it. Supports GitHub URLs, owner/repo format, or npm package names.",
+      inputSchema: z.object({
+        repo: z
+          .string()
+          .describe(
+            "Target repository: GitHub URL (https://github.com/owner/repo), owner/repo format, or npm package name"
+          ),
+        command: z
+          .string()
+          .describe(
+            "Bash command to execute (e.g., 'ls -la', 'cat package.json', 'grep -r pattern')"
+          ),
+        ref: z
+          .string()
+          .optional()
+          .describe("Git ref (branch, tag, or commit SHA) to checkout"),
+        version: z
+          .string()
+          .optional()
+          .describe(
+            "Package version (for npm packages or GitHub repos with version tags)"
+          ),
+      }),
+      outputSchema: z.object({
+        stdout: z.string().describe("Standard output from the command"),
+        stderr: z.string().describe("Standard error from the command"),
+        exitCode: z.number().describe("Exit code of the command"),
+      }),
+      execute: async ({ repo, command, ref, version }) => {
+        // Build the npx remote-bash command
+        const args = [repo]
+        if (ref) {
+          args.push("-ref", ref)
+        }
+        if (version) {
+          args.push("-v", version)
+        }
+        args.push("--", command)
+
+        const result = await runCommand(context.workspace, "npx", [
+          "-y",
+          "remote-bash",
+          ...args,
+        ])
+
+        const [stdout, stderr] = await Promise.all([
+          result.stdout(),
+          result.stderr(),
+        ])
+
+        // npx remote-bash returns exit code 0 on success, non-zero on failure
+        // We need to check the result to determine success
+        const hasError = stderr.includes("Error:") || stderr.includes("error:")
+        const exitCode = hasError ? 1 : 0
+
+        return {
+          stdout,
+          stderr,
+          exitCode,
+        }
       },
     }),
 
