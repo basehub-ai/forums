@@ -243,11 +243,11 @@ async function setupStep({
   // Store gitContextData in DB asynchronously (don't block on it)
   if (!existingGitContext) {
     waitUntil(
-      lazyWorkspace.gitContextData.then((data) => {
+      lazyWorkspace.gitContextData.then((data) =>
         db.update(posts)
           .set({ gitContexts: [data] })
           .where(eq(posts.id, postId))
-      })
+      )
     )
   }
 

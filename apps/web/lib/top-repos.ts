@@ -1,8 +1,28 @@
-import { sql } from "drizzle-orm"
+import { desc, sql } from "drizzle-orm"
 import { cacheLife } from "next/cache"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import { githubFetch } from "@/lib/github-fetch"
+
+/**
+ * Get top repos for build-time static params generation.
+ * Uses only DB data (no GitHub API calls) to avoid rate limiting during builds.
+ * Sorted by post count descending.
+ */
+export async function getTopReposForBuild(limit = 10) {
+  const repos = await db
+    .select({
+      owner: posts.owner,
+      repo: posts.repo,
+      postCount: sql<number>`count(*)::int`.as("post_count"),
+    })
+    .from(posts)
+    .groupBy(posts.owner, posts.repo)
+    .orderBy(desc(sql`count(*)`))
+    .limit(limit)
+
+  return repos.map((r) => ({ owner: r.owner, repo: r.repo }))
+}
 
 type RepoStats = {
   name: string

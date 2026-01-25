@@ -10,6 +10,7 @@ import { getGithubRepo } from "@/lib/data/github"
 import { getModelsForPicker } from "@/lib/data/models"
 import { db } from "@/lib/db/client"
 import { categories, comments, posts } from "@/lib/db/schema"
+import { getTopReposForBuild } from "@/lib/top-repos"
 import { formatCompactNumber, getSiteOrigin } from "@/lib/utils"
 import { RepoContent } from "./repo-content"
 
@@ -49,15 +50,8 @@ export async function generateMetadata({
 }
 
 export const generateStaticParams = async () => {
-  const repos = (
-    await db
-      .selectDistinctOn([posts.owner, posts.repo], {
-        owner: posts.owner,
-        repo: posts.repo,
-      })
-      .from(posts)
-  ).map((r) => ({ owner: r.owner, repo: r.repo }))
-
+  // Limit to top 10 repos by post count to avoid GitHub API rate limits during build
+  const repos = await getTopReposForBuild(10)
   return repos.length > 0 ? repos : [{ owner: "basehub-ai", repo: "forums" }]
 }
 

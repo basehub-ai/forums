@@ -14,6 +14,7 @@ import { getGithubRepo } from "@/lib/data/github"
 import { getModelsForPicker } from "@/lib/data/models"
 import { db } from "@/lib/db/client"
 import { categories, comments, posts } from "@/lib/db/schema"
+import { getTopReposForBuild } from "@/lib/top-repos"
 import { getSiteOrigin } from "@/lib/utils"
 import { RepoContent } from "../../repo-content"
 
@@ -51,9 +52,24 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const allCategories = await db.select().from(categories)
+  // Limit to categories from top 10 repos to avoid GitHub API rate limits during build
+  const topRepos = await getTopReposForBuild(10)
 
-  return allCategories.map((category) => ({
+  if (topRepos.length === 0) {
+    return []
+  }
+
+  const topRepoCategories = await db
+    .select()
+    .from(categories)
+    .where(
+      sql`(${categories.owner}, ${categories.repo}) IN (${sql.join(
+        topRepos.map((r) => sql`(${r.owner}, ${r.repo})`),
+        sql`, `
+      )})`
+    )
+
+  return topRepoCategories.map((category) => ({
     owner: category.owner,
     repo: category.repo,
     categorySlug: categorySlugify(category.title),

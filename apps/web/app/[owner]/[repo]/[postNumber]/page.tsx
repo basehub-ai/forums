@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm"
+import { and, asc, eq, sql } from "drizzle-orm"
 import type { Metadata } from "next"
 import { cacheLife, cacheTag } from "next/cache"
 import { notFound, redirect } from "next/navigation"
@@ -16,6 +16,7 @@ import {
   reactions,
 } from "@/lib/db/schema"
 import { githubFetch } from "@/lib/github-fetch"
+import { getTopReposForBuild } from "@/lib/top-repos"
 import { getSiteOrigin } from "@/lib/utils"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
 import { CommentThreadClient } from "./comment-thread-client"
@@ -106,9 +107,28 @@ export async function generateMetadata({
 }
 
 export const generateStaticParams = async () => {
-  const allPosts = await db.select().from(posts)
+  // Limit to posts from top 10 repos to avoid GitHub API rate limits during build
+  const topRepos = await getTopReposForBuild(10)
 
-  return allPosts.map((post) => ({
+  if (topRepos.length === 0) {
+    return []
+  }
+
+  const topRepoPosts = await db
+    .select({
+      owner: posts.owner,
+      repo: posts.repo,
+      number: posts.number,
+    })
+    .from(posts)
+    .where(
+      sql`(${posts.owner}, ${posts.repo}) IN (${sql.join(
+        topRepos.map((r) => sql`(${r.owner}, ${r.repo})`),
+        sql`, `
+      )})`
+    )
+
+  return topRepoPosts.map((post) => ({
     owner: post.owner,
     repo: post.repo,
     postNumber: String(post.number),
