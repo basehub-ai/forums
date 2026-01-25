@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Composer, type ComposerProps } from "@/components/composer"
 import { checkCanModerate, createPost } from "@/lib/actions/posts"
+import { authClient } from "@/lib/auth-client"
 import type { categories } from "@/lib/db/schema"
 import { RepoPostsSection } from "./repo-posts-section"
 
@@ -36,6 +37,7 @@ type RepoContentProps = {
   askingOptions: ComposerProps["options"]["asking"]
   categoryId?: string
   defaultBranch: string
+  isPrivateRepo?: boolean
 }
 
 export function RepoContent({
@@ -47,11 +49,14 @@ export function RepoContent({
   askingOptions,
   categoryId,
   defaultBranch,
+  isPrivateRepo,
 }: RepoContentProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [defaultLlmId, setDefaultLlmId] = useState<string | undefined>()
   const [canModerate, setCanModerate] = useState(false)
+  const { data: session } = authClient.useSession()
+  const username = session?.user?.username ?? null
 
   useEffect(() => {
     checkCanModerate(owner, repo).then(setCanModerate)
@@ -72,11 +77,12 @@ export function RepoContent({
           canModerate={canModerate}
           defaultAskingId={defaultLlmId}
           defaultBranch={defaultBranch}
+          isPrivateRepo={isPrivateRepo}
           onAskingChange={(asking) => {
             localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
           }}
           onChange={setSearchQuery}
-          onSubmit={async ({ value, options, branch, mode }) => {
+          onSubmit={async ({ value, options, branch, mode, visibility }) => {
             const result = await createPost({
               owner,
               repo,
@@ -89,6 +95,7 @@ export function RepoContent({
               categoryId,
               branch,
               mode,
+              visibility,
             })
             router.push(`/${owner}/${repo}/${result.postNumber}`)
           }}
@@ -98,7 +105,9 @@ export function RepoContent({
           owner={owner}
           placeholder="Ask or search"
           repo={repo}
+          showVisibility
           storageKey={`new-post-composer:${owner}:${repo}`}
+          username={username}
         />
       </div>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCustomer } from "autumn-js/react"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon, Globe, Lock, User } from "lucide-react"
 import { usePathname } from "next/navigation"
 import {
   Suspense,
@@ -21,6 +21,8 @@ import { authClient } from "@/lib/auth-client"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
+
+export type VisibilityOption = "public" | "repo" | "user"
 
 const PREFERRED_MODE_KEY = "preferred-mode"
 
@@ -57,6 +59,7 @@ export type ComposerProps = {
     }
     branch?: string
     mode?: AgentMode
+    visibility?: string
   }) => Promise<void>
   autoFocus?: boolean
   defaultAskingId?: string
@@ -67,6 +70,9 @@ export type ComposerProps = {
   repo?: string
   canModerate?: boolean
   isStreaming?: boolean
+  showVisibility?: boolean
+  isPrivateRepo?: boolean
+  username?: string | null
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -85,6 +91,9 @@ export const Composer = ({
   repo,
   canModerate,
   isStreaming,
+  showVisibility,
+  isPrivateRepo,
+  username,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
@@ -109,6 +118,9 @@ export const Composer = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const selectedBranchRef = useRef(defaultBranch ?? "main")
   const [mode, setMode] = useState<AgentMode>("ask")
+  const [visibility, setVisibility] = useState<VisibilityOption>(
+    isPrivateRepo ? "repo" : "public"
+  )
 
   useEffect(() => {
     if (canModerate) {
@@ -181,11 +193,17 @@ export const Composer = ({
           return
         }
         startTransition(async () => {
+          const visibilityValue = showVisibility
+            ? visibility === "user" && username
+              ? `user:${username}`
+              : visibility
+            : undefined
           await onSubmit({
             value,
             options: { asking: selectedAsking },
             branch: selectedBranchRef.current,
             mode: canModerate ? mode : undefined,
+            visibility: visibilityValue,
           })
             .then(() => {
               form.reset()
@@ -349,6 +367,62 @@ export const Composer = ({
                     repo={repo}
                   />
                 </Suspense>
+              )}
+
+              {showVisibility && isSignedIn && (
+                <Menu.Root>
+                  <Menu.Trigger className="h-9 justify-between bg-transparent text-faint text-sm transition-none hover:text-accent hover:no-underline active:text-accent data-popup-open:text-accent">
+                    {visibility === "public" && (
+                      <>
+                        <Globe
+                          absoluteStrokeWidth
+                          aria-hidden="true"
+                          className="h-4 w-4"
+                        />
+                        <span className="hidden sm:block">Public</span>
+                      </>
+                    )}
+                    {visibility === "repo" && (
+                      <>
+                        <Lock
+                          absoluteStrokeWidth
+                          aria-hidden="true"
+                          className="h-4 w-4"
+                        />
+                        <span className="hidden sm:block">Repo</span>
+                      </>
+                    )}
+                    {visibility === "user" && (
+                      <>
+                        <User
+                          absoluteStrokeWidth
+                          aria-hidden="true"
+                          className="h-4 w-4"
+                        />
+                        <span className="hidden sm:block">Only me</span>
+                      </>
+                    )}
+                    <ChevronDownIcon
+                      absoluteStrokeWidth
+                      aria-hidden="true"
+                      className="size-4"
+                    />
+                  </Menu.Trigger>
+                  <Menu.Popup>
+                    <Menu.Item onClick={() => setVisibility("public")}>
+                      <Globe absoluteStrokeWidth className="h-4 w-4" />
+                      Public
+                    </Menu.Item>
+                    <Menu.Item onClick={() => setVisibility("repo")}>
+                      <Lock absoluteStrokeWidth className="h-4 w-4" />
+                      Repo members
+                    </Menu.Item>
+                    <Menu.Item onClick={() => setVisibility("user")}>
+                      <User absoluteStrokeWidth className="h-4 w-4" />
+                      Only me
+                    </Menu.Item>
+                  </Menu.Popup>
+                </Menu.Root>
               )}
 
               {isSignedIn && selectedAsking.id !== "human" && (

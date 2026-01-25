@@ -19,7 +19,7 @@ export async function generateMetadata({
   params: Promise<{ owner: string; repo: string }>
 }): Promise<Metadata> {
   const { owner, repo } = await params
-  const repoData = await getGithubRepo(owner, repo)
+  const repoData = await getGithubRepo({ owner, repo })
 
   if (!repoData) {
     notFound()
@@ -80,6 +80,7 @@ export default async function RepoPage({
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
         pinned: posts.pinned,
+        visibility: posts.visibility,
         commentCount: sql<number>`(
           SELECT COUNT(*) FROM comments WHERE comments.post_id = ${posts.id}
         )`.as("comment_count"),
@@ -97,7 +98,7 @@ export default async function RepoPage({
       .from(categories)
       .where(and(eq(categories.owner, owner), eq(categories.repo, repo))),
     getModelsForPicker(),
-    getGithubRepo(owner, repo),
+    getGithubRepo({ owner, repo }),
   ])
 
   if (!repoData) {
@@ -162,6 +163,7 @@ export default async function RepoPage({
         ]}
         categoriesById={categoriesById}
         defaultBranch={repoData.default_branch}
+        isPrivateRepo={repoData.private}
         owner={owner}
         pinnedPosts={pinnedPosts}
         posts={regularPosts}

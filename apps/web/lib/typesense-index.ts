@@ -40,6 +40,7 @@ export async function ensureCollections() {
         { name: "title", type: "string", optional: true },
         { name: "categoryId", type: "string", optional: true, facet: true },
         { name: "authorId", type: "string", facet: true },
+        { name: "visibility", type: "string", facet: true },
         { name: "commentCount", type: "int32" },
         { name: "createdAt", type: "int64" },
       ],
@@ -58,6 +59,7 @@ export async function ensureCollections() {
         { name: "owner", type: "string", facet: true },
         { name: "repo", type: "string", facet: true },
         { name: "authorId", type: "string", facet: true },
+        { name: "visibility", type: "string", facet: true },
         { name: "text", type: "string" },
         { name: "isRootComment", type: "bool", facet: true },
         { name: "createdAt", type: "int64" },
@@ -101,6 +103,7 @@ export async function indexPost(post: Post, commentCount: number) {
       title: post.title ?? "",
       categoryId: post.categoryId ?? "",
       authorId: post.authorId,
+      visibility: post.visibility,
       commentCount,
       createdAt: post.createdAt,
     })
@@ -112,6 +115,7 @@ export async function updatePostIndex(
     title?: string
     categoryId?: string
     commentCount?: number
+    visibility?: string
   }
 ) {
   await ensureCollectionsOnce()
@@ -124,6 +128,9 @@ export async function updatePostIndex(
   }
   if (updates.commentCount !== undefined) {
     doc.commentCount = updates.commentCount
+  }
+  if (updates.visibility !== undefined) {
+    doc.visibility = updates.visibility
   }
 
   await typesense.collections(POSTS_COLLECTION).documents(postId).update(doc)
@@ -146,7 +153,7 @@ export async function indexComment(
   postNumber: number,
   categoryId: string | null,
   isRootComment: boolean,
-  options?: { skipEmbedding?: boolean }
+  options?: { skipEmbedding?: boolean; visibility?: string }
 ) {
   const text = extractText(comment)
   if (!text.trim()) {
@@ -163,6 +170,7 @@ export async function indexComment(
     owner,
     repo,
     authorId: comment.authorId,
+    visibility: options?.visibility ?? "public",
     text,
     isRootComment,
     createdAt: comment.createdAt,
@@ -582,6 +590,7 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
             owner: posts.owner,
             repo: posts.repo,
             rootCommentId: posts.rootCommentId,
+            visibility: posts.visibility,
           })
           .from(posts)
           .where(eq(posts.id, comment.postId))
@@ -594,7 +603,8 @@ export async function reindexCommentsWithoutEmbeddings(): Promise<{
             post.repo,
             post.number,
             post.categoryId,
-            comment.id === post.rootCommentId
+            comment.id === post.rootCommentId,
+            { visibility: post.visibility }
           )
           reindexed++
         }
@@ -643,6 +653,7 @@ export async function indexAllComments(): Promise<{
           owner: posts.owner,
           repo: posts.repo,
           rootCommentId: posts.rootCommentId,
+          visibility: posts.visibility,
         })
         .from(posts)
         .where(eq(posts.id, comment.postId))
@@ -655,7 +666,8 @@ export async function indexAllComments(): Promise<{
           post.repo,
           post.number,
           post.categoryId,
-          comment.id === post.rootCommentId
+          comment.id === post.rootCommentId,
+          { visibility: post.visibility }
         )
         indexed++
       }

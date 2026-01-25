@@ -6,6 +6,7 @@ export type ResolvedRepoInput = {
   owner: string
   repo: string
   defaultRef?: string
+  isPrivate: boolean
 }
 
 /**
@@ -43,26 +44,51 @@ export function parseGitHubInput(
 }
 
 /**
- * Validate that a GitHub repository exists and is publicly accessible.
+ * Validate that a GitHub repository exists and is accessible.
+ * Returns whether the repo is private.
  */
-async function validateGitHubRepo(owner: string, repo: string): Promise<void> {
-  const res = await githubFetch(`https://api.github.com/repos/${owner}/${repo}`)
-
-  if (res.status === 404) {
-    throw new Error(`GitHub repository '${owner}/${repo}' does not exist.`)
+async function validateGitHubRepo(args: {
+  owner: string
+  repo: string
+  userAccessToken?: string | null
+}): Promise<{ isPrivate: boolean }> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github.v3+json",
+  }
+  if (args.userAccessToken) {
+    headers.Authorization = `Bearer ${args.userAccessToken}`
   }
 
-  if (res.status === 403) {
+  const res = args.userAccessToken
+    ? await fetch(`https://api.github.com/repos/${args.owner}/${args.repo}`, {
+        headers,
+      })
+    : await githubFetch(
+        `https://api.github.com/repos/${args.owner}/${args.repo}`
+      )
+
+  if (res.status === 404) {
     throw new Error(
-      `GitHub repository '${owner}/${repo}' is private or inaccessible.`
+      `GitHub repository '${args.owner}/${args.repo}' does not exist.`
+    )
+  }
+
+  // 403 without auth means private - if user has token, try with auth
+  if (res.status === 403 && !args.userAccessToken) {
+    // Return as private - caller can retry with user token
+    throw new Error(
+      `GitHub repository '${args.owner}/${args.repo}' is private. Sign in to access.`
     )
   }
 
   if (!res.ok) {
     throw new Error(
-      `Failed to verify GitHub repository '${owner}/${repo}': ${res.status} ${res.statusText}`
+      `Failed to verify GitHub repository '${args.owner}/${args.repo}': ${res.status} ${res.statusText}`
     )
   }
+
+  const data = (await res.json()) as { private?: boolean }
+  return { isPrivate: data.private === true }
 }
 
 /**
@@ -100,10 +126,11 @@ function parseNpmPackageInput(input: string): {
  *
  * @throws Error with descriptive message if input cannot be resolved
  */
-export async function resolveRepoInput(
+export async function resolveRepoInput(args: {
   input: string
-): Promise<ResolvedRepoInput> {
-  const trimmed = input.trim()
+  userAccessToken?: string | null
+}): Promise<ResolvedRepoInput> {
+  const trimmed = args.input.trim()
   if (!trimmed) {
     throw new Error(
       "Invalid repository. Use GitHub URL (https://github.com/owner/repo), owner/repo format, or npm package name."
@@ -113,8 +140,12 @@ export async function resolveRepoInput(
   // Try GitHub URL or owner/repo format first
   const githubParsed = parseGitHubInput(trimmed)
   if (githubParsed) {
-    await validateGitHubRepo(githubParsed.owner, githubParsed.repo)
-    return githubParsed
+    const { isPrivate } = await validateGitHubRepo({
+      owner: githubParsed.owner,
+      repo: githubParsed.repo,
+      userAccessToken: args.userAccessToken,
+    })
+    return { ...githubParsed, isPrivate }
   }
 
   // Try NPM package
@@ -139,12 +170,17 @@ export async function resolveRepoInput(
       )
     }
 
-    await validateGitHubRepo(githubUrl.owner, githubUrl.repo)
+    const { isPrivate } = await validateGitHubRepo({
+      owner: githubUrl.owner,
+      repo: githubUrl.repo,
+      userAccessToken: args.userAccessToken,
+    })
 
     return {
       owner: githubUrl.owner,
       repo: githubUrl.repo,
       defaultRef: resolved.gitTag,
+      isPrivate,
     }
   } catch (err) {
     if (err instanceof Error) {

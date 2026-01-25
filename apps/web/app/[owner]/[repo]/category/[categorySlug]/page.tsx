@@ -73,7 +73,7 @@ export default async function CategoryPage({
   const [category, allLlmUsers, repoData] = await Promise.all([
     getCategoryBySlug(owner, repo, categorySlug),
     getModelsForPicker(),
-    getGithubRepo(owner, repo),
+    getGithubRepo({ owner, repo }),
   ])
 
   if (!category) {
@@ -150,6 +150,7 @@ export default async function CategoryPage({
         categoriesById={categoriesById}
         categoryId={category.id}
         defaultBranch={repoData.default_branch}
+        isPrivateRepo={repoData.private}
         owner={owner}
         pinnedPosts={pinnedPosts}
         posts={regularPosts}

@@ -1,11 +1,13 @@
 import { and, asc, eq } from "drizzle-orm"
 import type { Metadata } from "next"
 import { cacheLife, cacheTag } from "next/cache"
+import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
 import { Container } from "@/components/container"
-import { gitHubUserLoader } from "@/lib/auth"
+import { auth, gitHubUserLoader } from "@/lib/auth"
 import { getModelsForPicker } from "@/lib/data/models"
+import { canViewPost, parseVisibility } from "@/lib/data/permissions"
 import { getPostByNumber, getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import {
@@ -106,9 +108,14 @@ export async function generateMetadata({
 }
 
 export const generateStaticParams = async () => {
-  const allPosts = await db.select().from(posts)
+  // Only statically generate public posts
+  const publicPosts = await db
+    .select({ owner: posts.owner, repo: posts.repo, number: posts.number })
+    .from(posts)
+    .where(eq(posts.visibility, "public"))
+    .limit(1000)
 
-  return allPosts.map((post) => ({
+  return publicPosts.map((post) => ({
     owner: post.owner,
     repo: post.repo,
     postNumber: String(post.number),
@@ -159,6 +166,7 @@ export default async function PostPage({
         updatedAt: posts.updatedAt,
         gitContexts: posts.gitContexts,
         pinned: posts.pinned,
+        visibility: posts.visibility,
         category: {
           id: categories.id,
           title: categories.title,
@@ -230,7 +238,31 @@ export default async function PostPage({
     notFound()
   }
 
-  const { category, gitContexts, pinned, ...post } = postWithCategory
+  // Check visibility access
+  const visibility = parseVisibility(postWithCategory.visibility)
+  if (visibility.type !== "public") {
+    const session = await auth.api.getSession({ headers: await headers() })
+    const userId = session?.user?.id ?? null
+    const hasAccess = await canViewPost({
+      post: {
+        visibility: postWithCategory.visibility,
+        owner: postWithCategory.owner,
+        repo: postWithCategory.repo,
+      },
+      userId,
+    })
+    if (!hasAccess) {
+      notFound()
+    }
+  }
+
+  const {
+    category,
+    gitContexts,
+    pinned,
+    visibility: postVisibility,
+    ...post
+  } = postWithCategory
   const gitContext = gitContexts?.[0] ?? null
 
   cacheTag(`post:${post.id}`)
@@ -343,6 +375,7 @@ export default async function PostPage({
       postId={post.id}
       repo={repo}
       staleInfo={staleInfo}
+      visibility={postVisibility}
     >
       <StreamingStateProvider
         initialStreamingCommentIds={initialStreamingCommentIds}

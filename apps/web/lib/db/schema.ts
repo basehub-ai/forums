@@ -31,8 +31,10 @@ export const posts = pgTable(
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
     pinned: boolean().notNull().default(false),
+    visibility: varchar({ length: 255 }).notNull().default("public"),
   },
   (table) => [
+    index("idx_posts_visibility").on(table.visibility),
     uniqueIndex("idx_posts_owner_repo_number").on(
       table.owner,
       table.repo,

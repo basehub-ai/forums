@@ -23,16 +23,33 @@ const githubRepoSchema = z.object({
   stargazers_count: z.number(),
   homepage: z.string().nullable(),
   default_branch: z.string(),
+  private: z.boolean(),
 })
 
 export type GithubRepoData = z.infer<typeof githubRepoSchema>
 
 export const getGithubRepo = cache(
-  async (owner: string, repo: string): Promise<GithubRepoData | null> => {
+  async (args: {
+    owner: string
+    repo: string
+    userAccessToken?: string | null
+  }): Promise<GithubRepoData | null> => {
     try {
-      const res = await githubFetch(
-        `https://api.github.com/repos/${owner}/${repo}`
-      )
+      const headers: Record<string, string> = {
+        Accept: "application/vnd.github.v3+json",
+      }
+      if (args.userAccessToken) {
+        headers.Authorization = `Bearer ${args.userAccessToken}`
+      }
+
+      const res = args.userAccessToken
+        ? await fetch(
+            `https://api.github.com/repos/${args.owner}/${args.repo}`,
+            { headers }
+          )
+        : await githubFetch(
+            `https://api.github.com/repos/${args.owner}/${args.repo}`
+          )
 
       if (!res.ok || res.status === 404) {
         return null
@@ -40,7 +57,10 @@ export const getGithubRepo = cache(
 
       return githubRepoSchema.parse(await res.json())
     } catch (error) {
-      console.error(`Failed to fetch GitHub repo ${owner}/${repo}:`, error)
+      console.error(
+        `Failed to fetch GitHub repo ${args.owner}/${args.repo}:`,
+        error
+      )
       return null
     }
   }
@@ -51,11 +71,27 @@ const githubBranchSchema = z.object({
 })
 
 export const getBranches = cache(
-  async (owner: string, repo: string): Promise<string[] | null> => {
+  async (args: {
+    owner: string
+    repo: string
+    userAccessToken?: string | null
+  }): Promise<string[] | null> => {
     try {
-      const res = await githubFetch(
-        `https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`
-      )
+      const headers: Record<string, string> = {
+        Accept: "application/vnd.github.v3+json",
+      }
+      if (args.userAccessToken) {
+        headers.Authorization = `Bearer ${args.userAccessToken}`
+      }
+
+      const res = args.userAccessToken
+        ? await fetch(
+            `https://api.github.com/repos/${args.owner}/${args.repo}/branches?per_page=100`,
+            { headers }
+          )
+        : await githubFetch(
+            `https://api.github.com/repos/${args.owner}/${args.repo}/branches?per_page=100`
+          )
 
       if (!res.ok || res.status === 404) {
         return null
@@ -64,7 +100,10 @@ export const getBranches = cache(
       const branches = z.array(githubBranchSchema).parse(await res.json())
       return branches.map((b) => b.name)
     } catch (error) {
-      console.error(`Failed to fetch branches for ${owner}/${repo}:`, error)
+      console.error(
+        `Failed to fetch branches for ${args.owner}/${args.repo}:`,
+        error
+      )
       return null
     }
   }

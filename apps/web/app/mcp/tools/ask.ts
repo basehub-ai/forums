@@ -90,7 +90,7 @@ export default async function ask({
   let defaultRef: string | undefined
 
   try {
-    const resolved = await resolveRepoInput(repoInput)
+    const resolved = await resolveRepoInput({ input: repoInput })
     owner = resolved.owner
     repo = resolved.repo
     defaultRef = resolved.defaultRef
@@ -352,6 +352,7 @@ export default async function ask({
         rootCommentId: result.userCommentId,
         gitContexts: null,
         pinned: false,
+        visibility: "public",
         createdAt: now,
         updatedAt: now,
       },
@@ -400,7 +401,8 @@ export default async function ask({
             repo,
             result.postNumber,
             result.categoryId,
-            result.isNewPost // isRootComment only for new posts
+            result.isNewPost, // isRootComment only for new posts
+            { visibility: "public" }
           )
         )
       }
@@ -412,7 +414,8 @@ export default async function ask({
             repo,
             result.postNumber,
             result.categoryId,
-            false
+            false,
+            { visibility: "public" }
           )
         )
       }

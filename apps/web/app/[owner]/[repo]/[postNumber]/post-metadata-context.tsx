@@ -39,6 +39,7 @@ type PostMetadata = {
     categoryId?: string | null
   }) => Promise<void>
   pinned: boolean
+  visibility: string
 }
 
 const PostMetadataContext = createContext<PostMetadata | null>(null)
@@ -55,6 +56,7 @@ export function PostMetadataProvider({
   archivedRefs,
   categories,
   pinned,
+  visibility,
   children,
 }: {
   postId: string
@@ -68,6 +70,7 @@ export function PostMetadataProvider({
   archivedRefs: string[]
   categories: Category[]
   pinned: boolean
+  visibility: string
   children: React.ReactNode
 }) {
   const [title, setTitle] = useState(initialTitle)
@@ -148,6 +151,7 @@ export function PostMetadataProvider({
         setSelectedRef,
         updateMetadata,
         pinned,
+        visibility,
       }}
     >
       {children}

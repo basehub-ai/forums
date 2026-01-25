@@ -8,6 +8,7 @@ import slugify from "slugify"
 import { Subtitle, Title } from "@/components/typography"
 import { Menu } from "@/components/ui/menu"
 import { Tooltip } from "@/components/ui/tooltip"
+import { VisibilityBadge } from "@/components/visibility-badge"
 import { pinPost, unpinPost } from "@/lib/actions/moderation"
 import { rerunLlmCommentsInPost } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
@@ -28,7 +29,8 @@ export function PostHeader({
   repo: string
   postNumber: number
 }) {
-  const { title, category, gitContext, archivedRefs } = usePostMetadata()
+  const { title, category, gitContext, archivedRefs, visibility } =
+    usePostMetadata()
   const hasArchivedRefs = archivedRefs.length > 0
 
   return (
@@ -51,6 +53,14 @@ export function PostHeader({
               >
                 <Subtitle>{category.title}</Subtitle>
               </Link>
+            </>
+          )}
+          {visibility !== "public" && (
+            <>
+              <Subtitle className="select-none">
+                <ChevronRight size={14} />
+              </Subtitle>
+              <VisibilityBadge visibility={visibility} />
             </>
           )}
         </div>

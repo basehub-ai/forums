@@ -169,6 +169,7 @@ export async function createPost(data: {
   categoryId?: string
   branch?: string
   mode?: AgentMode
+  visibility?: string
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
@@ -245,6 +246,7 @@ export async function createPost(data: {
             authorId: session.user.id,
             rootCommentId: commentId,
             categoryId: data.categoryId,
+            visibility: data.visibility ?? "public",
             createdAt: now,
             updatedAt: now,
           })
@@ -353,7 +355,8 @@ export async function createPost(data: {
           data.repo,
           newPost.number,
           newPost.categoryId,
-          true
+          true,
+          { visibility: newPost.visibility }
         )
       }
     })()
@@ -568,7 +571,8 @@ export async function createComment(data: {
           post.repo,
           post.number,
           post.categoryId,
-          false
+          false,
+          { visibility: post.visibility }
         )
       }
       const commentCount = await db
