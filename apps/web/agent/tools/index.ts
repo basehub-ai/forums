@@ -26,8 +26,6 @@ function runCommand(
 }
 
 const normalizationRegex = /^\//
-const exitCodeMatchRegex = /___EXIT_CODE___(\d+)/m
-const exitCodeReplaceRegex = /___EXIT_CODE___\d+\s*$/
 
 function normalizePath(inputPath: string, workspacePath: string): string {
   if (inputPath.startsWith(workspacePath)) {
@@ -546,7 +544,7 @@ export function getTools(context: ToolContext) {
 
     Bash: tool({
       description:
-        "Execute a shell command in the workspace. Use this for running scripts, searching with grep, installing dependencies, running tests, and other shell tasks.",
+        "Execute a shell command in the workspace (read-only mode). Use this for running scripts, searching with grep, and other read operations. Write operations are blocked.",
       inputSchema: z.object({
         command: z.string().describe("The shell command to execute"),
         workdir: z
@@ -569,34 +567,29 @@ export function getTools(context: ToolContext) {
           cwd = join(context.workspace.path, normalizedWorkdir)
         }
 
+        // Escape single quotes in command for safe shell embedding
+        const escapedCommand = command.replace(/'/g, "'\\''")
+
+        // Use just-bash in read-only mode (default) for isolation
+        // First ensure just-bash is installed, then run the command
         const result = await runCommand(context.workspace, "bash", [
           "-c",
           `
-            cd "$1" || exit 1
+            # Ensure just-bash is installed
+            which just-bash >/dev/null 2>&1 || npm install -g just-bash >/dev/null 2>&1
 
-            # Run the command and capture exit code
-            bash -c "$2"
-            EXIT_CODE=$?
-
-            # Output exit code marker
-            echo "___EXIT_CODE___$EXIT_CODE"
+            # Run command in read-only mode using just-bash
+            cd "${cwd}" && just-bash --root . -c '${escapedCommand}'
           `,
-          "--",
-          cwd,
-          command,
         ])
 
-        const [rawStdout, stderr] = await Promise.all([
+        const [stdout, stderr] = await Promise.all([
           result.stdout(),
           result.stderr(),
         ])
 
-        // Parse exit code from output
-        const exitCodeMatch = rawStdout.match(exitCodeMatchRegex)
-        const exitCode = exitCodeMatch
-          ? Number.parseInt(exitCodeMatch[1], 10)
-          : 1
-        const stdout = rawStdout.replace(exitCodeReplaceRegex, "")
+        // just-bash returns the actual exit code
+        const exitCode = result.exitCode ?? 0
 
         return {
           stdout,

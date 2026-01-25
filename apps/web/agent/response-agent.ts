@@ -266,7 +266,7 @@ The repo is already cloned and available. All file paths are relative to the wor
 
 ## Tools Available
 - Read, Grep, List: explore and search the codebase
-- Bash: run shell commands in the workspace (scripts, tests, etc.)
+- Bash: run shell commands in the workspace (read-only, no writes allowed)
 - RemoteBash: run commands against a different GitHub repository (use when referencing external repos)
 
 ## General Goals
