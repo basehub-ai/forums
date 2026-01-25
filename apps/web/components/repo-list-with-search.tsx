@@ -29,20 +29,25 @@ type SearchResult = {
   isIndexed?: boolean
 }
 
+const GH_URL_REGEX = /(?:https?:\/\/)?(?:www\.)?github\.com\/([^/]+)\/([^/]+)/i
+const DOT_GIT_REGEX = /\.git$/
+const HASH_REGEX = /[?#]/
+const REPO_PATH_REGEX = /^\/?([^/]+)\/([^/]+)\/?$/
+
 function parseRepoInput(input: string): { owner: string; repo: string } | null {
   const trimmed = input.trim()
-  if (!trimmed) return null
+  if (!trimmed) {
+    return null
+  }
 
-  const githubUrlMatch = trimmed.match(
-    /(?:https?:\/\/)?(?:www\.)?github\.com\/([^/]+)\/([^/]+)/i
-  )
+  const githubUrlMatch = trimmed.match(GH_URL_REGEX)
   if (githubUrlMatch) {
     const [, owner, repo] = githubUrlMatch
-    const cleanRepo = repo.replace(/\.git$/, "").split(/[?#]/)[0]
+    const cleanRepo = repo.replace(DOT_GIT_REGEX, "").split(HASH_REGEX)[0]
     return { owner, repo: cleanRepo }
   }
 
-  const pathMatch = trimmed.match(/^\/?([^/]+)\/([^/]+)\/?$/)
+  const pathMatch = trimmed.match(REPO_PATH_REGEX)
   if (pathMatch) {
     const [, owner, repo] = pathMatch
     return { owner, repo }
@@ -66,7 +71,6 @@ export function RepoListWithSearch({
     SearchResult[] | null
   >(null)
   const [githubResults, setGithubResults] = useState<SearchResult[]>([])
-  const [isSearching, setIsSearching] = useState(false)
   const [isGithubSearching, setIsGithubSearching] = useState(false)
   const [minHeight, setMinHeight] = useState<number | undefined>(undefined)
   const typesenseAbortRef = useRef<AbortController | null>(null)
@@ -74,6 +78,7 @@ export function RepoListWithSearch({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: .
   useEffect(() => {
     if (containerRef.current && minHeight === undefined) {
       setMinHeight(containerRef.current.offsetHeight)
@@ -92,7 +97,6 @@ export function RepoListWithSearch({
       setGithubResults([])
       setSearchQuery("")
       setDisplayedQuery("")
-      setIsSearching(false)
       setIsGithubSearching(false)
       return
     }
@@ -104,7 +108,6 @@ export function RepoListWithSearch({
     typesenseAbortRef.current = typesenseController
     githubAbortRef.current = githubController
 
-    setIsSearching(true)
     setIsGithubSearching(true)
     setSearchQuery(query)
 
@@ -116,13 +119,11 @@ export function RepoListWithSearch({
         if (!typesenseController.signal.aborted) {
           setTypesenseResults(data.results ?? [])
           setDisplayedQuery(query)
-          setIsSearching(false)
         }
       })
       .catch((err) => {
         if (err instanceof Error && err.name !== "AbortError") {
           setTypesenseResults([])
-          setIsSearching(false)
         }
       })
 
@@ -227,7 +228,7 @@ export function RepoListWithSearch({
           style={minHeight ? { minHeight } : undefined}
         >
           <div className="relative min-w-120">
-            <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+            <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0 opacity-40" />
             <div className="relative z-10 flex w-full">
               <div className="flex grow">
                 <TableColumnTitle className="px-0 pr-2">
@@ -267,6 +268,7 @@ export function RepoListWithSearch({
                       {highlight ? (
                         <span
                           className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-transparent [&_mark]:font-bold [&_mark]:text-bright"
+                          // biome-ignore lint/security/noDangerouslySetInnerHtml: .
                           dangerouslySetInnerHTML={{ __html: highlight }}
                         />
                       ) : (

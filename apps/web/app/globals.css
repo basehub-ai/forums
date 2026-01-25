@@ -226,3 +226,16 @@ svg tspan {
 @utility animate-fade-in {
   animation: fade-in 150ms ease-out;
 }
+
+/* SSR syntax highlighting - grayscale theme */
+.code-block-ssr {
+  --sh-background: transparent;
+  --sh-foreground: var(--dim);
+  --sh-comment: var(--faint);
+  --sh-string: var(--bright);
+  --sh-keyword: var(--muted);
+  --sh-function: var(--muted);
+  --sh-constant: var(--faint);
+  --sh-variable: var(--faint);
+  --sh-punctuation: var(--faint);
+}

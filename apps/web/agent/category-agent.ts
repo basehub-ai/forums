@@ -1,6 +1,6 @@
 import { generateText, stepCountIs, streamText, tool } from "ai"
 import { and, eq } from "drizzle-orm"
-import { updateTag } from "next/cache"
+import { revalidateTag } from "next/cache"
 import { z } from "zod"
 import { db } from "@/lib/db/client"
 import { categories, posts } from "@/lib/db/schema"
@@ -125,13 +125,9 @@ You're working on your own. The category has already been set.`
       "Title fallback triggered, finishReason:",
       await stream.finishReason
     )
-    const fallbackSystemPrompt =
-      mode === "build"
-        ? "Generate a concise, action-oriented title (10 words max) for the following build request. Focus on what the user wants to create, implement, or add. Even if the post seems vague or incomplete, infer the intent from context and create a descriptive title. Reply with ONLY the title, nothing else."
-        : `Generate a concise title (10 words max) for a forum post in the GitHub repository "${owner}/${repo}". Do your best to describe what the post is/will be about, based on the user's comment. Even if the post seems vague or incomplete, infer the intent from context and create a descriptive title. Reply with ONLY the title, nothing else.`
     const fallback = await generateText({
       model: "anthropic/claude-haiku-4.5",
-      system: fallbackSystemPrompt,
+      system: `Generate a concise title (10 words max) for a forum post in the GitHub repository "${owner}/${repo}". Do your best to describe what the post is/will be about, based on the user's comment. Even if the post seems vague or incomplete, infer the intent from context and create a descriptive title. Reply with ONLY the title, nothing else.`,
       prompt: content,
     })
     result.title = fallback.text.trim()
@@ -176,6 +172,6 @@ You're working on your own. The category has already been set.`
     ...(categoryId && { categoryId }),
   })
 
-  updateTag(`repo:${owner}:${repo}`)
-  updateTag(`post:${postId}`)
+  revalidateTag(`repo:${owner}:${repo}`, "max")
+  revalidateTag(`post:${postId}`, "max")
 }

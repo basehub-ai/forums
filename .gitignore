@@ -44,3 +44,6 @@ package-lock.json
 
 # turborepo
 .turbo
+
+.next-term
+/apps/web/public/cli

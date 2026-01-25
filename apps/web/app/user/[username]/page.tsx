@@ -193,7 +193,7 @@ export default async function UserProfilePage({
       <div className="-mx-4 overflow-x-auto [--col-w-1:67px] [--col-w-2:131px] sm:-mx-2 sm:px-2">
         <div className="min-w-fit px-4 sm:px-0">
           <div className="relative min-w-100">
-            <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+            <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0 opacity-40" />
             <div className="relative z-10 flex w-full">
               <div className="flex grow">
                 <TableColumnTitle className="px-0 pr-2">
@@ -240,7 +240,7 @@ export default async function UserProfilePage({
       </div>
 
       <div className="relative mt-10 mb-2">
-        <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
+        <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0 opacity-40" />
         <h2 className="relative z-10 w-fit bg-background pr-2 font-medium text-sm uppercase">
           Recent Comments
         </h2>

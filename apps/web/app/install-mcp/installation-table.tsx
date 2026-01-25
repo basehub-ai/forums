@@ -1,16 +1,11 @@
-"use client"
-
-import { CheckIcon, ChevronRightIcon, CopyIcon } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
-import { Streamdown } from "streamdown"
 import { Button } from "@/components/button"
-import { List, ListItem, TableColumnTitle } from "@/components/typography"
-import { Collapsible } from "@/components/ui/collapsible"
-import { Tooltip } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+import { CodeBlockSyntaxHighlighted } from "@/components/code-block-syntax-highlighted"
+import { getSiteOrigin } from "@/lib/utils"
+import { Instructions } from "./client-instructions"
+import { CollapsibleItem } from "./collapsible-item"
 
-const MCP_URL = "https://forums.basehub.com/mcp"
+const MCP_URL = getSiteOrigin() + "/mcp"
 
 const clientIds = [
   "claude-code",
@@ -138,129 +133,39 @@ args = ["-y", "mcp-remote@latest", "${MCP_URL}"]`,
   },
 }
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-
-  const copy = () => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const Icon = copied ? CheckIcon : CopyIcon
-
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger
-        className="absolute top-1 right-1 flex size-6 cursor-pointer items-center justify-center text-muted hover:text-dim"
-        onClick={copy}
-      >
-        <Icon absoluteStrokeWidth className="size-4 shrink-0" />
-      </Tooltip.Trigger>
-      <Tooltip.Popup>{copied ? "Copied" : "Copy"}</Tooltip.Popup>
-    </Tooltip.Root>
-  )
-}
-
-function CodeBlock({ code, language }: { code: string; language: string }) {
-  return (
-    <div className="relative">
-      <CopyButton text={code} />
-      <Streamdown
-        components={{
-          pre: (props) => (
-            <pre
-              className="min-h-8 overflow-x-auto bg-shade px-2 py-1 text-sm"
-              {...props}
-            />
-          ),
-          code: (props) => <code className="font-mono" {...props} />,
-        }}
-        mode="static"
-        shikiTheme={["github-light", "github-dark"]}
-      >
-        {`\`\`\`${language}\n${code}\n\`\`\``}
-      </Streamdown>
-    </div>
-  )
-}
-
 function ClientContent({ clientId }: { clientId: ClientId }) {
   const config = configs[clientId]
 
   return (
-    <div className="flex flex-col gap-4">
-      <Streamdown
-        components={{
-          p: (props) => <p className="text-muted leading-relaxed" {...props} />,
-          strong: (props) => (
-            <strong className="font-semibold text-dim" {...props} />
-          ),
-          code: (props) => (
-            <code
-              className="bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
-              {...props}
-            />
-          ),
-          ol: (props) => (
-            <ol className="list-decimal space-y-1 pl-6 text-muted" {...props} />
-          ),
-          li: (props) => <li {...props} />,
-        }}
-        mode="static"
-      >
-        {config.steps}
-      </Streamdown>
+    <div className="flex flex-col gap-2">
+      <Instructions>{config.steps}</Instructions>
 
-      {config.json && <CodeBlock code={config.json} language="json" />}
+      {config.json && (
+        <CodeBlockSyntaxHighlighted code={config.json} language="json" />
+      )}
 
       {clientId === "opencode" && (
-        <Streamdown
-          components={{
-            p: (props) => (
-              <p className="text-muted leading-relaxed" {...props} />
-            ),
-          }}
-          mode="static"
-        >
+        <Instructions>
           2. Save the file and restart OpenCode. Authenticate by running:
-        </Streamdown>
+        </Instructions>
       )}
 
       {clientId === "gemini-cli" && (
-        <Streamdown
-          components={{
-            p: (props) => (
-              <p className="text-muted leading-relaxed" {...props} />
-            ),
-          }}
-          mode="static"
-        >
+        <Instructions>
           2. Save the file and restart Gemini CLI. Authenticate by running:
-        </Streamdown>
+        </Instructions>
       )}
 
-      {config.command && <CodeBlock code={config.command} language="bash" />}
+      {config.command && (
+        <CodeBlockSyntaxHighlighted code={config.command} language="bash" />
+      )}
 
       {clientId === "codex" && (
         <>
-          <Streamdown
-            components={{
-              p: (props) => (
-                <p className="text-muted leading-relaxed" {...props} />
-              ),
-              code: (props) => (
-                <code
-                  className="bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
-                  {...props}
-                />
-              ),
-            }}
-            mode="static"
-          >
-            Or edit `~/.codex/config.toml` and add:
-          </Streamdown>
-          {config.toml && <CodeBlock code={config.toml} language="toml" />}
+          <Instructions>Or edit `~/.codex/config.toml` and add:</Instructions>
+          {config.toml && (
+            <CodeBlockSyntaxHighlighted code={config.toml} language="toml" />
+          )}
         </>
       )}
     </div>
@@ -268,60 +173,31 @@ function ClientContent({ clientId }: { clientId: ClientId }) {
 }
 
 export function InstallationTable() {
-  const [openClient, setOpenClient] = useState<ClientId | null>(null)
-
   return (
-    <div className="mt-6">
-      <div className="relative mb-2">
-        <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0" />
-        <TableColumnTitle className="relative z-10 flex w-fit items-center gap-1.5 px-0 pr-2">
-          Installation
-        </TableColumnTitle>
-      </div>
-
-      <List>
-        {clients.map((client) => (
-          <ListItem key={client.id}>
-            <Collapsible.Root
-              className="w-full"
-              onOpenChange={(open) => setOpenClient(open ? client.id : null)}
-              open={openClient === client.id}
+    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+      {clients.map((client) => (
+        <CollapsibleItem key={client.id} label={client.label}>
+          {client.id === "cursor" && (
+            <Link
+              className="mb-2 block"
+              href="https://cursor.com/en-US/install-mcp?name=forums&config=eyJ1cmwiOiJodHRwczovL2ZvcnVtcy5iYXNlaHViLmNvbS9tY3AifQ%3D%3D"
+              rel="noopener noreferrer"
+              target="_blank"
             >
-              <Collapsible.Trigger className="group flex w-full cursor-pointer items-center gap-1 text-dim hover:text-bright">
-                <ChevronRightIcon
-                  absoluteStrokeWidth
-                  className={cn(
-                    "h-4 w-4 shrink-0 text-faint",
-                    openClient === client.id && "rotate-90"
-                  )}
-                />
-                <span>{client.label}</span>
-              </Collapsible.Trigger>
-              <Collapsible.Panel className="mt-4 ml-5">
-                {client.id === "cursor" && (
-                  <Link
-                    className="mb-4 block"
-                    href="https://cursor.com/en-US/install-mcp?name=forums&config=eyJ1cmwiOiJodHRwczovL2ZvcnVtcy5iYXNlaHViLmNvbS9tY3AifQ%3D%3D"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <Button>Add to Cursor</Button>
-                  </Link>
-                )}
-                {client.id === "vscode" && (
-                  <Link
-                    className="mb-4 block"
-                    href="https://vscode.dev/redirect/mcp/install?name=Forums&config=%7B%22type%22%3A%22http%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fforums.basehub.com%2Fmcp%22%7D"
-                  >
-                    <Button>Add to VS Code</Button>
-                  </Link>
-                )}
-                <ClientContent clientId={client.id} />
-              </Collapsible.Panel>
-            </Collapsible.Root>
-          </ListItem>
-        ))}
-      </List>
+              <Button>Add to Cursor</Button>
+            </Link>
+          )}
+          {client.id === "vscode" && (
+            <Link
+              className="mb-2 block"
+              href="https://vscode.dev/redirect/mcp/install?name=Forums&config=%7B%22type%22%3A%22http%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fforums.basehub.com%2Fmcp%22%7D"
+            >
+              <Button>Add to VS Code</Button>
+            </Link>
+          )}
+          <ClientContent clientId={client.id} />
+        </CollapsibleItem>
+      ))}
     </div>
   )
 }
