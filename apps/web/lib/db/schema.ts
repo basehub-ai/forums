@@ -171,6 +171,7 @@ export const user = pgTable("user", {
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
   username: text("username"),
+  lastLlmUserId: varchar("last_llm_user_id", { length: 32 }),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 })

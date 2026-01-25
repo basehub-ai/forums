@@ -1,25 +1,20 @@
-import { asc, eq, sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { revalidateTag } from "next/cache"
 import { headers } from "next/headers"
 import { after } from "next/server"
 import type { InferSchema } from "xmcp"
 import { z } from "zod"
-import { runCategoryAgent } from "@/agent/category-agent"
-import { mcpAgent } from "@/agent/mcp-agent"
 import type { AgentUIMessage } from "@/agent/types"
-import { auth, extractGitHubUserId, gitHubUserByIdLoader } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { autumn, CREDIT_COSTS, checkIsPro } from "@/lib/autumn"
+import { getUserAccessToken } from "@/lib/data/github"
 import { db } from "@/lib/db/client"
-import { comments, llmUsers, postCounters, posts, user } from "@/lib/db/schema"
+import { comments, llmUsers, user } from "@/lib/db/schema"
 import { checkMessageRateLimit } from "@/lib/rate-limit"
 import { resolveRepoInput } from "@/lib/resolve-repo-input"
-import {
-  indexComment,
-  indexPost,
-  indexRepo,
-  updatePostIndex,
-} from "@/lib/typesense-index"
+import { indexRepo } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
+import { createPostCore } from "@/lib/actions/posts-internal"
 
 export const schema = {
   repo: z
@@ -34,10 +29,12 @@ export const schema = {
     .describe(
       "Git ref (branch, tag, commit). Defaults to version tag for npm packages"
     ),
-  postId: z
+  model: z
     .string()
     .optional()
-    .describe("Post ID to continue an existing conversation"),
+    .describe(
+      "Model ID to use. Run list_models tool to see available options."
+    ),
 }
 
 export const metadata = {
@@ -52,29 +49,17 @@ export const metadata = {
   },
 }
 
-async function getGitHubUsername(
-  image: string | null | undefined
-): Promise<string | null> {
-  const userId = extractGitHubUserId(image)
-  if (!userId) {
-    return null
-  }
-  const githubUser = await gitHubUserByIdLoader.load(userId)
-  return githubUser?.login ?? null
-}
-
 export default async function ask({
   repo: repoInput,
   query,
   ref,
-  postId: existingPostId,
+  model,
 }: InferSchema<typeof schema>): Promise<{
   content: { type: "text"; text: string }[]
   structuredContent: { response: string; postId: string; postUrl: string }
 }> {
   const session = await auth.api.getMcpSession({ headers: await headers() })
 
-  // Get authenticated session
   if (!session) {
     throw new Error("Authentication required. Please reconnect with OAuth.")
   }
@@ -105,40 +90,65 @@ export default async function ask({
   // Use provided ref or default from npm package
   const gitRef = ref ?? defaultRef
 
-  const [llmUser, userRecord] = await Promise.all([
+  // Get user record, pro status, and all models in parallel
+  const [userRecord, isPro, allModels] = await Promise.all([
     db
-      .select({ id: llmUsers.id, model: llmUsers.model })
-      .from(llmUsers)
-      .where(eq(llmUsers.isDefault, true))
-      .limit(1)
-      .then((r) => r[0]),
-    db
-      .select({ id: user.id, username: user.username, image: user.image })
+      .select({
+        id: user.id,
+        username: user.username,
+        image: user.image,
+        email: user.email,
+        name: user.name,
+        lastLlmUserId: user.lastLlmUserId,
+      })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0]),
+    checkIsPro(userId),
+    db.select().from(llmUsers).where(eq(llmUsers.isInModelPicker, true)),
   ])
-
-  if (!llmUser) {
-    throw new Error("No default LLM user configured")
-  }
 
   if (!userRecord) {
     throw new Error("User account not found for MCP session")
   }
 
-  const authorUsername =
-    userRecord.username ?? (await getGitHubUsername(userRecord.image))
-  const seekingAnswerFrom = llmUser.id
-  const llmUserModel = llmUser.model
+  // Filter models by pro status
+  const availableModels = isPro
+    ? allModels
+    : allModels.filter((m) => m.billing_category === "standard")
+
+  // Select the model to use
+  let llmUser: (typeof availableModels)[0]
+  if (model) {
+    const found = availableModels.find(
+      (m) => m.id === model || m.name.toLowerCase() === model.toLowerCase()
+    )
+    if (!found) {
+      throw new Error(
+        `Model '${model}' not available. ${isPro ? "Run list_models to see available options." : "Upgrade to Pro for more models."}`
+      )
+    }
+    llmUser = found
+  } else if (userRecord.lastLlmUserId) {
+    const lastUsed = availableModels.find(
+      (m) => m.id === userRecord.lastLlmUserId
+    )
+    llmUser = lastUsed ?? availableModels.find((m) => m.isDefault)!
+  } else {
+    llmUser = availableModels.find((m) => m.isDefault)!
+  }
+
+  if (!llmUser) {
+    throw new Error("No default LLM user configured")
+  }
 
   // Check credits
-  const isPro = await checkIsPro(userId)
+  const billingCategory = llmUser.billing_category || "standard"
   const { data: checkResult, error: checkError } = await autumn.check({
     customer_id: userId,
     feature_id: "standard_credits",
-    required_balance: CREDIT_COSTS.standard,
+    required_balance: CREDIT_COSTS[billingCategory as keyof typeof CREDIT_COSTS],
   })
 
   if (checkError || !checkResult) {
@@ -156,7 +166,8 @@ export default async function ask({
     )
   }
 
-  const now = Date.now()
+  // Get user access token for workspace
+  const userAccessToken = await getUserAccessToken(userId)
 
   // Create user message
   const userMessage: AgentUIMessage = {
@@ -165,289 +176,95 @@ export default async function ask({
     parts: [{ type: "text", text: query }],
   }
 
-  // Wrap all database operations in a transaction
-  // If mcpAgent fails, the transaction rolls back automatically
-  const result = await db.transaction(async (tx) => {
-    let postId: string
-    let postNumber: number
-    let isNewPost = false
-    let userCommentId: string
-    let categoryId: string | null = null
+  // Create post using createPostCore (same code path as web UI)
+  const result = await createPostCore({
+    owner,
+    repo,
+    content: userMessage,
+    seekingAnswerFrom: llmUser.id,
+    branch: gitRef,
+    userId,
+    userImage: userRecord.image,
+    userEmail: userRecord.email,
+    userName: userRecord.name,
+    userAccessToken,
+    createdBy: "mcp",
+  })
 
-    if (existingPostId) {
-      // Continue existing conversation
-      const existingPost = await tx
-        .select({
-          id: posts.id,
-          number: posts.number,
-          owner: posts.owner,
-          repo: posts.repo,
-          categoryId: posts.categoryId,
-        })
-        .from(posts)
-        .where(eq(posts.id, existingPostId))
+  // Poll until the LLM response is complete
+  if (result.llmCommentId) {
+    const maxWaitMs = 5 * 60 * 1000 // 5 minutes
+    const pollIntervalMs = 500
+    const startTime = Date.now()
+
+    while (Date.now() - startTime < maxWaitMs) {
+      const comment = await db
+        .select({ streamStatus: comments.streamStatus })
+        .from(comments)
+        .where(eq(comments.id, result.llmCommentId))
         .limit(1)
         .then((r) => r[0])
 
-      if (!existingPost) {
-        throw new Error(`Post '${existingPostId}' not found.`)
+      if (
+        comment?.streamStatus === "completed" ||
+        comment?.streamStatus === "failed"
+      ) {
+        break
       }
 
-      if (existingPost.owner !== owner || existingPost.repo !== repo) {
-        throw new Error(
-          `Post '${existingPostId}' belongs to a different repository.`
-        )
-      }
-
-      postId = existingPost.id
-      postNumber = existingPost.number
-      categoryId = existingPost.categoryId
-      userCommentId = nanoid()
-
-      // Add user comment to existing post
-      await tx.insert(comments).values({
-        id: userCommentId,
-        postId,
-        authorId: userId,
-        authorUsername,
-        seekingAnswerFrom,
-        createdBy: "mcp",
-        content: [userMessage],
-        createdAt: now,
-        updatedAt: now,
-      })
-    } else {
-      // Create new post
-      isNewPost = true
-      postId = nanoid()
-      userCommentId = nanoid()
-
-      const counterResult = await tx
-        .insert(postCounters)
-        .values({ owner, repo, lastNumber: 1 })
-        .onConflictDoUpdate({
-          target: [postCounters.owner, postCounters.repo],
-          set: { lastNumber: sql`${postCounters.lastNumber} + 1` },
-        })
-        .returning({ lastNumber: postCounters.lastNumber })
-
-      postNumber = counterResult[0].lastNumber
-
-      await Promise.all([
-        tx.insert(posts).values({
-          id: postId,
-          number: postNumber,
-          owner,
-          repo,
-          authorId: userId,
-          rootCommentId: userCommentId,
-          createdAt: now,
-          updatedAt: now,
-        }),
-        tx.insert(comments).values({
-          id: userCommentId,
-          postId,
-          authorId: userId,
-          authorUsername,
-          seekingAnswerFrom,
-          createdBy: "mcp",
-          content: [userMessage],
-          createdAt: now,
-          updatedAt: now,
-        }),
-      ])
+      await new Promise((r) => setTimeout(r, pollIntervalMs))
     }
+  }
 
-    // Get all previous messages for context
-    const allComments = await tx
-      .select({ content: comments.content })
-      .from(comments)
-      .where(eq(comments.postId, postId))
-      .orderBy(asc(comments.createdAt))
+  // Get final response from DB
+  const finalComment = result.llmCommentId
+    ? await db
+        .select({ content: comments.content, gitRef: comments.gitRef })
+        .from(comments)
+        .where(eq(comments.id, result.llmCommentId))
+        .limit(1)
+        .then((r) => r[0])
+    : null
 
-    const messages: AgentUIMessage[] = allComments.flatMap((c) => c.content)
-
-    // Run the agent - if this throws, the transaction rolls back
-    const { response, gitRef: resolvedGitRef } = await mcpAgent({
-      owner,
-      repo,
-      ref: gitRef,
-      messages,
-      model: llmUserModel,
-      userId,
-    })
-
-    // Create LLM response comment
-    const llmCommentId = nanoid()
-    const llmMessage: AgentUIMessage = {
-      id: nanoid(),
-      role: "assistant",
-      parts: [{ type: "text", text: response }],
+  // Extract text response from the comment content
+  let responseText = "I was unable to generate a response."
+  if (finalComment?.content) {
+    const textParts = finalComment.content
+      .flatMap((msg) => msg.parts)
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+    if (textParts.length > 0) {
+      responseText = textParts.join("\n\n")
     }
-
-    await tx.insert(comments).values({
-      id: llmCommentId,
-      postId,
-      authorId: llmUser.id,
-      authorUsername: llmUserModel,
-      createdBy: "mcp",
-      content: [llmMessage],
-      streamStatus: "completed",
-      gitRef: resolvedGitRef,
-      createdAt: now + 1,
-      updatedAt: now + 1,
-    })
-
-    // Update post git context if not already set
-    const postWithContext = await tx
-      .select({ gitContexts: posts.gitContexts })
-      .from(posts)
-      .where(eq(posts.id, postId))
-      .limit(1)
-      .then((r) => r[0])
-
-    if (!postWithContext?.gitContexts) {
-      await tx
-        .update(posts)
-        .set({
-          gitContexts: [
-            {
-              sha: resolvedGitRef,
-              branch: gitRef ?? "HEAD",
-              tags: [],
-              message: "",
-              date: new Date().toISOString(),
-            },
-          ],
-          updatedAt: now,
-        })
-        .where(eq(posts.id, postId))
-    }
-
-    return {
-      postId,
-      postNumber,
-      response,
-      isNewPost,
-      userCommentId,
-      llmCommentId,
-      categoryId,
-      resolvedGitRef,
-    }
-  })
+  }
 
   const postUrl = `${getSiteOrigin()}/${owner}/${repo}/${result.postNumber}`
-
-  // Index post first (required before category agent can update it)
-  if (result.isNewPost) {
-    await indexPost(
-      {
-        id: result.postId,
-        number: result.postNumber,
-        owner,
-        repo,
-        title: null,
-        categoryId: null,
-        authorId: userId,
-        rootCommentId: result.userCommentId,
-        gitContexts: null,
-        pinned: false,
-        createdAt: now,
-        updatedAt: now,
-      },
-      2 // user comment + llm comment
-    )
-  }
 
   revalidateTag(`repo:${owner}:${repo}`, "max")
   revalidateTag(`post:${result.postId}`, "max")
 
-  const response = {
-    content: [{ type: "text", text: result.response }],
-    structuredContent: {
-      response: result.response,
-      postId: result.postId,
-      postUrl,
-    },
-  }
-
-  // Background tasks: index comments, update counts, run category agent
+  // Background tasks
   after(async () => {
     try {
-      // Fetch the comments we just created for indexing
-      const [userComment, llmComment] = await Promise.all([
-        db
-          .select()
-          .from(comments)
-          .where(eq(comments.id, result.userCommentId))
-          .limit(1)
-          .then((r) => r[0]),
-        db
-          .select()
-          .from(comments)
-          .where(eq(comments.id, result.llmCommentId))
-          .limit(1)
-          .then((r) => r[0]),
-      ])
-
-      // Index comments
-      const indexPromises: Promise<void>[] = []
-      if (userComment) {
-        indexPromises.push(
-          indexComment(
-            userComment,
-            owner,
-            repo,
-            result.postNumber,
-            result.categoryId,
-            result.isNewPost // isRootComment only for new posts
-          )
-        )
-      }
-      if (llmComment) {
-        indexPromises.push(
-          indexComment(
-            llmComment,
-            owner,
-            repo,
-            result.postNumber,
-            result.categoryId,
-            false
-          )
-        )
-      }
-
-      // Update comment count for existing posts
-      if (!result.isNewPost) {
-        const commentCount = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(comments)
-          .where(eq(comments.postId, result.postId))
-          .then((r) => Number(r[0]?.count ?? 0))
-        indexPromises.push(updatePostIndex(result.postId, { commentCount }))
-      }
+      // Update user's last used LLM preference
+      await db
+        .update(user)
+        .set({ lastLlmUserId: llmUser.id })
+        .where(eq(user.id, userId))
 
       // Index repo stats
-      indexPromises.push(indexRepo(owner, repo))
-
-      await Promise.all(indexPromises)
-
-      // Run category agent for new posts (generates title)
-      if (result.isNewPost) {
-        await runCategoryAgent({
-          postId: result.postId,
-          owner,
-          repo,
-          content: query,
-        })
-      }
+      await indexRepo(owner, repo)
     } catch (error) {
       console.error("Failed to run post-creation tasks:", error)
     }
   })
 
-  return response as {
-    content: { type: "text"; text: string }[]
-    structuredContent: { response: string; postId: string; postUrl: string }
+  return {
+    content: [{ type: "text", text: responseText }],
+    structuredContent: {
+      response: responseText,
+      postId: result.postId,
+      postUrl,
+    },
   }
 }
