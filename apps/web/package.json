@@ -7,7 +7,7 @@
     "dev:cli": "next-term build && node .next-term/dist/cli.js",
     "publish:cli": "next-term build && cd .next-term/dist && npm publish",
     "build:cli": "next-term build",
-    "build": "xmcp build && next build && ([ \"$VERCEL_ENV\" = \"production\" ] && bun run publish:cli || true)",
+    "build": "VERCEL=0 xmcp build && next build && ([ \"$VERCEL_ENV\" = \"production\" ] && bun run publish:cli || true)",
     "start": "next start",
     "test": "vercel env run -- bun test",
     "lint": "ultracite fix",

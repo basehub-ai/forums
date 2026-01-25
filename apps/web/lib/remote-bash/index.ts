@@ -21,6 +21,7 @@ export type RemoteBashResponse = {
   resolvedRef: string // Actual git SHA used
   resolvedVersion?: string // If version provided
   executionTimeMs: number
+  truncated: boolean
 }
 
 export type RemoteBashErrorResponse = {
@@ -178,6 +179,7 @@ export async function remoteBash(
     resolvedRef: workspace.sha,
     resolvedVersion,
     executionTimeMs: result.executionTimeMs,
+    truncated: false,
   }
 }
 
