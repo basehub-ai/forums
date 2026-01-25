@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { detectInstalledVersion } from "@/lib/detect-version"
 import type {
   RemoteBashAPIResponse,
   RemoteBashErrorResponse,
@@ -39,7 +40,7 @@ async function writeToTempFile(content: string): Promise<string> {
   return filepath
 }
 
-export default async function handler({
+async function remoteBashCLI({
   repo,
   command,
   ref,
@@ -99,4 +100,92 @@ export default async function handler({
     returnedTokens,
     ...(fullOutputPath && { fullOutputPath }),
   }
+}
+
+type ParsedArgs = {
+  repo: string
+  ref?: string
+  version?: string
+  command: string
+}
+
+export function parseArgs({ argv }: { argv: string[] }): ParsedArgs {
+  const doubleDashIdx = argv.indexOf("--")
+
+  if (doubleDashIdx === -1) {
+    throw new Error("Missing -- separator before command")
+  }
+
+  const flags = argv.slice(0, doubleDashIdx)
+  const commandParts = argv.slice(doubleDashIdx + 1)
+
+  if (commandParts.length === 0) {
+    throw new Error("Missing command after --")
+  }
+
+  const command = commandParts.join(" ")
+
+  const repo = flags[0]
+  if (!repo) {
+    throw new Error("Missing repo")
+  }
+
+  let ref: string | undefined
+  let version: string | undefined
+
+  for (let i = 1; i < flags.length; i++) {
+    const flag = flags[i]
+    const next = flags[i + 1]
+
+    if (flag === "-ref") {
+      if (!next) throw new Error("Missing value for -ref")
+      ref = next
+      i++
+    } else if (flag === "-v") {
+      if (!next) throw new Error("Missing value for -v")
+      version = next
+      i++
+    } else {
+      throw new Error(`Unknown flag: ${flag}`)
+    }
+  }
+
+  return { repo, ref, version, command }
+}
+
+function isPackageName(repo: string): boolean {
+  // owner/repo format has a slash, package names don't (or are scoped @org/pkg)
+  if (repo.includes("/") && !repo.startsWith("@")) {
+    return false
+  }
+  return true
+}
+
+export default async function handler() {
+  const argv = process.argv.slice(2)
+  const args = parseArgs({ argv })
+
+  // auto-detect version from lockfile if not specified and repo looks like a package name
+  if (!args.version && isPackageName(args.repo)) {
+    const detectedVersion = await detectInstalledVersion({
+      packageName: args.repo,
+    })
+    if (detectedVersion) {
+      args.version = detectedVersion
+    }
+  }
+
+  const result = await remoteBashCLI(args)
+
+  if (result.stdout) process.stdout.write(result.stdout)
+  if (result.stderr) process.stderr.write(result.stderr)
+
+  if (result.truncated) {
+    console.error(
+      `\n[truncated: ${result.returnedTokens}/${result.totalTokens} tokens]`
+    )
+    console.error(`[full output: ${result.fullOutputPath}]`)
+  }
+
+  return result
 }

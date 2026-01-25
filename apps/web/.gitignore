@@ -48,3 +48,6 @@ package-lock.json
 # xmcp
 .xmcp
 xmcp-env.d.ts
+
+# next-term
+.next-term

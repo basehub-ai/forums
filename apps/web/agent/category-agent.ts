@@ -1,6 +1,6 @@
 import { generateText, stepCountIs, streamText, tool } from "ai"
 import { and, eq } from "drizzle-orm"
-import { updateTag } from "next/cache"
+import { revalidateTag } from "next/cache"
 import { z } from "zod"
 import { db } from "@/lib/db/client"
 import { categories, posts } from "@/lib/db/schema"
@@ -172,6 +172,6 @@ You're working on your own. The category has already been set.`
     ...(categoryId && { categoryId }),
   })
 
-  updateTag(`repo:${owner}:${repo}`)
-  updateTag(`post:${postId}`)
+  revalidateTag(`repo:${owner}:${repo}`, "max")
+  revalidateTag(`post:${postId}`, "max")
 }
