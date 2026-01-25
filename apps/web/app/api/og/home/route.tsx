@@ -1,7 +1,6 @@
 import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import { join } from "path"
-import { getSiteOrigin } from "@/lib/utils"
 
 const size = {
   width: 1200,
@@ -20,11 +19,13 @@ const geistMonoBold = readFile(
     "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
   )
 )
+const iconSvg = readFile(join(process.cwd(), "public/icon.svg"), "utf-8")
 
 export async function GET() {
-  const [fontRegular, fontBold] = await Promise.all([
+  const [fontRegular, fontBold, icon] = await Promise.all([
     geistMonoRegular,
     geistMonoBold,
+    iconSvg,
   ])
 
   return new ImageResponse(
@@ -59,7 +60,7 @@ export async function GET() {
           <img
             alt="Forums"
             height={120}
-            src={`${getSiteOrigin()}/icon.svg`}
+            src={`data:image/svg+xml;base64,${Buffer.from(icon).toString("base64")}`}
             width={120}
           />
           <span
