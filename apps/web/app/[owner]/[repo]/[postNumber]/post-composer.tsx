@@ -6,6 +6,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { checkCanModerate, createComment } from "@/lib/actions/posts"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
+import { useHasStreamingComment } from "./streaming-state-context"
 
 type AskingOption = {
   id: string
@@ -21,7 +22,6 @@ export function PostComposer({
   defaultLlmId,
   owner,
   repo,
-  hasStreamingComment,
 }: {
   postId: string
   askingOptions: AskingOption[]
@@ -32,8 +32,8 @@ export function PostComposer({
   defaultLlmId?: string
   owner?: string
   repo?: string
-  hasStreamingComment?: boolean
 }) {
+  const hasStreamingComment = useHasStreamingComment()
   const [canModerate, setCanModerate] = useState(false)
 
   useEffect(() => {

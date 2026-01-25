@@ -3,11 +3,26 @@ import { type ToolSet, tool } from "ai"
 import { join } from "path"
 import { z } from "zod"
 import { getSiteOrigin } from "@/lib/utils"
-import type { Workspace } from "../workspace"
+import type { LazyWorkspace, Workspace } from "../workspace"
 import { type BuildToolContext, getBuildTools } from "./build-tools"
 
 export type ToolContext = {
-  workspace: Workspace
+  workspace: Workspace | LazyWorkspace
+}
+
+/**
+ * Runs a command in the workspace sandbox.
+ * Handles both Workspace (direct) and LazyWorkspace (waits for setup).
+ */
+function runCommand(
+  workspace: Workspace | LazyWorkspace,
+  cmd: string,
+  args: string[]
+) {
+  if ("runCommand" in workspace) {
+    return workspace.runCommand(cmd, args)
+  }
+  return workspace.sandbox.runCommand(cmd, args)
 }
 
 const normalizationRegex = /^\//
@@ -70,7 +85,7 @@ export function getTools(context: ToolContext) {
         const normalizedPath = normalizePath(path, context.workspace.path)
         const fullPath = join(context.workspace.path, normalizedPath)
 
-        const result = await context.workspace.sandbox.runCommand("bash", [
+        const result = await runCommand(context.workspace, "bash", [
           "-c",
           `
             set -e
@@ -312,7 +327,7 @@ export function getTools(context: ToolContext) {
 
         args.push("--", pattern, searchPath)
 
-        const result = await context.workspace.sandbox.runCommand("rg", args)
+        const result = await runCommand(context.workspace, "rg", args)
         const [stdout, stderr] = await Promise.all([
           result.stdout(),
           result.stderr(),
@@ -420,7 +435,7 @@ export function getTools(context: ToolContext) {
           : "."
         const searchPath = join(context.workspace.path, normalizedPath)
 
-        const result = await context.workspace.sandbox.runCommand("bash", [
+        const result = await runCommand(context.workspace, "bash", [
           "-c",
           `
             set -e

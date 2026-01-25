@@ -22,6 +22,7 @@ import { CommentThreadClient } from "./comment-thread-client"
 import { PostComposer } from "./post-composer"
 import { PostHeader } from "./post-header"
 import { PostMetadataProvider } from "./post-metadata-context"
+import { StreamingStateProvider } from "./streaming-state-context"
 
 const githubCompareSchema = z.object({
   ahead_by: z.number(),
@@ -325,6 +326,10 @@ export default async function PostPage({
     .reverse()
     .find((c) => c.authorId.startsWith("llm_"))?.authorId
 
+  const initialStreamingCommentIds = postComments
+    .filter((c) => c.streamStatus === "streaming")
+    .map((c) => c.id)
+
   return (
     <PostMetadataProvider
       archivedRefs={archivedRefs}
@@ -339,41 +344,42 @@ export default async function PostPage({
       repo={repo}
       staleInfo={staleInfo}
     >
-      <Container>
-        <div className="min-h-body-min-height">
-          <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
+      <StreamingStateProvider
+        initialStreamingCommentIds={initialStreamingCommentIds}
+      >
+        <Container>
+          <div className="min-h-body-min-height">
+            <PostHeader owner={owner} postNumber={postNumber} repo={repo} />
 
-          <div className="mt-8 space-y-4">
-            <CommentThreadClient
-              askingOptions={askingOptions}
-              authorsById={authorsById}
-              commentNumbers={commentNumbers}
-              comments={postComments}
-              mentions={postMentions}
-              owner={owner}
-              reactions={postReactions}
-              repo={repo}
-              rootCommentId={post.rootCommentId}
-            />
+            <div className="mt-8 space-y-4">
+              <CommentThreadClient
+                askingOptions={askingOptions}
+                authorsById={authorsById}
+                commentNumbers={commentNumbers}
+                comments={postComments}
+                mentions={postMentions}
+                owner={owner}
+                reactions={postReactions}
+                repo={repo}
+                rootCommentId={post.rootCommentId}
+              />
+            </div>
           </div>
-        </div>
 
-        <hr className="divider-md my-14 h-px border-0" />
-        <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm">
-          END OF POST
-        </p>
+          <hr className="divider-md my-14 h-px border-0" />
+          <p className="relative -top-14 left-1/2 max-w-max -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm">
+            END OF POST
+          </p>
 
-        <PostComposer
-          askingOptions={askingOptions}
-          defaultLlmId={lastLlmAuthorId}
-          hasStreamingComment={postComments.some(
-            (c) => c.streamStatus === "streaming"
-          )}
-          owner={owner}
-          postId={post.id}
-          repo={repo}
-        />
-      </Container>
+          <PostComposer
+            askingOptions={askingOptions}
+            defaultLlmId={lastLlmAuthorId}
+            owner={owner}
+            postId={post.id}
+            repo={repo}
+          />
+        </Container>
+      </StreamingStateProvider>
     </PostMetadataProvider>
   )
 }

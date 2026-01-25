@@ -1,4 +1,4 @@
-import { type GitContext, getWorkspace } from "@/agent/workspace"
+import { type GitContext, startWorkspace } from "@/agent/workspace"
 import { parseGitHubInput } from "@/lib/resolve-repo-input"
 import { resolveNpmPackage } from "@/lib/utils/match-package-with-repo"
 import { DEFAULT_TIMEOUT, executeCommand, MAX_TIMEOUT } from "./command"
@@ -156,15 +156,15 @@ export async function remoteBash(
   })
 
   // Get workspace (reuses existing sandbox if available)
-  const workspace = await getWorkspace({
+  const workspace = await startWorkspace({
     sandboxId: null,
     gitContext,
     mode: "ask",
   })
 
-  // Execute command
+  // Execute command (runCommand waits for workspace setup internally)
   const result = await executeCommand(
-    workspace.sandbox,
+    workspace.runCommand,
     workspace.path,
     command,
     effectiveTimeout
@@ -175,7 +175,7 @@ export async function remoteBash(
     stdout: result.stdout,
     stderr: result.stderr,
     exitCode: result.exitCode,
-    resolvedRef: workspace.gitContextData.sha,
+    resolvedRef: workspace.sha,
     resolvedVersion,
     executionTimeMs: result.executionTimeMs,
   }
