@@ -1,0 +1,7 @@
+{
+  "$schema": "./.next-term/next-term.config.schema.json",
+  "cliName": "remote-bash",
+  "localBaseUrl": "http://localhost:3000",
+  "buildType": "registry",
+  "npmInfo": {}
+}
