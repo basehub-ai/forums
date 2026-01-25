@@ -10,13 +10,8 @@ export type CommandResult = {
   stdout: string
   stderr: string
   exitCode: number
-  truncated: boolean
   executionTimeMs: number
 }
-
-// Output limits from spec
-const MAX_STDOUT = 1024 * 1024 // 1 MB
-const MAX_STDERR = 100 * 1024 // 100 KB
 
 // Timeout limits from spec
 export const DEFAULT_TIMEOUT = 30_000 // 30 seconds
@@ -73,23 +68,12 @@ export async function executeCommand(
 
   let stdout = ""
   let stderr = ""
-  let truncated = false
 
   for await (const log of result.logs()) {
     if (log.stream === "stdout") {
-      if (stdout.length < MAX_STDOUT) {
-        stdout += log.data
-        if (stdout.length > MAX_STDOUT) {
-          stdout = stdout.slice(0, MAX_STDOUT)
-          truncated = true
-        }
-      }
-    } else if (stderr.length < MAX_STDERR) {
+      stdout += log.data
+    } else {
       stderr += log.data
-      if (stderr.length > MAX_STDERR) {
-        stderr = stderr.slice(0, MAX_STDERR)
-        truncated = true
-      }
     }
   }
 
@@ -105,7 +89,6 @@ export async function executeCommand(
     stdout,
     stderr,
     exitCode,
-    truncated,
     executionTimeMs,
   }
 }

@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { Button } from "@/components/button"
 import { CodeBlockSyntaxHighlighted } from "@/components/code-block-syntax-highlighted"
+import { getSiteOrigin } from "@/lib/utils"
 import { Instructions } from "./client-instructions"
 import { CollapsibleItem } from "./collapsible-item"
 
-const MCP_URL = "https://forums.basehub.com/mcp"
+const MCP_URL = getSiteOrigin() + "/mcp"
 
 const clientIds = [
   "claude-code",
@@ -132,7 +133,7 @@ args = ["-y", "mcp-remote@latest", "${MCP_URL}"]`,
   },
 }
 
-async function ClientContent({ clientId }: { clientId: ClientId }) {
+function ClientContent({ clientId }: { clientId: ClientId }) {
   const config = configs[clientId]
 
   return (
