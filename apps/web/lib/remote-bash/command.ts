@@ -13,7 +13,7 @@ export type CommandResult = {
   executionTimeMs: number
 }
 
-export const DEFAULT_TIMEOUT = 30_000 // 30 seconds
+export const DEFAULT_TIMEOUT = 60_000 // 1 minute
 export const MAX_TIMEOUT = 120_000 // 2 minutes
 
 /**
