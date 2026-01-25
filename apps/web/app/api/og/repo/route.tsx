@@ -3,9 +3,9 @@ import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
 import { join } from "path"
-import { githubFetch } from "@/lib/github-fetch"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
+import { githubFetch } from "@/lib/github-fetch"
 import { getSiteOrigin } from "@/lib/utils"
 
 const size = {

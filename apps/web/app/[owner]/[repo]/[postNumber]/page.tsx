@@ -5,7 +5,6 @@ import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
 import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
-import { githubFetch } from "@/lib/github-fetch"
 import { getModelsForPicker } from "@/lib/data/models"
 import { getPostByNumber, getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
@@ -16,6 +15,7 @@ import {
   posts,
   reactions,
 } from "@/lib/db/schema"
+import { githubFetch } from "@/lib/github-fetch"
 import { getSiteOrigin } from "@/lib/utils"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
 import { CommentThreadClient } from "./comment-thread-client"

@@ -43,7 +43,9 @@ describe("resolveToGitContext", () => {
       expect(result.gitContext.owner).toBe("vercel")
       expect(result.gitContext.repo).toBe("next.js")
       // Uses gitHead from npm registry (no GitHub API call needed)
-      expect(result.gitContext.ref).toBe("34916762cdff14f27c7e3273d74af60eb6c23cb6")
+      expect(result.gitContext.ref).toBe(
+        "34916762cdff14f27c7e3273d74af60eb6c23cb6"
+      )
       expect(result.resolvedVersion).toBe("16.1.0")
       expect(result.packageName).toBe("next")
     })
