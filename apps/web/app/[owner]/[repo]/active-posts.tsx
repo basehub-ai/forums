@@ -65,7 +65,7 @@ export function ActivePosts({
                   className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                   href={`/${owner}/${repo}/${post.number}`}
                 >
-                  <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                  <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
                   <span className="truncate leading-none group-hover:text-bright">
                     {post.title || `Post #${post.number}`}
                   </span>

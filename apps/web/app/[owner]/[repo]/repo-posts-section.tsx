@@ -229,7 +229,7 @@ function PinnedPosts({
               href={`/${owner}/${repo}/${post.number}`}
             >
               <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
-              <span className="text-dim group-hover:text-bright group-hover:underline">
+              <span className="truncate text-dim group-hover:text-bright group-hover:underline">
                 {post.title || `Post #${post.number}`}
               </span>
             </Link>

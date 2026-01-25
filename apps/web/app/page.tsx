@@ -111,20 +111,32 @@ export default async function Home() {
                     href={`/${post.owner}/${post.repo}/${post.number}`}
                   >
                     <AsteriskIcon className="shrink-0 text-faint" size={16} />
-                    <div className="min-w-0">
-                      <span className="text-dim leading-none group-hover:text-bright group-hover:underline">
-                        {post.title || `Post #${post.number}`}
-                      </span>
-                      <span className="ml-2 text-faint text-sm leading-none">
-                        {post.owner}/{post.repo}
-                      </span>
-                    </div>
+                    <span className="truncate text-dim leading-none group-hover:text-bright group-hover:underline">
+                      {post.title || `Post #${post.number}`}
+                    </span>
+                    <span className="shrink-0 text-faint text-sm leading-none">
+                      {post.owner}/{post.repo}
+                    </span>
                   </Link>
                 </ListItem>
               ))}
             </List>
           </div>
         )}
+
+        <a
+          className="mt-6 block"
+          href="https://www.producthunt.com/products/basehub?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-forums"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            alt="Forums - AI-powered Q&A for GitHub repositories. | Product Hunt"
+            width="180"
+            height="39"
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=999623&theme=neutral&t=1769324688310"
+          />
+        </a>
       </Container>
 
       <hr className="divider-md my-14 h-px border-0 opacity-40" />
@@ -200,14 +212,12 @@ export default async function Home() {
                       href={`/${post.owner}/${post.repo}/${post.number}`}
                     >
                       <AsteriskIcon className="shrink-0 text-faint" size={16} />
-                      <div className="min-w-0">
-                        <span className="text-dim leading-none group-hover:text-bright group-hover:underline">
-                          {post.title || `Post #${post.number}`}
-                        </span>
-                        <span className="ml-2 text-faint text-sm leading-none">
-                          {post.owner}/{post.repo}
-                        </span>
-                      </div>
+                      <span className="truncate text-dim leading-none group-hover:text-bright group-hover:underline">
+                        {post.title || `Post #${post.number}`}
+                      </span>
+                      <span className="shrink-0 text-faint text-sm leading-none">
+                        {post.owner}/{post.repo}
+                      </span>
                     </Link>
                   </ListItem>
                 ))}

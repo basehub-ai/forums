@@ -217,7 +217,7 @@ export default async function UserProfilePage({
                     className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                     href={`/${repo.owner}/${repo.repo}`}
                   >
-                    <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                    <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
                     <span className="whitespace-nowrap leading-none group-hover:text-bright">
                       {repo.owner}/{repo.repo}
                     </span>
@@ -269,15 +269,17 @@ export default async function UserProfilePage({
                     className="mt-0.5 shrink-0 text-faint"
                     size={16}
                   />
-                  <div className="min-w-0">
-                    <span className="text-dim group-hover:text-bright group-hover:underline">
-                      {comment.postTitle || `Post #${comment.postNumber}`}
-                    </span>
-                    <span className="ml-2 text-faint text-sm">
-                      {comment.postOwner}/{comment.postRepo}
-                    </span>
+                  <div className="flex min-w-0 flex-col">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-dim group-hover:text-bright group-hover:underline">
+                        {comment.postTitle || `Post #${comment.postNumber}`}
+                      </span>
+                      <span className="shrink-0 text-faint text-sm">
+                        {comment.postOwner}/{comment.postRepo}
+                      </span>
+                    </div>
                     {!!preview && (
-                      <p className="mt-0.5 truncate text-faint text-sm">
+                      <p className="truncate text-faint text-sm">
                         {preview}
                         {preview.length >= 200 && "..."}
                       </p>

@@ -264,7 +264,7 @@ export function RepoListWithSearch({
                       className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                       href={repo.name}
                     >
-                      <AsteriskIcon className="mt-0.5 text-faint" size={16} />
+                      <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
                       {highlight ? (
                         <span
                           className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-transparent [&_mark]:font-bold [&_mark]:text-bright"
