@@ -1,6 +1,11 @@
 import type { Sandbox } from "@vercel/sandbox"
 import { CommandTimeoutError, SandboxError } from "./errors"
 
+export type RunCommandFn = (
+  cmd: string,
+  args: string[]
+) => ReturnType<Sandbox["runCommand"]>
+
 export type CommandResult = {
   stdout: string
   stderr: string
@@ -21,11 +26,13 @@ export const MAX_TIMEOUT = 120_000 // 2 minutes
  * Ensure just-bash is installed in the sandbox.
  * This is cached after first run due to sandbox reuse.
  */
-async function ensureJustBashInstalled(sandbox: Sandbox): Promise<void> {
-  const checkResult = await sandbox.runCommand({
-    cmd: "bash",
-    args: ["-c", "which just-bash || npm install -g just-bash"],
-  })
+async function ensureJustBashInstalled(
+  runCommand: RunCommandFn
+): Promise<void> {
+  const checkResult = await runCommand("bash", [
+    "-c",
+    "which just-bash || npm install -g just-bash",
+  ])
 
   let stderr = ""
   for await (const log of checkResult.logs()) {
@@ -45,7 +52,7 @@ async function ensureJustBashInstalled(sandbox: Sandbox): Promise<void> {
  * Commands run in read-only mode by default (writes blocked).
  */
 export async function executeCommand(
-  sandbox: Sandbox,
+  runCommand: RunCommandFn,
   workspacePath: string,
   command: string,
   timeoutMs = DEFAULT_TIMEOUT
@@ -53,19 +60,16 @@ export async function executeCommand(
   // Clamp timeout to allowed range
   const effectiveTimeout = Math.min(Math.max(timeoutMs, 1000), MAX_TIMEOUT)
 
-  await ensureJustBashInstalled(sandbox)
+  await ensureJustBashInstalled(runCommand)
 
   const startTime = Date.now()
 
   // Use just-bash with read-only mode (default)
   // The --root flag sets the working directory
-  const result = await sandbox.runCommand({
-    cmd: "bash",
-    args: [
-      "-c",
-      `cd "${workspacePath}" && timeout ${Math.ceil(effectiveTimeout / 1000)} just-bash --root . -c ${escapeShellArg(command)}`,
-    ],
-  })
+  const result = await runCommand("bash", [
+    "-c",
+    `cd "${workspacePath}" && timeout ${Math.ceil(effectiveTimeout / 1000)} just-bash --root . -c ${escapeShellArg(command)}`,
+  ])
 
   let stdout = ""
   let stderr = ""

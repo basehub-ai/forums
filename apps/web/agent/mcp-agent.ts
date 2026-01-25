@@ -3,7 +3,7 @@ import { autumn } from "@/lib/autumn"
 import { getUserAccessToken } from "@/lib/data/github"
 import { getTools } from "./tools"
 import type { AgentUIMessage } from "./types"
-import { getWorkspace } from "./workspace"
+import { startWorkspace } from "./workspace"
 
 const SYSTEM_PROMPT = (owner: string, repo: string) =>
   `You're assisting a user with questions about the GitHub repository \`${owner}/${repo}\`.
@@ -39,7 +39,7 @@ export async function mcpAgent({
 
   const userAccessToken = await getUserAccessToken(userId)
 
-  const workspace = await getWorkspace({
+  const workspace = await startWorkspace({
     sandboxId: null,
     gitContext: { owner, repo, ref },
     mode: "ask",
@@ -65,6 +65,6 @@ export async function mcpAgent({
 
   return {
     response: result.text || "I was unable to generate a response.",
-    gitRef: workspace.gitContextData.sha,
+    gitRef: workspace.sha,
   }
 }
