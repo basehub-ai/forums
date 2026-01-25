@@ -24,6 +24,7 @@ import {
   mentions,
   posts,
   reactions,
+  user,
 } from "@/lib/db/schema"
 import { parsePostUrl } from "@/lib/parse-post-url"
 import { resolvePostLinks } from "@/lib/post-links"
@@ -174,6 +175,15 @@ export async function createPost(data: {
   // Start fetching token early (non-blocking) - used for GitHub API rate limits
   const userAccessToken = await getUserAccessToken(session.user.id)
 
+  if (data.seekingAnswerFrom?.startsWith("llm_")) {
+    waitUntil(
+      db
+        .update(user)
+        .set({ lastLlmUserId: data.seekingAnswerFrom })
+        .where(eq(user.id, session.user.id))
+    )
+  }
+
   return createPostCore({
     ...data,
     userId: session.user.id,
@@ -193,6 +203,15 @@ export async function createComment(data: {
 }) {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
+
+  if (data.seekingAnswerFrom?.startsWith("llm_")) {
+    waitUntil(
+      db
+        .update(user)
+        .set({ lastLlmUserId: data.seekingAnswerFrom })
+        .where(eq(user.id, session.user.id))
+    )
+  }
 
   // Start fetching token early (non-blocking) - used for GitHub API rate limits
   const userAccessTokenPromise = getUserAccessToken(session.user.id)

@@ -142,15 +142,7 @@ export default async function Home() {
 
           <div className="mt-6">
             <h3 className="font-medium text-sm uppercase">
-              Also available as a{" "}
-              <a
-                className="underline decoration-dashed underline-offset-2 hover:decoration-solid"
-                href="https://skills.sh/basehub-ai/forums/remote-bash"
-                rel="noreferrer"
-                target="_blank"
-              >
-                skill
-              </a>
+              Also available as a skill
             </h3>
             <div className="mt-2 flex items-center gap-1.5">
               <AsteriskIcon className="shrink-0 text-faint" size={16} />

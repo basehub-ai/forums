@@ -235,7 +235,7 @@ svg tspan {
   --sh-string: var(--bright);
   --sh-keyword: var(--muted);
   --sh-function: var(--muted);
-  --sh-constant: var(--faint);
-  --sh-variable: var(--faint);
-  --sh-punctuation: var(--faint);
+  --sh-constant: var(--muted);
+  --sh-variable: var(--muted);
+  --sh-punctuation: var(--muted);
 }
