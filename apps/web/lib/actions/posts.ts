@@ -5,7 +5,6 @@ import { updateTag } from "next/cache"
 import { headers } from "next/headers"
 import slugify from "slugify"
 import { getRun, start } from "workflow/api"
-import { runCategoryAgent } from "@/agent/category-agent"
 import { responseAgent } from "@/agent/response-agent"
 import type { AgentMode, AgentUIMessage } from "@/agent/types"
 import {
@@ -35,12 +34,12 @@ import {
   deleteCommentFromIndex,
   deletePostFromIndex,
   indexComment,
-  indexPost,
   indexRepo,
   updatePostIndex,
 } from "@/lib/typesense-index"
 import { getSiteOrigin, nanoid } from "@/lib/utils"
 import { run } from "../run"
+import { createPostCore } from "./posts-internal"
 
 function categorySlugify(title: string) {
   return slugify(title, { lower: true, strict: true })
@@ -173,219 +172,17 @@ export async function createPost(data: {
   const session = await getSessionOrThrow()
   await checkMessageRateLimit(session.user.id)
 
-  const mode = data.mode ?? "ask"
-
   // Start fetching token early (non-blocking) - used for GitHub API rate limits
-  const userAccessTokenPromise = getUserAccessToken(session.user.id)
+  const userAccessToken = await getUserAccessToken(session.user.id)
 
-  if (mode === "build") {
-    const hasPermission = await canModerate(
-      session.user.id,
-      data.owner,
-      data.repo
-    )
-    if (!hasPermission) {
-      throw new Error("Build mode requires write access to this repository")
-    }
-    const token = await userAccessTokenPromise
-    if (!token) {
-      throw new Error("Could not retrieve GitHub access token for build mode")
-    }
-    if (!(session.user.email && session.user.name)) {
-      throw new Error(
-        "Build mode requires email and name from your GitHub profile"
-      )
-    }
-  }
-
-  const authorUsername = await getGitHubUsername(session.user.image)
-  const now = Date.now()
-  const postId = nanoid()
-  const commentId = nanoid()
-
-  const [llm, newPost] = await Promise.all([
-    run(
-      async () => {
-        if (data.seekingAnswerFrom === "human") {
-          return null
-        }
-        if (data.seekingAnswerFrom?.startsWith("llm_")) {
-          return await db
-            .select()
-            .from(llmUsers)
-            .where(eq(llmUsers.id, data.seekingAnswerFrom))
-            .limit(1)
-            .then((r) => r[0] ?? null)
-        }
-        return await db
-          .select()
-          .from(llmUsers)
-          .where(eq(llmUsers.isDefault, true))
-          .limit(1)
-          .then((r) => r[0] ?? null)
-      },
-      { noCatch: true }
-    ),
-    db
-      .insert(postCounters)
-      .values({ owner: data.owner, repo: data.repo, lastNumber: 1 })
-      .onConflictDoUpdate({
-        target: [postCounters.owner, postCounters.repo],
-        set: { lastNumber: sql`${postCounters.lastNumber} + 1` },
-      })
-      .returning({ lastNumber: postCounters.lastNumber })
-      .then(async (r) => {
-        return await db
-          .insert(posts)
-          .values({
-            id: postId,
-            number: r[0].lastNumber,
-            owner: data.owner,
-            repo: data.repo,
-            authorId: session.user.id,
-            rootCommentId: commentId,
-            categoryId: data.categoryId,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning()
-          .then((p) => p[0])
-      }),
-    db.insert(comments).values({
-      id: commentId,
-      postId,
-      authorId: session.user.id,
-      authorUsername,
-      content: [data.content],
-      seekingAnswerFrom: data.seekingAnswerFrom,
-      createdAt: now,
-      updatedAt: now,
-    }),
-  ])
-
-  let llmCommentId: string | undefined
-  let streamId: string | undefined
-
-  if (llm) {
-    const billingCategory = (llm.billing_category ||
-      "standard") as BillingCategory
-
-    const { data: checkResult, error } = await autumn.check({
-      customer_id: session.user.id,
-      feature_id: "standard_credits",
-      required_balance: CREDIT_COSTS[billingCategory],
-    })
-
-    if (error || !checkResult) {
-      throw new Error("Failed to check billing status. Please try again.")
-    }
-
-    if (!checkResult.allowed) {
-      throw new Error("Insufficient credits. Please upgrade your plan.")
-    }
-
-    const newCommentId = nanoid()
-    llmCommentId = nanoid()
-    streamId = String(now)
-
-    const { runId } = await start(responseAgent, [
-      {
-        commentId: newCommentId,
-        streamId,
-        postId,
-        owner: data.owner,
-        repo: data.repo,
-        model: llm.model,
-        userId: session.user.id,
-        billingCategory,
-        branch: data.branch,
-        mode,
-        userAccessToken: await userAccessTokenPromise,
-        userEmail: session.user.email,
-        userName: session.user.name,
-      },
-    ])
-
-    await db.insert(comments).values({
-      id: newCommentId,
-      postId,
-      authorId: llm.id,
-      authorUsername: llm.model,
-      content: [],
-      streamId,
-      streamStatus: "streaming",
-      runId,
-      createdAt: now + 1,
-      updatedAt: now + 1,
-    })
-  }
-
-  const contentText = data.content.parts
-    .filter((p): p is { type: "text"; text: string } => p.type === "text")
-    .map((p) => p.text)
-    .join("\n\n")
-
-  // Index post first so category agent can update it
-  await indexPost(newPost, 1)
-
-  if (contentText) {
-    await runCategoryAgent({
-      postId,
-      owner: data.owner,
-      repo: data.repo,
-      content: contentText,
-      existingCategoryId: data.categoryId,
-      mode,
-    })
-  }
-
-  waitUntil(
-    (async () => {
-      const [comment] = await db
-        .select()
-        .from(comments)
-        .where(eq(comments.id, commentId))
-        .limit(1)
-      if (comment) {
-        await indexComment(
-          comment,
-          data.owner,
-          data.repo,
-          newPost.number,
-          newPost.categoryId,
-          true
-        )
-      }
-    })()
-  )
-
-  waitUntil(
-    createMentions({
-      sourcePostId: postId,
-      sourceCommentId: commentId,
-      authorId: session.user.id,
-      authorUsername,
-      content: data.content,
-      owner: data.owner,
-      repo: data.repo,
-    })
-  )
-
-  waitUntil(indexRepo(data.owner, data.repo))
-
-  updateTag(`repo:${data.owner}:${data.repo}`)
-  updateTag(`post:${postId}`)
-  if (authorUsername) {
-    updateTag(`user:${authorUsername}`)
-  }
-
-  return {
-    postId,
-    postNumber: newPost.number,
-    commentId,
-    ...(llmCommentId && { llmCommentId }),
-    ...(streamId && { streamId }),
-  }
+  return createPostCore({
+    ...data,
+    userId: session.user.id,
+    userImage: session.user.image,
+    userEmail: session.user.email,
+    userName: session.user.name,
+    userAccessToken,
+  })
 }
 
 export async function createComment(data: {
