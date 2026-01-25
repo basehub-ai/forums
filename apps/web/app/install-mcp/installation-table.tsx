@@ -132,7 +132,7 @@ args = ["-y", "mcp-remote@latest", "${MCP_URL}"]`,
   },
 }
 
-async function ClientContent({ clientId }: { clientId: ClientId }) {
+function ClientContent({ clientId }: { clientId: ClientId }) {
   const config = configs[clientId]
 
   return (
