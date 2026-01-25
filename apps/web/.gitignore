@@ -51,3 +51,7 @@ xmcp-env.d.ts
 
 # next-term
 .next-term
+
+# mcp-publisher cli token
+.mcpregistry_registry_token
+.mcpregistry_github_token

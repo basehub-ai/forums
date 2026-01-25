@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.basehub-ai/forums",
+  "title": "Forums",
+  "description": "Ask any GitHub repository a question. Get source-backed answers.",
+  "repository": {
+    "url": "https://github.com/basehub-ai/forums",
+    "source": "github",
+    "subfolder": "apps/web"
+  },
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://forums.basehub.com/mcp"
+    }
+  ]
+}
