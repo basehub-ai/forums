@@ -29,10 +29,18 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-export function CodeBlock({ code, language }: { code: string; language: string }) {
+export function CodeBlock({
+  code,
+  language,
+  showCopy = true,
+}: {
+  code: string
+  language: string
+  showCopy?: boolean
+}) {
   return (
     <div className="relative">
-      <CopyButton text={code} />
+      {showCopy && <CopyButton text={code} />}
       <Streamdown
         components={{
           pre: (props) => (

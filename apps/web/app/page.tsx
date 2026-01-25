@@ -3,7 +3,7 @@ import { AsteriskIcon } from "lucide-react"
 import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { InstallationTable } from "@/app/install-mcp/installation-table"
-import { CodeBlock } from "@/components/code-block"
+import { CodeBlockSyntaxHighlighted } from "@/components/code-block-syntax-highlighted"
 import { Container } from "@/components/container"
 import { FlowDiagram, type FlowStep } from "@/components/flow-diagram"
 import { RepoListWithSearch } from "@/components/repo-list-with-search"
@@ -66,11 +66,14 @@ const flowSteps: FlowStep[] = [
 const cliExample = `# Search for exports in Next.js
 npx remote-bash vercel/next.js -- grep "export default"
 
+# Auto-detect from npm package name
+npx remote-bash next -- ls src/
+
 # Target a specific branch
-npx remote-bash vercel/next.js -ref main -- find . -name "*.ts"
+npx remote-bash next --ref canary -- find . -name "*.ts"
 
 # Target a specific version tag
-npx remote-bash vercel/next.js -v 13.0.0 -- ls -la src/`
+npx remote-bash next -v 15.0.0 -- ls -la packages/`
 
 export default async function Home() {
   "use cache"
@@ -129,11 +132,32 @@ export default async function Home() {
       <Container>
         <Section id="cli" title="CLI">
           <p className="mt-1 text-muted">
-            Use the `remote-bash` CLI (also available as a skill) to run bash
-            commands against any public GitHub repository without cloning it.
+            Use the <span className="select-none">`</span>remote-bash
+            <span className="select-none">`</span> CLI to run bash commands
+            against any public GitHub repository without cloning it.
           </p>
           <div className="mt-4">
-            <CodeBlock code={cliExample} language="bash" />
+            <CodeBlockSyntaxHighlighted code={cliExample} language="bash" />
+          </div>
+
+          <div className="mt-6">
+            <h3 className="font-medium text-sm uppercase">
+              Also available as a{" "}
+              <a
+                className="underline decoration-dashed underline-offset-2 hover:decoration-solid"
+                href="https://skills.sh/basehub-ai/forums"
+                rel="noreferrer"
+                target="_blank"
+              >
+                skill
+              </a>
+            </h3>
+            <div className="mt-2 flex items-center gap-1.5">
+              <AsteriskIcon className="shrink-0 text-faint" size={16} />
+              <code className="font-mono text-accent">
+                npx skills add basehub-ai/forums
+              </code>
+            </div>
           </div>
         </Section>
       </Container>

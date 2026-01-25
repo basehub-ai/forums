@@ -340,7 +340,7 @@ function RelatedPostsSection({
               href={`/${owner}/${repo}/${post.number}`}
               key={post.id}
             >
-              <span className="text-dim text-sm group-hover:text-bright group-hover:underline">
+              <span className="truncate text-dim text-sm group-hover:text-bright group-hover:underline">
                 {post.title || `Post #${post.number}`}
               </span>
               {post.highlight && (

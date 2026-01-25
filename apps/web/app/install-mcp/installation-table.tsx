@@ -1,13 +1,8 @@
-"use client"
-
-import { ChevronRightIcon } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
-import { Streamdown } from "streamdown"
 import { Button } from "@/components/button"
-import { CodeBlock } from "@/components/code-block"
-import { Collapsible } from "@/components/ui/collapsible"
-import { cn } from "@/lib/utils"
+import { CodeBlockSyntaxHighlighted } from "@/components/code-block-syntax-highlighted"
+import { Instructions } from "./client-instructions"
+import { CollapsibleItem } from "./collapsible-item"
 
 const MCP_URL = "https://forums.basehub.com/mcp"
 
@@ -137,82 +132,39 @@ args = ["-y", "mcp-remote@latest", "${MCP_URL}"]`,
   },
 }
 
-function ClientContent({ clientId }: { clientId: ClientId }) {
+async function ClientContent({ clientId }: { clientId: ClientId }) {
   const config = configs[clientId]
 
   return (
-    <div className="flex flex-col gap-4">
-      <Streamdown
-        components={{
-          p: (props) => <p className="text-muted leading-relaxed" {...props} />,
-          strong: (props) => (
-            <strong className="font-semibold text-dim" {...props} />
-          ),
-          code: (props) => (
-            <code
-              className="bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
-              {...props}
-            />
-          ),
-          ol: (props) => (
-            <ol className="list-decimal space-y-1 pl-6 text-muted" {...props} />
-          ),
-          li: (props) => <li {...props} />,
-        }}
-        mode="static"
-      >
-        {config.steps}
-      </Streamdown>
+    <div className="flex flex-col gap-2">
+      <Instructions>{config.steps}</Instructions>
 
-      {config.json && <CodeBlock code={config.json} language="json" />}
+      {config.json && (
+        <CodeBlockSyntaxHighlighted code={config.json} language="json" />
+      )}
 
       {clientId === "opencode" && (
-        <Streamdown
-          components={{
-            p: (props) => (
-              <p className="text-muted leading-relaxed" {...props} />
-            ),
-          }}
-          mode="static"
-        >
+        <Instructions>
           2. Save the file and restart OpenCode. Authenticate by running:
-        </Streamdown>
+        </Instructions>
       )}
 
       {clientId === "gemini-cli" && (
-        <Streamdown
-          components={{
-            p: (props) => (
-              <p className="text-muted leading-relaxed" {...props} />
-            ),
-          }}
-          mode="static"
-        >
+        <Instructions>
           2. Save the file and restart Gemini CLI. Authenticate by running:
-        </Streamdown>
+        </Instructions>
       )}
 
-      {config.command && <CodeBlock code={config.command} language="bash" />}
+      {config.command && (
+        <CodeBlockSyntaxHighlighted code={config.command} language="bash" />
+      )}
 
       {clientId === "codex" && (
         <>
-          <Streamdown
-            components={{
-              p: (props) => (
-                <p className="text-muted leading-relaxed" {...props} />
-              ),
-              code: (props) => (
-                <code
-                  className="bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
-                  {...props}
-                />
-              ),
-            }}
-            mode="static"
-          >
-            Or edit `~/.codex/config.toml` and add:
-          </Streamdown>
-          {config.toml && <CodeBlock code={config.toml} language="toml" />}
+          <Instructions>Or edit `~/.codex/config.toml` and add:</Instructions>
+          {config.toml && (
+            <CodeBlockSyntaxHighlighted code={config.toml} language="toml" />
+          )}
         </>
       )}
     </div>
@@ -220,59 +172,30 @@ function ClientContent({ clientId }: { clientId: ClientId }) {
 }
 
 export function InstallationTable() {
-  const [openClients, setOpenClients] = useState<Set<ClientId>>(new Set())
-
   return (
     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
       {clients.map((client) => (
-        <Collapsible.Root
-          className="w-full"
-          key={client.id}
-          onOpenChange={(open) => {
-            setOpenClients((prev) => {
-              const next = new Set(prev)
-              if (open) {
-                next.add(client.id)
-              } else {
-                next.delete(client.id)
-              }
-              return next
-            })
-          }}
-          open={openClients.has(client.id)}
-        >
-          <Collapsible.Trigger className="group flex w-full cursor-pointer items-center gap-1 text-dim hover:text-bright">
-            <ChevronRightIcon
-              absoluteStrokeWidth
-              className={cn(
-                "h-4 w-4 shrink-0 text-faint",
-                openClients.has(client.id) && "rotate-90"
-              )}
-            />
-            <span>{client.label}</span>
-          </Collapsible.Trigger>
-          <Collapsible.Panel className="mt-4 ml-5">
-            {client.id === "cursor" && (
-              <Link
-                className="mb-4 block"
-                href="https://cursor.com/en-US/install-mcp?name=forums&config=eyJ1cmwiOiJodHRwczovL2ZvcnVtcy5iYXNlaHViLmNvbS9tY3AifQ%3D%3D"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <Button>Add to Cursor</Button>
-              </Link>
-            )}
-            {client.id === "vscode" && (
-              <Link
-                className="mb-4 block"
-                href="https://vscode.dev/redirect/mcp/install?name=Forums&config=%7B%22type%22%3A%22http%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fforums.basehub.com%2Fmcp%22%7D"
-              >
-                <Button>Add to VS Code</Button>
-              </Link>
-            )}
-            <ClientContent clientId={client.id} />
-          </Collapsible.Panel>
-        </Collapsible.Root>
+        <CollapsibleItem key={client.id} label={client.label}>
+          {client.id === "cursor" && (
+            <Link
+              className="mb-2 block"
+              href="https://cursor.com/en-US/install-mcp?name=forums&config=eyJ1cmwiOiJodHRwczovL2ZvcnVtcy5iYXNlaHViLmNvbS9tY3AifQ%3D%3D"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <Button>Add to Cursor</Button>
+            </Link>
+          )}
+          {client.id === "vscode" && (
+            <Link
+              className="mb-2 block"
+              href="https://vscode.dev/redirect/mcp/install?name=Forums&config=%7B%22type%22%3A%22http%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fforums.basehub.com%2Fmcp%22%7D"
+            >
+              <Button>Add to VS Code</Button>
+            </Link>
+          )}
+          <ClientContent clientId={client.id} />
+        </CollapsibleItem>
       ))}
     </div>
   )
