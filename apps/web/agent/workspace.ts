@@ -2,6 +2,7 @@ import { Sandbox } from "@vercel/sandbox"
 import ms from "ms"
 import { ResultAsync } from "neverthrow"
 import type { AgentMode, GitContextData } from "@/agent/types"
+import { githubFetch } from "@/lib/github-fetch"
 import {
   extendPostSandboxTTL,
   extendSandboxTTL,
@@ -14,6 +15,7 @@ import {
   storePostSandbox,
   storeSandbox,
 } from "@/lib/redis"
+
 export type GitContext = {
   owner: string
   repo: string
@@ -32,6 +34,45 @@ export type Workspace = {
 }
 
 const cleanupRegex = /^\.\./
+const SHA_REGEX = /^[0-9a-f]{40}$/i
+
+/**
+ * Resolve a git ref to its SHA before entering the sandbox.
+ * This enables shallow cloning to a specific commit.
+ */
+async function resolveRefToSha({
+  owner,
+  repo,
+  ref,
+  userAccessToken,
+}: {
+  owner: string
+  repo: string
+  ref?: string
+  userAccessToken?: string | null
+}): Promise<string> {
+  // Already a full SHA
+  if (ref && SHA_REGEX.test(ref)) {
+    return ref
+  }
+
+  const url = `https://api.github.com/repos/${owner}/${repo}/commits/${ref || "HEAD"}`
+  const response = await githubFetch(
+    url,
+    userAccessToken
+      ? { headers: { Authorization: `Bearer ${userAccessToken}` } }
+      : undefined
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to resolve ref '${ref || "HEAD"}' for ${owner}/${repo}: ${response.status}`
+    )
+  }
+
+  const data = (await response.json()) as { sha: string }
+  return data.sha
+}
 
 const sleep = (duration: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, duration))
@@ -210,6 +251,7 @@ export const getWorkspace = async ({
   postId,
   userEmail,
   userName,
+  userAccessToken,
 }: {
   sandboxId: string | null
   gitContext: GitContext
@@ -217,6 +259,7 @@ export const getWorkspace = async ({
   postId?: string
   userEmail?: string | null
   userName?: string | null
+  userAccessToken?: string | null
 }): Promise<Workspace> => {
   let sandbox: Sandbox | null = null
 
@@ -256,174 +299,20 @@ export const getWorkspace = async ({
     })
   }
 
-  return initializeAskWorkspace({ sandbox, gitContext, repoUrl, providedRef })
-}
-
-async function initializeAskWorkspace({
-  sandbox,
-  gitContext,
-  repoUrl,
-  providedRef,
-}: {
-  sandbox: Sandbox
-  gitContext: GitContext
-  repoUrl: string
-  providedRef?: string
-}): Promise<Workspace> {
-  const repoDir = `${gitContext.repo}.git`
-  const worktreesBase = `${gitContext.repo}-worktrees`
-
-  const result = await sandbox.runCommand({
-    cmd: "bash",
-    args: [
-      "-c",
-      `
-        set -e
-        REPO_DIR="$1"
-        REPO_URL="$2"
-        WORKTREES_BASE="$3"
-        PROVIDED_REF="$4"
-
-        export PATH="$HOME/.local/bin:$PATH"
-
-        # Install ripgrep in background if not present
-        INSTALL_PID=""
-        if ! which rg >/dev/null 2>&1; then
-          (
-            mkdir -p ~/.local/bin
-            cd /tmp
-            curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-            tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
-            cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
-            rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
-          ) &
-          INSTALL_PID=$!
-        fi
-
-        # Clone as bare repo if needed
-        if [ ! -d "$REPO_DIR" ]; then
-          git clone --bare "$REPO_URL" "$REPO_DIR"
-        fi
-
-        cd "$REPO_DIR"
-        git fetch origin --quiet
-
-        # Wait for tool installation to complete if it was started
-        if [ -n "$INSTALL_PID" ]; then
-          wait $INSTALL_PID || true
-        fi
-
-        # Determine ref: use provided or detect default branch
-        if [ -n "$PROVIDED_REF" ]; then
-          REF="$PROVIDED_REF"
-        else
-          # Get the default branch from the remote
-          REF=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
-          if [ -z "$REF" ]; then
-            echo "Error: Could not detect default branch from remote" >&2
-            exit 1
-          fi
-        fi
-
-        # Create worktree path - use short SHA (7 chars) for full SHAs, URL-encode otherwise
-        if [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
-          WORKTREE_NAME=$(echo "$REF" | cut -c1-7)
-        else
-          WORKTREE_NAME=$(node -p 'encodeURIComponent(process.argv[1])' "$REF")
-        fi
-        WORKTREE_PATH="../$WORKTREES_BASE/$WORKTREE_NAME"
-        ABS_WORKTREE_PATH=$(cd .. && pwd)/"$WORKTREES_BASE/$WORKTREE_NAME"
-
-        # Clean up stale worktree entry if directory doesn't exist
-        if git worktree list | grep -qF "$ABS_WORKTREE_PATH" && [ ! -d "$WORKTREE_PATH" ]; then
-          git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || git worktree prune
-        fi
-
-        # Create or update worktree
-        if [ ! -d "$WORKTREE_PATH" ]; then
-          git worktree add "$WORKTREE_PATH" "$REF" >/dev/null 2>&1 || {
-            echo "Error: Failed to create worktree for ref $REF" >&2
-            exit 1
-          }
-        else
-          (
-            cd "$WORKTREE_PATH"
-            git fetch origin >/dev/null 2>&1
-            git reset --hard "origin/$REF" >/dev/null 2>&1 || git reset --hard "$REF" >/dev/null 2>&1
-          )
-        fi
-
-        # Verify worktree was created
-        if [ ! -d "$WORKTREE_PATH" ]; then
-          echo "Error: Worktree directory does not exist after creation: $WORKTREE_PATH" >&2
-          exit 1
-        fi
-
-        # Output worktree path on first line (absolute path)
-        echo "$ABS_WORKTREE_PATH"
-
-        # Gather git context and output as JSON on second line
-        cd "$WORKTREE_PATH"
-        SHA=$(git rev-parse HEAD)
-        BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-        TAGS=$(git tag --points-at HEAD 2>/dev/null | tr '\n' ',' | sed 's/,$//')
-        MESSAGE=$(git log -1 --format="%s")
-        DATE=$(git log -1 --format="%ci")
-
-        node -p "JSON.stringify({
-          sha: process.argv[1],
-          branch: process.argv[2],
-          tags: process.argv[3] ? process.argv[3].split(',') : [],
-          message: process.argv[4],
-          date: process.argv[5]
-        })" "$SHA" "$BRANCH" "$TAGS" "$MESSAGE" "$DATE"
-      `,
-      "--",
-      repoDir,
-      repoUrl,
-      worktreesBase,
-      providedRef || "",
-    ],
+  // Resolve ref to SHA, then shallow clone (depth=1)
+  const sha = await resolveRefToSha({
+    owner: gitContext.owner,
+    repo: gitContext.repo,
+    ref: providedRef,
+    userAccessToken,
   })
 
-  let stdout = ""
-  let stderr = ""
-  for await (const log of result.logs()) {
-    if (log.stream === "stdout") {
-      stdout += log.data
-    } else {
-      stderr += log.data
-    }
-  }
-
-  if (stderr) {
-    console.warn(`Workspace initialization warning: ${stderr}`)
-  }
-
-  const lines = stdout.trim().split("\n")
-  const worktreePath = lines[0]?.replace(cleanupRegex, "")
-  const gitContextJson = lines[1]?.trim()
-
-  if (!(worktreePath && gitContextJson)) {
-    console.error(
-      `Invalid workspace output! stdout: "${stdout}", stderr: "${stderr}"`
-    )
-    throw new Error(
-      `Failed to initialize git worktree. stderr: ${stderr || "none"}`
-    )
-  }
-
-  let gitContextData: GitContextData
-  try {
-    gitContextData = JSON.parse(gitContextJson) as GitContextData
-  } catch (error) {
-    console.error(
-      `Failed to parse git context JSON: ${error instanceof Error ? error.message : String(error)}, json: "${gitContextJson}"`
-    )
-    throw new Error("Failed to parse git context data")
-  }
-
-  return { path: worktreePath, sandbox, gitContextData }
+  return initializeShallowWorkspace({
+    sandbox,
+    gitContext,
+    repoUrl,
+    sha,
+  })
 }
 
 async function initializeBuildWorkspace({
@@ -587,4 +476,134 @@ async function initializeBuildWorkspace({
   }
 
   return { path: repoPath, sandbox, gitContextData }
+}
+
+async function initializeShallowWorkspace({
+  sandbox,
+  gitContext,
+  repoUrl,
+  sha,
+}: {
+  sandbox: Sandbox
+  gitContext: GitContext
+  repoUrl: string
+  sha: string
+}): Promise<Workspace> {
+  // Use short SHA (7 chars) for directory name
+  const shortSha = sha.slice(0, 7)
+  const shallowBase = `${gitContext.repo}-shallow`
+  const cloneDir = `${shallowBase}/${shortSha}`
+
+  const result = await sandbox.runCommand({
+    cmd: "bash",
+    args: [
+      "-c",
+      `
+        set -e
+        CLONE_DIR="$1"
+        REPO_URL="$2"
+        SHA="$3"
+
+        export PATH="$HOME/.local/bin:$PATH"
+
+        # Install ripgrep in background if not present
+        INSTALL_PID=""
+        if ! which rg >/dev/null 2>&1; then
+          (
+            mkdir -p ~/.local/bin
+            cd /tmp
+            curl -sLO https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+            tar xzf ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz &&
+            cp -f ripgrep-15.1.0-x86_64-unknown-linux-musl/rg ~/.local/bin/ &&
+            rm -rf ripgrep-15.1.0-x86_64-unknown-linux-musl*
+          ) &
+          INSTALL_PID=$!
+        fi
+
+        # Shallow clone to specific SHA if directory doesn't exist
+        if [ ! -d "$CLONE_DIR" ]; then
+          mkdir -p "$CLONE_DIR"
+          cd "$CLONE_DIR"
+          git init --quiet
+          git remote add origin "$REPO_URL"
+          git fetch --depth 1 origin "$SHA" --quiet
+          git checkout FETCH_HEAD --quiet
+        else
+          cd "$CLONE_DIR"
+          # Verify we have the correct SHA
+          CURRENT_SHA=$(git rev-parse HEAD)
+          if [ "$CURRENT_SHA" != "$SHA" ]; then
+            git fetch --depth 1 origin "$SHA" --quiet
+            git checkout FETCH_HEAD --quiet
+          fi
+        fi
+
+        # Wait for tool installation to complete if it was started
+        if [ -n "$INSTALL_PID" ]; then
+          wait $INSTALL_PID || true
+        fi
+
+        # Output absolute path on first line
+        ABS_PATH=$(pwd)
+        echo "$ABS_PATH"
+
+        # Gather git context and output as JSON on second line
+        BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        TAGS=$(git tag --points-at HEAD 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+        MESSAGE=$(git log -1 --format="%s" 2>/dev/null || echo "")
+        DATE=$(git log -1 --format="%ci" 2>/dev/null || echo "")
+
+        node -p "JSON.stringify({
+          sha: process.argv[1],
+          branch: process.argv[2],
+          tags: process.argv[3] ? process.argv[3].split(',') : [],
+          message: process.argv[4],
+          date: process.argv[5]
+        })" "$SHA" "$BRANCH" "$TAGS" "$MESSAGE" "$DATE"
+      `,
+      "--",
+      cloneDir,
+      repoUrl,
+      sha,
+    ],
+  })
+
+  let stdout = ""
+  let stderr = ""
+  for await (const log of result.logs()) {
+    if (log.stream === "stdout") {
+      stdout += log.data
+    } else {
+      stderr += log.data
+    }
+  }
+
+  if (stderr) {
+    console.warn(`Shallow workspace initialization warning: ${stderr}`)
+  }
+
+  const lines = stdout.trim().split("\n")
+  const clonePath = lines[0]?.replace(cleanupRegex, "")
+  const gitContextJson = lines[1]?.trim()
+
+  if (!(clonePath && gitContextJson)) {
+    console.error(
+      `Invalid shallow workspace output! stdout: "${stdout}", stderr: "${stderr}"`
+    )
+    throw new Error(
+      `Failed to initialize shallow clone. stderr: ${stderr || "none"}`
+    )
+  }
+
+  let gitContextData: GitContextData
+  try {
+    gitContextData = JSON.parse(gitContextJson) as GitContextData
+  } catch (error) {
+    console.error(
+      `Failed to parse git context JSON in shallow workspace: ${error instanceof Error ? error.message : String(error)}, json: "${gitContextJson}"`
+    )
+    throw new Error("Failed to parse git context data in shallow workspace")
+  }
+
+  return { path: clonePath, sandbox, gitContextData }
 }

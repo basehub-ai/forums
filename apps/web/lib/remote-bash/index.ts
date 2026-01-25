@@ -28,7 +28,7 @@ export type RemoteBashResponse = {
  * Resolve repo input with optional version to a GitContext.
  * Handles npm packages with version → tag resolution.
  */
-async function resolveToGitContext({
+export async function resolveToGitContext({
   repo,
   ref,
   version,
@@ -48,11 +48,11 @@ async function resolveToGitContext({
 
     // If version provided for GitHub repo, resolve to tag
     if (version && !ref) {
-      const resolved = await resolveVersionToTag(
-        githubParsed.owner,
-        githubParsed.repo,
-        version
-      )
+      const resolved = await resolveVersionToTag({
+        owner: githubParsed.owner,
+        repo: githubParsed.repo,
+        version,
+      })
       effectiveRef = resolved.tag
     }
 
@@ -68,7 +68,7 @@ async function resolveToGitContext({
 
   // Must be an npm package name
   try {
-    const npmResolved = await resolveNpmPackage(repo, version)
+    const npmResolved = await resolveNpmPackage({ packageName: repo, version })
     const repoUrl = parseGitHubInput(npmResolved.repoUrl)
 
     if (!repoUrl) {
@@ -88,12 +88,12 @@ async function resolveToGitContext({
       } else {
         // No gitHead, try to resolve tag pattern
         try {
-          const tagResolved = await resolveVersionToTag(
-            repoUrl.owner,
-            repoUrl.repo,
-            npmResolved.version,
-            repo
-          )
+          const tagResolved = await resolveVersionToTag({
+            owner: repoUrl.owner,
+            repo: repoUrl.repo,
+            version: npmResolved.version,
+            packageName: repo,
+          })
           effectiveRef = tagResolved.tag
         } catch {
           console.warn(
@@ -150,7 +150,7 @@ export async function remoteBash(
   const workspace = await getWorkspace({
     sandboxId: null,
     gitContext,
-    mode: "ask", // Read-only mode
+    mode: "ask",
   })
 
   // Execute command

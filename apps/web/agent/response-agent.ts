@@ -62,6 +62,7 @@ export async function responseAgent({
       mode,
       userEmail,
       userName,
+      userAccessToken,
     })
 
     let finishReason: FinishReason | undefined
@@ -173,6 +174,7 @@ async function setupStep({
   mode = "ask",
   userEmail,
   userName,
+  userAccessToken,
 }: {
   postId: string
   commentId: string
@@ -182,6 +184,7 @@ async function setupStep({
   mode?: AgentMode
   userEmail?: string | null
   userName?: string | null
+  userAccessToken?: string | null
 }): Promise<{
   initialMessages: AgentUIMessage[]
   sandboxId: string
@@ -228,6 +231,7 @@ async function setupStep({
     postId,
     userEmail,
     userName,
+    userAccessToken,
   })
 
   if (!existingGitContext) {
@@ -334,6 +338,7 @@ async function streamTextStep({
     postId,
     userEmail,
     userName,
+    userAccessToken,
   })
   const allMessages = [...initialMessages, ...newMessages] as AgentUIMessage[]
 

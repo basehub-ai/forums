@@ -79,7 +79,13 @@ export function getLatestVersion(
 /**
  * Resolve an npm package to its repository information
  */
-export async function resolveNpmPackage(packageName: string, version?: string) {
+export async function resolveNpmPackage({
+  packageName,
+  version,
+}: {
+  packageName: string
+  version?: string
+}) {
   // biome-ignore lint/suspicious/noExplicitAny: npm package info
   const info = (await fetchNpmPackageInfo(packageName)) as any
 

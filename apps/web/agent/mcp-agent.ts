@@ -1,5 +1,6 @@
 import { convertToModelMessages, generateText, stepCountIs } from "ai"
 import { autumn } from "@/lib/autumn"
+import { getUserAccessToken } from "@/lib/data/github"
 import { getTools } from "./tools"
 import type { AgentUIMessage } from "./types"
 import { getWorkspace } from "./workspace"
@@ -36,10 +37,13 @@ export async function mcpAgent({
 }): Promise<{ response: string; gitRef: string }> {
   console.log("mcpAgent", { owner, repo, ref, messages, userId })
 
+  const userAccessToken = await getUserAccessToken(userId)
+
   const workspace = await getWorkspace({
     sandboxId: null,
     gitContext: { owner, repo, ref },
     mode: "ask",
+    userAccessToken,
   })
 
   const result = await generateText({

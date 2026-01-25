@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm"
 import { cacheLife } from "next/cache"
-import { githubFetch } from "@/lib/data/github"
+import { githubFetch } from "@/lib/github-fetch"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 

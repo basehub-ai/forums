@@ -1,4 +1,4 @@
-import { githubFetch } from "@/lib/data/github"
+import { githubFetch } from "@/lib/github-fetch"
 import { TagNotFoundError } from "./errors"
 
 type GitHubTag = {
@@ -68,12 +68,17 @@ async function fetchGitHubTags(
  * Resolve a version string to a git tag.
  * Tries multiple tag patterns and returns the first match.
  */
-export async function resolveVersionToTag(
-  owner: string,
-  repo: string,
-  version: string,
+export async function resolveVersionToTag({
+  owner,
+  repo,
+  version,
+  packageName,
+}: {
+  owner: string
+  repo: string
+  version: string
   packageName?: string
-): Promise<{ tag: string; sha: string }> {
+}): Promise<{ tag: string; sha: string }> {
   const tags = await fetchGitHubTags(owner, repo)
   const tagMap = new Map(tags.map((t) => [t.name, t.commit.sha]))
 
@@ -92,11 +97,15 @@ export async function resolveVersionToTag(
 /**
  * Check if a specific tag exists in the repository.
  */
-export async function tagExists(
-  owner: string,
-  repo: string,
+export async function tagExists({
+  owner,
+  repo,
+  tag,
+}: {
+  owner: string
+  repo: string
   tag: string
-): Promise<boolean> {
+}): Promise<boolean> {
   const res = await githubFetch(
     `https://api.github.com/repos/${owner}/${repo}/git/refs/tags/${encodeURIComponent(tag)}`
   )
