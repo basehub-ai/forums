@@ -1,7 +1,7 @@
 "use client"
 
 import { useCustomer } from "autumn-js/react"
-import { ChevronDownIcon } from "lucide-react"
+import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 import {
   Suspense,
@@ -66,6 +66,8 @@ export type ComposerProps = {
   owner?: string
   repo?: string
   canModerate?: boolean
+  hasRepoScope?: boolean
+  onRequestRepoScope?: () => void
   isStreaming?: boolean
 }
 
@@ -84,6 +86,8 @@ export const Composer = ({
   owner,
   repo,
   canModerate,
+  hasRepoScope,
+  onRequestRepoScope,
   isStreaming,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -222,6 +226,11 @@ export const Composer = ({
         onKeyDown={(e) => {
           if (e.key === "Tab" && e.shiftKey && canModerate) {
             e.preventDefault()
+            // If switching to build mode and no repo scope, request it
+            if (mode === "ask" && !hasRepoScope && onRequestRepoScope) {
+              onRequestRepoScope()
+              return
+            }
             toggleMode()
             return
           }
@@ -368,17 +377,29 @@ export const Composer = ({
                       : "Switch to ask mode"
                   }
                   className={cn(
-                    "flex items-center justify-center text-faint text-sm transition-colors hover:text-accent"
+                    "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
                   )}
-                  onClick={toggleMode}
+                  onClick={() => {
+                    // If switching to build mode and no repo scope, request it
+                    if (mode === "ask" && !hasRepoScope && onRequestRepoScope) {
+                      onRequestRepoScope()
+                      return
+                    }
+                    toggleMode()
+                  }}
                   title={
                     mode === "ask"
-                      ? "Ask mode (Shift+Tab to switch)"
+                      ? hasRepoScope
+                        ? "Ask mode (Shift+Tab to switch)"
+                        : "Build mode requires additional GitHub permissions"
                       : "Build mode (Shift+Tab to switch)"
                   }
                   type="button"
                 >
                   {mode}
+                  {mode === "ask" && !hasRepoScope && (
+                    <AlertTriangleIcon className="size-3.5 text-yellow-500" />
+                  )}
                 </button>
               )}
               <Button

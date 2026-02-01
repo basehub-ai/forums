@@ -67,8 +67,9 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       overrideUserInfoOnSignIn: true,
-      // repo scope needed for build mode (push, PRs)
-      scope: ["read:user", "user:email", "repo"],
+      // Only request minimal scopes by default
+      // repo scope is requested incrementally when user enables build mode
+      scope: ["read:user", "user:email"],
     },
   },
   databaseHooks: {

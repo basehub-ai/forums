@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
+import { useEffect, useState, useTransition } from "react"
 import { Composer } from "@/components/composer"
 import { UserAvatar } from "@/components/user-avatar"
 import { checkCanModerate, createComment } from "@/lib/actions/posts"
+import { checkHasRepoScope } from "@/lib/actions/scopes"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 import { useHasStreamingComment } from "./streaming-state-context"
@@ -34,11 +36,19 @@ export function PostComposer({
   repo?: string
 }) {
   const hasStreamingComment = useHasStreamingComment()
+  const pathname = usePathname()
   const [canModerate, setCanModerate] = useState(false)
+  const [hasRepoScope, setHasRepoScope] = useState(false)
+  const [, startTransition] = useTransition()
 
   useEffect(() => {
     if (owner && repo) {
-      checkCanModerate(owner, repo).then(setCanModerate)
+      Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()]).then(
+        ([moderateResult, scopeResult]) => {
+          setCanModerate(moderateResult)
+          setHasRepoScope(scopeResult)
+        }
+      )
     }
   }, [owner, repo])
   const { data, isPending: isAuthLoading } = authClient.useSession()
@@ -72,7 +82,17 @@ export function PostComposer({
       <Composer
         canModerate={canModerate}
         defaultAskingId={defaultLlmId}
+        hasRepoScope={hasRepoScope}
         isStreaming={hasStreamingComment}
+        onRequestRepoScope={() => {
+          startTransition(async () => {
+            await authClient.linkSocial({
+              provider: "github",
+              scopes: ["repo"],
+              callbackURL: pathname,
+            })
+          })
+        }}
         onSubmit={async ({ value, options, mode }) => {
           await createComment({
             postId,

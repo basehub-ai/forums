@@ -2,10 +2,12 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { checkCanModerate } from "@/lib/actions/moderation"
+import { checkHasRepoScope } from "@/lib/actions/scopes"
 import { authClient } from "@/lib/auth-client"
 
 type RepoPermissions = {
   canModerate: boolean
+  hasRepoScope: boolean
   isLoading: boolean
 }
 
@@ -22,29 +24,35 @@ export function RepoPermissionsProvider({
 }) {
   const session = authClient.useSession()
   const [canModerate, setCanModerate] = useState(false)
+  const [hasRepoScope, setHasRepoScope] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     if (!session.data?.user) {
       setCanModerate(false)
+      setHasRepoScope(false)
       setIsLoading(false)
       return
     }
     setIsLoading(true)
-    checkCanModerate(owner, repo)
-      .then((result) => {
-        setCanModerate(result)
+    Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()])
+      .then(([moderateResult, scopeResult]) => {
+        setCanModerate(moderateResult)
+        setHasRepoScope(scopeResult)
         setIsLoading(false)
       })
       .catch((error) => {
-        console.error("Failed to check moderation permissions:", error)
+        console.error("Failed to check permissions:", error)
         setCanModerate(false)
+        setHasRepoScope(false)
         setIsLoading(false)
       })
   }, [owner, repo, session.data?.user])
 
   return (
-    <RepoPermissionsContext.Provider value={{ canModerate, isLoading }}>
+    <RepoPermissionsContext.Provider
+      value={{ canModerate, hasRepoScope, isLoading }}
+    >
       {children}
     </RepoPermissionsContext.Provider>
   )
