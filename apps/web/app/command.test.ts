@@ -80,37 +80,33 @@ describe("parseArgs", () => {
     })
   })
 
-  it("throws when missing -- separator", () => {
-    expect(() =>
-      parseArgs({ argv: ["vercel/next.js", "grep", "foo"] })
-    ).toThrow("Missing -- separator before command")
+  it("returns null when missing -- separator", () => {
+    const result = parseArgs({ argv: ["vercel/next.js", "grep", "foo"] })
+    expect(result).toBeNull()
   })
 
-  it("throws when missing command after --", () => {
-    expect(() => parseArgs({ argv: ["vercel/next.js", "--"] })).toThrow(
-      "Missing command after --"
-    )
+  it("returns null when missing command after --", () => {
+    const result = parseArgs({ argv: ["vercel/next.js", "--"] })
+    expect(result).toBeNull()
   })
 
-  it("throws when missing repo", () => {
-    expect(() => parseArgs({ argv: ["--", "ls"] })).toThrow("Missing repo")
+  it("returns null when missing repo", () => {
+    const result = parseArgs({ argv: ["--", "ls"] })
+    expect(result).toBeNull()
   })
 
-  it("throws when -ref has no value", () => {
-    expect(() => parseArgs({ argv: ["repo", "-ref", "--", "ls"] })).toThrow(
-      "Missing value for -ref"
-    )
+  it("returns null when -ref has no value", () => {
+    const result = parseArgs({ argv: ["repo", "-ref", "--", "ls"] })
+    expect(result).toBeNull()
   })
 
-  it("throws when -v has no value", () => {
-    expect(() => parseArgs({ argv: ["repo", "-v", "--", "ls"] })).toThrow(
-      "Missing value for -v"
-    )
+  it("returns null when -v has no value", () => {
+    const result = parseArgs({ argv: ["repo", "-v", "--", "ls"] })
+    expect(result).toBeNull()
   })
 
-  it("throws on unknown flag", () => {
-    expect(() =>
-      parseArgs({ argv: ["repo", "-unknown", "val", "--", "ls"] })
-    ).toThrow("Unknown flag: -unknown")
+  it("returns null on unknown flag", () => {
+    const result = parseArgs({ argv: ["repo", "-unknown", "val", "--", "ls"] })
+    expect(result).toBeNull()
   })
 })
