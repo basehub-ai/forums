@@ -1,10 +1,13 @@
 "use client"
 
 import type { InferSelectModel } from "drizzle-orm"
+import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { Composer, type ComposerProps } from "@/components/composer"
 import { checkCanModerate, createPost } from "@/lib/actions/posts"
+import { checkHasRepoScope } from "@/lib/actions/scopes"
+import { authClient } from "@/lib/auth-client"
 import type { categories } from "@/lib/db/schema"
 import { RepoPostsSection } from "./repo-posts-section"
 
@@ -49,13 +52,29 @@ export function RepoContent({
   defaultBranch,
 }: RepoContentProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const { data: session } = authClient.useSession()
+  const userId = session?.user?.id
   const [searchQuery, setSearchQuery] = useState("")
   const [defaultLlmId, setDefaultLlmId] = useState<string | undefined>()
   const [canModerate, setCanModerate] = useState(false)
+  const [hasRepoScope, setHasRepoScope] = useState(false)
+  const [, startTransition] = useTransition()
 
+  // Re-fetch permissions when user changes (e.g., after OAuth redirect)
   useEffect(() => {
-    checkCanModerate(owner, repo).then(setCanModerate)
-  }, [owner, repo])
+    if (!userId) {
+      setCanModerate(false)
+      setHasRepoScope(false)
+      return
+    }
+    Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()]).then(
+      ([moderateResult, scopeResult]) => {
+        setCanModerate(moderateResult)
+        setHasRepoScope(scopeResult)
+      }
+    )
+  }, [owner, repo, userId])
 
   useEffect(() => {
     const saved = localStorage.getItem(PREFERRED_LLM_KEY)
@@ -72,10 +91,20 @@ export function RepoContent({
           canModerate={canModerate}
           defaultAskingId={defaultLlmId}
           defaultBranch={defaultBranch}
+          hasRepoScope={hasRepoScope}
           onAskingChange={(asking) => {
             localStorage.setItem(PREFERRED_LLM_KEY, asking.id)
           }}
           onChange={setSearchQuery}
+          onRequestRepoScope={() => {
+            startTransition(async () => {
+              await authClient.linkSocial({
+                provider: "github",
+                scopes: ["repo"],
+                callbackURL: pathname,
+              })
+            })
+          }}
           onSubmit={async ({ value, options, branch, mode }) => {
             const result = await createPost({
               owner,

@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
+import { useEffect, useState, useTransition } from "react"
+import type { AgentMode } from "@/agent/types"
 import { Composer } from "@/components/composer"
 import { UserAvatar } from "@/components/user-avatar"
 import { checkCanModerate, createComment } from "@/lib/actions/posts"
+import { checkHasRepoScope } from "@/lib/actions/scopes"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 import { useHasStreamingComment } from "./streaming-state-context"
@@ -20,6 +23,7 @@ export function PostComposer({
   askingOptions,
   threadCommentId,
   defaultLlmId,
+  defaultMode,
   owner,
   repo,
 }: {
@@ -30,18 +34,32 @@ export function PostComposer({
   onCancel?: () => void
   storageKey?: string
   defaultLlmId?: string
+  defaultMode?: AgentMode
   owner?: string
   repo?: string
 }) {
   const hasStreamingComment = useHasStreamingComment()
-  const [canModerate, setCanModerate] = useState(false)
-
-  useEffect(() => {
-    if (owner && repo) {
-      checkCanModerate(owner, repo).then(setCanModerate)
-    }
-  }, [owner, repo])
+  const pathname = usePathname()
   const { data, isPending: isAuthLoading } = authClient.useSession()
+  const userId = data?.user?.id
+  const [canModerate, setCanModerate] = useState(false)
+  const [hasRepoScope, setHasRepoScope] = useState(false)
+  const [, startTransition] = useTransition()
+
+  // Re-fetch permissions when user changes (e.g., after OAuth redirect)
+  useEffect(() => {
+    if (!userId || !owner || !repo) {
+      setCanModerate(false)
+      setHasRepoScope(false)
+      return
+    }
+    Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()]).then(
+      ([moderateResult, scopeResult]) => {
+        setCanModerate(moderateResult)
+        setHasRepoScope(scopeResult)
+      }
+    )
+  }, [owner, repo, userId])
 
   return (
     <div>
@@ -72,7 +90,18 @@ export function PostComposer({
       <Composer
         canModerate={canModerate}
         defaultAskingId={defaultLlmId}
+        defaultMode={defaultMode}
+        hasRepoScope={hasRepoScope}
         isStreaming={hasStreamingComment}
+        onRequestRepoScope={() => {
+          startTransition(async () => {
+            await authClient.linkSocial({
+              provider: "github",
+              scopes: ["repo"],
+              callbackURL: pathname,
+            })
+          })
+        }}
         onSubmit={async ({ value, options, mode }) => {
           await createComment({
             postId,

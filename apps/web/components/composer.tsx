@@ -1,7 +1,8 @@
 "use client"
 
 import { useCustomer } from "autumn-js/react"
-import { ChevronDownIcon } from "lucide-react"
+import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
+import { Tooltip } from "@/components/ui/tooltip"
 import { usePathname } from "next/navigation"
 import {
   Suspense,
@@ -66,7 +67,10 @@ export type ComposerProps = {
   owner?: string
   repo?: string
   canModerate?: boolean
+  hasRepoScope?: boolean
+  onRequestRepoScope?: () => void
   isStreaming?: boolean
+  defaultMode?: AgentMode
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -84,7 +88,10 @@ export const Composer = ({
   owner,
   repo,
   canModerate,
+  hasRepoScope,
+  onRequestRepoScope,
   isStreaming,
+  defaultMode,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
@@ -112,17 +119,22 @@ export const Composer = ({
 
   useEffect(() => {
     if (canModerate) {
-      const saved = localStorage.getItem(PREFERRED_MODE_KEY)
+      // Priority: defaultMode (from previous comment) > sessionStorage > "ask"
+      if (defaultMode === "build" || defaultMode === "ask") {
+        setMode(defaultMode)
+        return
+      }
+      const saved = sessionStorage.getItem(PREFERRED_MODE_KEY)
       if (saved === "build" || saved === "ask") {
         setMode(saved)
       }
     }
-  }, [canModerate])
+  }, [canModerate, defaultMode])
 
   const toggleMode = useCallback(() => {
     setMode((prev) => {
       const next = prev === "ask" ? "build" : "ask"
-      localStorage.setItem(PREFERRED_MODE_KEY, next)
+      sessionStorage.setItem(PREFERRED_MODE_KEY, next)
       return next
     })
   }, [])
@@ -361,31 +373,55 @@ export const Composer = ({
             </div>
             <div className="flex items-center gap-4">
               {canModerate && (
-                <button
-                  aria-label={
-                    mode === "ask"
-                      ? "Switch to build mode"
-                      : "Switch to ask mode"
-                  }
-                  className={cn(
-                    "flex items-center justify-center text-faint text-sm transition-colors hover:text-accent"
+                <div className="flex items-center gap-2">
+                  <Tooltip.Provider>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger
+                        aria-label={
+                          mode === "ask"
+                            ? "Switch to build mode"
+                            : "Switch to ask mode"
+                        }
+                        className={cn(
+                          "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
+                        )}
+                        onClick={toggleMode}
+                        type="button"
+                      >
+                        {mode}
+                      </Tooltip.Trigger>
+                      <Tooltip.Popup>
+                        {mode === "ask"
+                          ? "Switch to build mode (Shift+Tab)"
+                          : "Switch to ask mode (Shift+Tab)"}
+                      </Tooltip.Popup>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
+                  {mode === "build" && !hasRepoScope && (
+                    <Tooltip.Provider>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger
+                          aria-label="Grant additional GitHub permissions for build mode"
+                          className="flex items-center justify-center text-yellow-500 transition-colors hover:text-yellow-400"
+                          onClick={onRequestRepoScope}
+                        >
+                          <AlertTriangleIcon className="size-4" />
+                        </Tooltip.Trigger>
+                        <Tooltip.Popup>
+                          Build mode requires additional GitHub permissions.
+                          Click to grant access.
+                        </Tooltip.Popup>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
                   )}
-                  onClick={toggleMode}
-                  title={
-                    mode === "ask"
-                      ? "Ask mode (Shift+Tab to switch)"
-                      : "Build mode (Shift+Tab to switch)"
-                  }
-                  type="button"
-                >
-                  {mode}
-                </button>
+                </div>
               )}
               <Button
                 className="cursor-pointer"
                 disabled={
                   isPending ||
                   isStreaming ||
+                  (mode === "build" && !hasRepoScope) ||
                   (isSignedIn &&
                     selectedAsking.id !== "human" &&
                     creditBalance < (selectedAsking.isProModel ? 5 : 1))
