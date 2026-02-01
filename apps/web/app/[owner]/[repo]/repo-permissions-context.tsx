@@ -22,13 +22,16 @@ export function RepoPermissionsProvider({
   repo: string
   children: React.ReactNode
 }) {
-  const session = authClient.useSession()
+  const { data: session } = authClient.useSession()
+  // Use stable userId instead of full session object to prevent unnecessary re-renders
+  const userId = session?.user?.id
   const [canModerate, setCanModerate] = useState(false)
   const [hasRepoScope, setHasRepoScope] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Re-fetch permissions when user changes (e.g., after OAuth redirect)
   useEffect(() => {
-    if (!session.data?.user) {
+    if (!userId) {
       setCanModerate(false)
       setHasRepoScope(false)
       setIsLoading(false)
@@ -47,7 +50,7 @@ export function RepoPermissionsProvider({
         setHasRepoScope(false)
         setIsLoading(false)
       })
-  }, [owner, repo, session.data?.user])
+  }, [owner, repo, userId])
 
   return (
     <RepoPermissionsContext.Provider

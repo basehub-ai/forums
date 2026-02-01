@@ -37,21 +37,26 @@ export function PostComposer({
 }) {
   const hasStreamingComment = useHasStreamingComment()
   const pathname = usePathname()
+  const { data, isPending: isAuthLoading } = authClient.useSession()
+  const userId = data?.user?.id
   const [canModerate, setCanModerate] = useState(false)
   const [hasRepoScope, setHasRepoScope] = useState(false)
   const [, startTransition] = useTransition()
 
+  // Re-fetch permissions when user changes (e.g., after OAuth redirect)
   useEffect(() => {
-    if (owner && repo) {
-      Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()]).then(
-        ([moderateResult, scopeResult]) => {
-          setCanModerate(moderateResult)
-          setHasRepoScope(scopeResult)
-        }
-      )
+    if (!userId || !owner || !repo) {
+      setCanModerate(false)
+      setHasRepoScope(false)
+      return
     }
-  }, [owner, repo])
-  const { data, isPending: isAuthLoading } = authClient.useSession()
+    Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()]).then(
+      ([moderateResult, scopeResult]) => {
+        setCanModerate(moderateResult)
+        setHasRepoScope(scopeResult)
+      }
+    )
+  }, [owner, repo, userId])
 
   return (
     <div>

@@ -2,6 +2,7 @@
 
 import { useCustomer } from "autumn-js/react"
 import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
+import { Tooltip } from "@/components/ui/tooltip"
 import { usePathname } from "next/navigation"
 import {
   Suspense,
@@ -370,37 +371,45 @@ export const Composer = ({
             </div>
             <div className="flex items-center gap-4">
               {canModerate && (
-                <button
-                  aria-label={
-                    mode === "ask"
-                      ? "Switch to build mode"
-                      : "Switch to ask mode"
-                  }
-                  className={cn(
-                    "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
-                  )}
-                  onClick={() => {
-                    // If switching to build mode and no repo scope, request it
-                    if (mode === "ask" && !hasRepoScope && onRequestRepoScope) {
-                      onRequestRepoScope()
-                      return
-                    }
-                    toggleMode()
-                  }}
-                  title={
-                    mode === "ask"
-                      ? hasRepoScope
-                        ? "Ask mode (Shift+Tab to switch)"
-                        : "Build mode requires additional GitHub permissions"
-                      : "Build mode (Shift+Tab to switch)"
-                  }
-                  type="button"
-                >
-                  {mode}
-                  {mode === "ask" && !hasRepoScope && (
-                    <AlertTriangleIcon className="size-3.5 text-yellow-500" />
-                  )}
-                </button>
+                <Tooltip.Provider>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger
+                      aria-label={
+                        mode === "ask"
+                          ? "Switch to build mode"
+                          : "Switch to ask mode"
+                      }
+                      className={cn(
+                        "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
+                      )}
+                      onClick={() => {
+                        // If switching to build mode and no repo scope, request it
+                        if (
+                          mode === "ask" &&
+                          !hasRepoScope &&
+                          onRequestRepoScope
+                        ) {
+                          onRequestRepoScope()
+                          return
+                        }
+                        toggleMode()
+                      }}
+                      type="button"
+                    >
+                      {mode}
+                      {!hasRepoScope && (
+                        <AlertTriangleIcon className="size-3.5 text-yellow-500" />
+                      )}
+                    </Tooltip.Trigger>
+                    <Tooltip.Popup>
+                      {!hasRepoScope
+                        ? "Build mode requires additional GitHub permissions. Click to grant access."
+                        : mode === "ask"
+                          ? "Ask mode (Shift+Tab to switch)"
+                          : "Build mode (Shift+Tab to switch)"}
+                    </Tooltip.Popup>
+                  </Tooltip.Root>
+                </Tooltip.Provider>
               )}
               <Button
                 className="cursor-pointer"

@@ -53,20 +53,28 @@ export function RepoContent({
 }: RepoContentProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { data: session } = authClient.useSession()
+  const userId = session?.user?.id
   const [searchQuery, setSearchQuery] = useState("")
   const [defaultLlmId, setDefaultLlmId] = useState<string | undefined>()
   const [canModerate, setCanModerate] = useState(false)
   const [hasRepoScope, setHasRepoScope] = useState(false)
   const [, startTransition] = useTransition()
 
+  // Re-fetch permissions when user changes (e.g., after OAuth redirect)
   useEffect(() => {
+    if (!userId) {
+      setCanModerate(false)
+      setHasRepoScope(false)
+      return
+    }
     Promise.all([checkCanModerate(owner, repo), checkHasRepoScope()]).then(
       ([moderateResult, scopeResult]) => {
         setCanModerate(moderateResult)
         setHasRepoScope(scopeResult)
       }
     )
-  }, [owner, repo])
+  }, [owner, repo, userId])
 
   useEffect(() => {
     const saved = localStorage.getItem(PREFERRED_LLM_KEY)
