@@ -234,11 +234,6 @@ export const Composer = ({
         onKeyDown={(e) => {
           if (e.key === "Tab" && e.shiftKey && canModerate) {
             e.preventDefault()
-            // If switching to build mode and no repo scope, request it
-            if (mode === "ask" && !hasRepoScope && onRequestRepoScope) {
-              onRequestRepoScope()
-              return
-            }
             toggleMode()
             return
           }
@@ -378,51 +373,55 @@ export const Composer = ({
             </div>
             <div className="flex items-center gap-4">
               {canModerate && (
-                <Tooltip.Provider>
-                  <Tooltip.Root>
-                    <Tooltip.Trigger
-                      aria-label={
-                        mode === "ask"
-                          ? "Switch to build mode"
-                          : "Switch to ask mode"
-                      }
-                      className={cn(
-                        "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
-                      )}
-                      onClick={() => {
-                        // If switching to build mode and no repo scope, request it
-                        if (
-                          mode === "ask" &&
-                          !hasRepoScope &&
-                          onRequestRepoScope
-                        ) {
-                          onRequestRepoScope()
-                          return
+                <div className="flex items-center gap-2">
+                  <Tooltip.Provider>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger
+                        aria-label={
+                          mode === "ask"
+                            ? "Switch to build mode"
+                            : "Switch to ask mode"
                         }
-                        toggleMode()
-                      }}
-                      type="button"
-                    >
-                      {mode}
-                      {mode === "build" && !hasRepoScope && (
-                        <AlertTriangleIcon className="size-3.5 text-yellow-500" />
-                      )}
-                    </Tooltip.Trigger>
-                    <Tooltip.Popup>
-                      {mode === "build" && !hasRepoScope
-                        ? "Build mode requires additional GitHub permissions. Click to grant access."
-                        : mode === "ask"
+                        className={cn(
+                          "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
+                        )}
+                        onClick={toggleMode}
+                        type="button"
+                      >
+                        {mode}
+                      </Tooltip.Trigger>
+                      <Tooltip.Popup>
+                        {mode === "ask"
                           ? "Switch to build mode (Shift+Tab)"
                           : "Switch to ask mode (Shift+Tab)"}
-                    </Tooltip.Popup>
-                  </Tooltip.Root>
-                </Tooltip.Provider>
+                      </Tooltip.Popup>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
+                  {mode === "build" && !hasRepoScope && (
+                    <Tooltip.Provider>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger
+                          aria-label="Grant additional GitHub permissions for build mode"
+                          className="flex items-center justify-center text-yellow-500 transition-colors hover:text-yellow-400"
+                          onClick={onRequestRepoScope}
+                        >
+                          <AlertTriangleIcon className="size-4" />
+                        </Tooltip.Trigger>
+                        <Tooltip.Popup>
+                          Build mode requires additional GitHub permissions.
+                          Click to grant access.
+                        </Tooltip.Popup>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
+                  )}
+                </div>
               )}
               <Button
                 className="cursor-pointer"
                 disabled={
                   isPending ||
                   isStreaming ||
+                  (mode === "build" && !hasRepoScope) ||
                   (isSignedIn &&
                     selectedAsking.id !== "human" &&
                     creditBalance < (selectedAsking.isProModel ? 5 : 1))
