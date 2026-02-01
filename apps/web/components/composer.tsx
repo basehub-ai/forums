@@ -70,6 +70,7 @@ export type ComposerProps = {
   hasRepoScope?: boolean
   onRequestRepoScope?: () => void
   isStreaming?: boolean
+  defaultMode?: AgentMode
 }
 
 type AskingOption = ComposerProps["options"]["asking"][number]
@@ -90,6 +91,7 @@ export const Composer = ({
   hasRepoScope,
   onRequestRepoScope,
   isStreaming,
+  defaultMode,
 }: ComposerProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: auth, isPending: isAuthLoading } = authClient.useSession()
@@ -117,17 +119,22 @@ export const Composer = ({
 
   useEffect(() => {
     if (canModerate) {
-      const saved = localStorage.getItem(PREFERRED_MODE_KEY)
+      // Priority: defaultMode (from previous comment) > sessionStorage > "ask"
+      if (defaultMode === "build" || defaultMode === "ask") {
+        setMode(defaultMode)
+        return
+      }
+      const saved = sessionStorage.getItem(PREFERRED_MODE_KEY)
       if (saved === "build" || saved === "ask") {
         setMode(saved)
       }
     }
-  }, [canModerate])
+  }, [canModerate, defaultMode])
 
   const toggleMode = useCallback(() => {
     setMode((prev) => {
       const next = prev === "ask" ? "build" : "ask"
-      localStorage.setItem(PREFERRED_MODE_KEY, next)
+      sessionStorage.setItem(PREFERRED_MODE_KEY, next)
       return next
     })
   }, [])
@@ -397,16 +404,16 @@ export const Composer = ({
                       type="button"
                     >
                       {mode}
-                      {!hasRepoScope && (
+                      {mode === "build" && !hasRepoScope && (
                         <AlertTriangleIcon className="size-3.5 text-yellow-500" />
                       )}
                     </Tooltip.Trigger>
                     <Tooltip.Popup>
-                      {!hasRepoScope
+                      {mode === "build" && !hasRepoScope
                         ? "Build mode requires additional GitHub permissions. Click to grant access."
                         : mode === "ask"
-                          ? "Ask mode (Shift+Tab to switch)"
-                          : "Build mode (Shift+Tab to switch)"}
+                          ? "Switch to build mode (Shift+Tab)"
+                          : "Switch to ask mode (Shift+Tab)"}
                     </Tooltip.Popup>
                   </Tooltip.Root>
                 </Tooltip.Provider>

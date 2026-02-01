@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
+import type { AgentMode } from "@/agent/types"
 import { Composer } from "@/components/composer"
 import { UserAvatar } from "@/components/user-avatar"
 import { checkCanModerate, createComment } from "@/lib/actions/posts"
@@ -22,6 +23,7 @@ export function PostComposer({
   askingOptions,
   threadCommentId,
   defaultLlmId,
+  defaultMode,
   owner,
   repo,
 }: {
@@ -32,6 +34,7 @@ export function PostComposer({
   onCancel?: () => void
   storageKey?: string
   defaultLlmId?: string
+  defaultMode?: AgentMode
   owner?: string
   repo?: string
 }) {
@@ -87,6 +90,7 @@ export function PostComposer({
       <Composer
         canModerate={canModerate}
         defaultAskingId={defaultLlmId}
+        defaultMode={defaultMode}
         hasRepoScope={hasRepoScope}
         isStreaming={hasStreamingComment}
         onRequestRepoScope={() => {

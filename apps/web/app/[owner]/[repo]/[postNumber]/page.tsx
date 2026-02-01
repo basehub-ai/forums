@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { cacheLife, cacheTag } from "next/cache"
 import { notFound, redirect } from "next/navigation"
 import { z } from "zod"
+import type { AgentMode } from "@/agent/types"
 import { Container } from "@/components/container"
 import { gitHubUserLoader } from "@/lib/auth"
 import { getModelsForPicker } from "@/lib/data/models"
@@ -346,6 +347,12 @@ export default async function PostPage({
     .reverse()
     .find((c) => c.authorId.startsWith("llm_"))?.authorId
 
+  // Find the mode from the last comment (stored in first message's metadata)
+  const lastComment = postComments[postComments.length - 1]
+  const lastCommentMode = lastComment?.content?.[0]?.metadata?.mode as
+    | AgentMode
+    | undefined
+
   const initialStreamingCommentIds = postComments
     .filter((c) => c.streamStatus === "streaming")
     .map((c) => c.id)
@@ -394,6 +401,7 @@ export default async function PostPage({
           <PostComposer
             askingOptions={askingOptions}
             defaultLlmId={lastLlmAuthorId}
+            defaultMode={lastCommentMode}
             owner={owner}
             postId={post.id}
             repo={repo}
