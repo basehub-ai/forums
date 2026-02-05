@@ -26,6 +26,18 @@ describe("parseArgs", () => {
     })
   })
 
+  it("parses --ref flag (double dash)", () => {
+    const result = parseArgs({
+      argv: ["vercel/next.js", "--ref", "canary", "--", "cat", "README.md"],
+    })
+    expect(result).toEqual({
+      repo: "vercel/next.js",
+      ref: "canary",
+      version: undefined,
+      command: "cat README.md",
+    })
+  })
+
   it("parses -v flag", () => {
     const result = parseArgs({
       argv: [
@@ -44,6 +56,18 @@ describe("parseArgs", () => {
       ref: undefined,
       version: "13.0.0",
       command: "find . -name *.ts",
+    })
+  })
+
+  it("parses --version flag (double dash)", () => {
+    const result = parseArgs({
+      argv: ["next", "--version", "15.0.0", "--", "ls", "packages/"],
+    })
+    expect(result).toEqual({
+      repo: "next",
+      ref: undefined,
+      version: "15.0.0",
+      command: "ls packages/",
     })
   })
 
