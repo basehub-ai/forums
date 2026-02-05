@@ -14,9 +14,9 @@ describe("parseArgs", () => {
     })
   })
 
-  it("parses -ref flag", () => {
+  it("parses -r flag (short)", () => {
     const result = parseArgs({
-      argv: ["vercel/next.js", "-ref", "main", "--", "ls", "-la"],
+      argv: ["vercel/next.js", "-r", "main", "--", "ls", "-la"],
     })
     expect(result).toEqual({
       repo: "vercel/next.js",
@@ -26,7 +26,19 @@ describe("parseArgs", () => {
     })
   })
 
-  it("parses -v flag", () => {
+  it("parses --ref flag (long)", () => {
+    const result = parseArgs({
+      argv: ["vercel/next.js", "--ref", "canary", "--", "cat", "README.md"],
+    })
+    expect(result).toEqual({
+      repo: "vercel/next.js",
+      ref: "canary",
+      version: undefined,
+      command: "cat README.md",
+    })
+  })
+
+  it("parses -v flag (short)", () => {
     const result = parseArgs({
       argv: [
         "vercel/next.js",
@@ -47,11 +59,23 @@ describe("parseArgs", () => {
     })
   })
 
-  it("parses both -ref and -v flags", () => {
+  it("parses --version flag (long)", () => {
+    const result = parseArgs({
+      argv: ["next", "--version", "15.0.0", "--", "ls", "packages/"],
+    })
+    expect(result).toEqual({
+      repo: "next",
+      ref: undefined,
+      version: "15.0.0",
+      command: "ls packages/",
+    })
+  })
+
+  it("parses both --ref and -v flags", () => {
     const result = parseArgs({
       argv: [
         "vercel/next.js",
-        "-ref",
+        "--ref",
         "canary",
         "-v",
         "14.0.0",
@@ -70,7 +94,7 @@ describe("parseArgs", () => {
 
   it("handles flags in any order", () => {
     const result = parseArgs({
-      argv: ["owner/repo", "-v", "1.0.0", "-ref", "dev", "--", "pwd"],
+      argv: ["owner/repo", "--version", "1.0.0", "-r", "dev", "--", "pwd"],
     })
     expect(result).toEqual({
       repo: "owner/repo",
@@ -95,13 +119,13 @@ describe("parseArgs", () => {
     expect(result).toBeNull()
   })
 
-  it("returns null when -ref has no value", () => {
-    const result = parseArgs({ argv: ["repo", "-ref", "--", "ls"] })
+  it("returns null when --ref has no value", () => {
+    const result = parseArgs({ argv: ["repo", "--ref", "--", "ls"] })
     expect(result).toBeNull()
   })
 
-  it("returns null when -v has no value", () => {
-    const result = parseArgs({ argv: ["repo", "-v", "--", "ls"] })
+  it("returns null when --version has no value", () => {
+    const result = parseArgs({ argv: ["repo", "--version", "--", "ls"] })
     expect(result).toBeNull()
   })
 

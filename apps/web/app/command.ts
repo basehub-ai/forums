@@ -116,14 +116,14 @@ Arguments:
   command           Shell command to run in the repository
 
 Options:
-  -ref <ref>        Git ref (branch, tag, commit SHA)
-  -v <version>      Package version (resolves to git tag)
-  --help            Show this help message
+  -r, --ref <ref>         Git ref (branch, tag, commit SHA)
+  -v, --version <version> Package version (resolves to git tag)
+  -h, --help              Show this help message
 
 Examples:
   remote-bash vercel/next.js -- cat README.md
   remote-bash next -v 15.0.0 -- ls packages/
-  remote-bash https://github.com/facebook/react -ref main -- find . -name "*.ts"
+  remote-bash https://github.com/facebook/react --ref main -- find . -name "*.ts"
 `
 
 export function parseArgs({ argv }: { argv: string[] }): ParsedArgs | null {
@@ -165,17 +165,17 @@ export function parseArgs({ argv }: { argv: string[] }): ParsedArgs | null {
     const flag = flags[i]
     const next = flags[i + 1]
 
-    if (flag === "-ref") {
+    if (flag === "-r" || flag === "--ref") {
       if (!next) {
-        console.error("Error: Missing value for -ref\n")
+        console.error("Error: Missing value for --ref\n")
         console.log(USAGE)
         return null
       }
       ref = next
       i++
-    } else if (flag === "-v") {
+    } else if (flag === "-v" || flag === "--version") {
       if (!next) {
-        console.error("Error: Missing value for -v\n")
+        console.error("Error: Missing value for --version\n")
         console.log(USAGE)
         return null
       }
