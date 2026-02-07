@@ -112,7 +112,11 @@ export function StreamingBadge() {
   )
 }
 
-export function StreamingContent() {
+export function StreamingContent({
+  commentNumber,
+}: {
+  commentNumber?: string
+}) {
   const ctx = useContext(StreamingContext)
   if (!ctx) {
     return null
@@ -122,6 +126,7 @@ export function StreamingContent() {
 
   return (
     <CommentContent
+      commentNumber={commentNumber}
       content={lastMessage ? [lastMessage] : []}
       hasStreamError={ctx.hasStreamError}
       isRetrying={ctx.isRetrying}
