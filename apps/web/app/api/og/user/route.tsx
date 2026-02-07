@@ -1,8 +1,7 @@
 import { eq, sql } from "drizzle-orm"
-import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
-import { join } from "path"
+import { geistMonoBold, geistMonoRegular } from "@/app/api/og/fonts"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
@@ -12,19 +11,6 @@ const size = {
   width: 1200,
   height: 630,
 }
-
-const geistMonoRegular = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
-  )
-)
-const geistMonoBold = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
-  )
-)
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
