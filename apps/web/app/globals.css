@@ -4,6 +4,7 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-geist-pixel-square);
 
   /* --color-base: var(--base); */
   --color-background: var(--background);
@@ -119,7 +120,7 @@ body {
   position: relative;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-mono);
+  font-family: var(--font-geist-pixel-square);
   letter-spacing: -0.02em;
   --dash-size: 1px;
 
