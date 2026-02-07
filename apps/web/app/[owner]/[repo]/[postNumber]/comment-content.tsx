@@ -55,38 +55,49 @@ function Heading({
 }: ComponentProps<"h1"> & { level: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const Tag = `h${level}` as const
   const prefix = "#".repeat(level)
+
+  if (!id) {
+    return (
+      <Tag
+        className="relative mt-6 mb-2 font-semibold text-dim first:mt-0"
+        {...props}
+      >
+        <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
+          {prefix}
+        </span>
+        {children}
+      </Tag>
+    )
+  }
+
+  const href = `#${id}`
+  function handleClick(e: ReactMouseEvent<HTMLAnchorElement>) {
+    e.preventDefault()
+    const url = new URL(window.location.href)
+    url.hash = id as string
+    window.history.replaceState(null, "", url.toString())
+    document.getElementById(id as string)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    })
+  }
+
   return (
     <Tag
-      className="group/heading relative mt-6 mb-2 scroll-mt-10 font-semibold text-dim first:mt-0"
+      className="relative mt-6 mb-2 scroll-mt-10 font-semibold text-dim first:mt-0"
       id={id}
       {...props}
     >
-      <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
+      <a
+        className="right-full mr-1.5 select-none font-mono text-faint hover:underline sm:absolute"
+        href={href}
+        onClick={handleClick}
+      >
         {prefix}
-      </span>
-      {id ? (
-        <a
-          className="no-underline hover:underline"
-          href={`#${id}`}
-          onClick={(e: ReactMouseEvent<HTMLAnchorElement>) => {
-            e.preventDefault()
-            const url = new URL(window.location.href)
-            url.hash = id
-            window.history.replaceState(null, "", url.toString())
-            document.getElementById(id)?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            })
-          }}
-        >
-          {children}
-          <span className="ml-1.5 font-mono text-faint opacity-0 transition-opacity group-hover/heading:opacity-100">
-            #
-          </span>
-        </a>
-      ) : (
-        children
-      )}
+      </a>
+      <a className="hover:underline" href={href} onClick={handleClick}>
+        {children}
+      </a>
     </Tag>
   )
 }
