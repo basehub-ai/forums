@@ -1,4 +1,9 @@
-import type { JSONValue, LanguageModel, ModelMessage } from "ai"
+import type {
+  JSONValue,
+  LanguageModel,
+  ModelMessage,
+  SystemModelMessage,
+} from "ai"
 
 /**
  * Prompt caching utilities for reducing token costs and latency.
@@ -9,6 +14,10 @@ import type { JSONValue, LanguageModel, ModelMessage } from "ai"
  * prefix incrementally. Cached tokens cost 10% of input tokens
  * (cache writes cost 25% more). Minimum cacheable length varies
  * by model (1024–4096 tokens).
+ *
+ * IMPORTANT: Every request to Anthropic must include the cache
+ * control markers, otherwise the cache is not maintained. This
+ * applies to both the system prompt and conversation messages.
  *
  * ## OpenAI
  * OpenAI automatically caches prompts ≥ 1024 tokens. We set a
@@ -129,6 +138,33 @@ export function addCacheControlToMessages({
 
   // Other providers: return unchanged
   return messages
+}
+
+/**
+ * Wrap the system prompt with cache control for Anthropic models.
+ *
+ * For Anthropic, the system prompt must be sent as a SystemModelMessage
+ * with `providerOptions` containing `cacheControl`, otherwise the cache
+ * prefix is not established and the cache will be purged.
+ *
+ * For other providers, returns the system string as-is.
+ */
+export function wrapSystemPrompt({
+  system,
+  model,
+}: {
+  system: string
+  model: string | LanguageModel
+}): string | SystemModelMessage {
+  if (isAnthropicModel(model)) {
+    return {
+      role: "system" as const,
+      content: system,
+      providerOptions: ANTHROPIC_CACHE_CONTROL,
+    }
+  }
+
+  return system
 }
 
 /**

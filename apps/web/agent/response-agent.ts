@@ -16,7 +16,11 @@ import { autumn, type BillingCategory, CREDIT_COSTS } from "@/lib/autumn"
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import { ERROR_CODES } from "@/lib/errors"
-import { addCacheControlToMessages, getCacheProviderOptions } from "./prompt-cache"
+import {
+  addCacheControlToMessages,
+  getCacheProviderOptions,
+  wrapSystemPrompt,
+} from "./prompt-cache"
 import { getAllTools, getTools } from "./tools"
 import type { AgentMode, AgentUIMessage } from "./types"
 import { startWorkspace } from "./workspace"
@@ -362,16 +366,21 @@ async function streamTextStep({
       ? getAllTools({ workspace: lazyWorkspace, userAccessToken })
       : getTools({ workspace: lazyWorkspace })
 
-  const systemPrompt =
+  const systemPromptText =
     mode === "build"
       ? BUILD_SYSTEM_PROMPT(owner, repo)
       : ASK_SYSTEM_PROMPT(owner, repo)
 
-  // Apply prompt caching to reduce token costs and latency
+  // Apply prompt caching to reduce token costs and latency.
+  // For Anthropic: marks system prompt and conversation messages with
+  // cacheControl breakpoints. These must be present on every request
+  // or the cache is purged.
+  // For OpenAI: sets promptCacheKey for better cache routing.
   const modelMessages = addCacheControlToMessages({
     messages: await convertToModelMessages(allMessages),
     model,
   })
+  const systemPrompt = wrapSystemPrompt({ system: systemPromptText, model })
   const cacheProviderOptions = getCacheProviderOptions({ model, postId })
 
   const result = streamText({

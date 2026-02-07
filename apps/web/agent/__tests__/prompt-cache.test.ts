@@ -3,6 +3,7 @@ import type { ModelMessage } from "ai"
 import {
   addCacheControlToMessages,
   getCacheProviderOptions,
+  wrapSystemPrompt,
 } from "../prompt-cache"
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -309,5 +310,55 @@ describe("getCacheProviderOptions", () => {
       const result = getCacheProviderOptions({ model, postId: "test" })
       expect(result).toBeDefined()
     }
+  })
+})
+
+// ─── wrapSystemPrompt ────────────────────────────────────────────────
+
+describe("wrapSystemPrompt", () => {
+  test("wraps system prompt as SystemModelMessage for Anthropic", () => {
+    const result = wrapSystemPrompt({
+      system: "You are a helpful assistant.",
+      model: "anthropic/claude-sonnet-4.5",
+    })
+
+    expect(typeof result).toBe("object")
+    expect(result).toEqual({
+      role: "system",
+      content: "You are a helpful assistant.",
+      providerOptions: EPHEMERAL,
+    })
+  })
+
+  test("wraps for all Anthropic model variants", () => {
+    for (const model of [
+      "anthropic/claude-sonnet-4.5",
+      "anthropic/claude-haiku-4.5",
+      "anthropic/claude-opus-4",
+    ]) {
+      const result = wrapSystemPrompt({ system: "test", model })
+      expect(typeof result).toBe("object")
+      expect((result as any).providerOptions).toEqual(EPHEMERAL)
+    }
+  })
+
+  test("returns plain string for OpenAI models", () => {
+    const result = wrapSystemPrompt({
+      system: "You are a helpful assistant.",
+      model: "openai/gpt-4o",
+    })
+
+    expect(typeof result).toBe("string")
+    expect(result).toBe("You are a helpful assistant.")
+  })
+
+  test("returns plain string for unknown providers", () => {
+    const result = wrapSystemPrompt({
+      system: "You are a helpful assistant.",
+      model: "google/gemini-2.0-flash",
+    })
+
+    expect(typeof result).toBe("string")
+    expect(result).toBe("You are a helpful assistant.")
   })
 })
