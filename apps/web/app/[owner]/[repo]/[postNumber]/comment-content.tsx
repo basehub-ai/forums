@@ -30,7 +30,8 @@ function extractText(node: ReactNode): string {
       (node.props as { children?: ReactNode }).children ?? null
     )
   }
-  if (Array.isArray(node)) return node.map(extractText).join("")
+  if (Array.isArray(node))
+    return (node as ReactNode[]).map(extractText).join("")
   const arr: ReactNode[] = []
   Children.forEach(node, (child: ReactNode) => arr.push(child))
   return arr.map(extractText).join("")
