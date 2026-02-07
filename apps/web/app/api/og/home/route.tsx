@@ -1,31 +1,16 @@
-import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
-import { join } from "path"
+import { loadFonts } from "../_fonts/load-fonts"
+import { getSiteOrigin } from "@/lib/utils"
 
 const size = {
   width: 1200,
   height: 630,
 }
 
-const geistMonoRegular = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
-  )
-)
-const geistMonoBold = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
-  )
-)
-const iconSvg = readFile(join(process.cwd(), "public/icon.svg"), "utf-8")
-
 export async function GET() {
-  const [fontRegular, fontBold, icon] = await Promise.all([
-    geistMonoRegular,
-    geistMonoBold,
-    iconSvg,
+  const [fonts, icon] = await Promise.all([
+    loadFonts(),
+    fetch(`${getSiteOrigin()}/icon.svg`).then((res) => res.text()),
   ])
 
   return new ImageResponse(
@@ -87,18 +72,7 @@ export async function GET() {
     </div>,
     {
       ...size,
-      fonts: [
-        {
-          name: "Geist Mono",
-          data: fontRegular,
-          weight: 400,
-        },
-        {
-          name: "Geist Mono",
-          data: fontBold,
-          weight: 700,
-        },
-      ],
+      fonts,
     }
   )
 }
