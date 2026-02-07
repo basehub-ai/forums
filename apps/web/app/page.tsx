@@ -146,7 +146,7 @@ export default async function Home() {
             </h3>
             <div className="mt-2 flex items-center gap-1.5">
               <AsteriskIcon className="shrink-0 text-faint" size={16} />
-              <code className="font-mono text-accent">
+              <code className="font-pixel text-accent">
                 npx skills add basehub-ai/forums --skill remote-bash
               </code>
             </div>
@@ -177,7 +177,7 @@ export default async function Home() {
                       className="mt-0.5 shrink-0 text-faint"
                       size={16}
                     />
-                    <span className="font-mono text-dim">{tool.name}</span>
+                    <span className="font-pixel text-dim">{tool.name}</span>
                   </div>
                   <p className="ml-5.5 text-muted text-sm">
                     {tool.description}
