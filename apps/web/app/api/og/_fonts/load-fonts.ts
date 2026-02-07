@@ -1,15 +1,14 @@
-const geistMonoRegular = fetch(
-  new URL("./GeistMono-Regular.ttf", import.meta.url)
-).then((res) => res.arrayBuffer())
+import { readFile } from "fs/promises"
+import { join } from "path"
 
-const geistMonoBold = fetch(
-  new URL("./GeistMono-Bold.ttf", import.meta.url)
-).then((res) => res.arrayBuffer())
+let fontsPromise: ReturnType<typeof loadFontsFromDisk> | null = null
 
-export async function loadFonts() {
+async function loadFontsFromDisk() {
+  const fontsDir = join(process.cwd(), "app/api/og/_fonts")
+
   const [fontRegular, fontBold] = await Promise.all([
-    geistMonoRegular,
-    geistMonoBold,
+    readFile(join(fontsDir, "GeistMono-Regular.ttf")),
+    readFile(join(fontsDir, "GeistMono-Bold.ttf")),
   ])
 
   return [
@@ -24,4 +23,11 @@ export async function loadFonts() {
       weight: 700 as const,
     },
   ]
+}
+
+export function loadFonts() {
+  if (!fontsPromise) {
+    fontsPromise = loadFontsFromDisk()
+  }
+  return fontsPromise
 }

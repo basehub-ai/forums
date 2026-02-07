@@ -1,6 +1,9 @@
+import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
+import { join } from "path"
 import { loadFonts } from "../_fonts/load-fonts"
-import { getSiteOrigin } from "@/lib/utils"
+
+export const dynamic = "force-dynamic"
 
 const size = {
   width: 1200,
@@ -10,7 +13,7 @@ const size = {
 export async function GET() {
   const [fonts, icon] = await Promise.all([
     loadFonts(),
-    fetch(`${getSiteOrigin()}/icon.svg`).then((res) => res.text()),
+    readFile(join(process.cwd(), "public/icon.svg"), "utf-8"),
   ])
 
   return new ImageResponse(
