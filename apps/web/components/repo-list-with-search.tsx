@@ -223,11 +223,11 @@ export function RepoListWithSearch({
 
       <div className="-mx-4 mt-10 overflow-x-auto [--col-w-1:89px] [--col-w-2:67px] [--col-w-3:131px] sm:-mx-2 sm:px-2">
         <div
-          className="min-w-fit px-4 sm:px-0"
+          className="px-4 sm:min-w-fit sm:px-0"
           ref={containerRef}
           style={minHeight ? { minHeight } : undefined}
         >
-          <div className="relative min-w-120">
+          <div className="relative sm:min-w-120">
             <hr className="divider-md absolute top-1/2 left-0 w-full -translate-y-1/2 border-0 opacity-40" />
             <div className="relative z-10 flex w-full">
               <div className="flex grow">
@@ -235,7 +235,7 @@ export function RepoListWithSearch({
                   {headerText}
                 </TableColumnTitle>
               </div>
-              <div className="flex shrink-0">
+              <div className="hidden shrink-0 sm:flex">
                 {!displayedQuery && (
                   <TableColumnTitle className="mr-8">Stars</TableColumnTitle>
                 )}
@@ -254,44 +254,49 @@ export function RepoListWithSearch({
           </div>
 
           {displayRepos.length > 0 || isGithubSearching ? (
-            <List className="mt-2 min-w-120 pb-2">
+            <List className="mt-2 pb-2 sm:min-w-120">
               {displayRepos.map((repo) => {
                 const highlight =
                   "highlight" in repo ? (repo.highlight as string) : null
                 return (
-                  <ListItem key={repo.name}>
+                  <ListItem
+                    key={repo.name}
+                    className="flex-col gap-1 sm:flex-row sm:gap-0"
+                  >
                     <Link
-                      className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
+                      className="group mr-3 flex min-w-0 grow items-center gap-1 overflow-hidden text-dim hover:underline"
                       href={repo.name}
                     >
                       <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
                       {highlight ? (
                         <span
-                          className="whitespace-nowrap leading-none group-hover:text-bright [&_mark]:bg-transparent [&_mark]:font-bold [&_mark]:text-bright"
+                          className="truncate leading-none group-hover:text-bright [&_mark]:bg-transparent [&_mark]:font-bold [&_mark]:text-bright"
                           // biome-ignore lint/security/noDangerouslySetInnerHtml: .
                           dangerouslySetInnerHTML={{ __html: highlight }}
                         />
                       ) : (
-                        <span className="whitespace-nowrap leading-none group-hover:text-bright">
+                        <span className="truncate leading-none group-hover:text-bright">
                           {repo.name}
                         </span>
                       )}
                     </Link>
-                    <div className="flex shrink-0">
+                    <div className="flex shrink-0 gap-3 pl-5 text-xs sm:gap-0 sm:pl-0 sm:text-sm">
                       {!displayedQuery && (
-                        <TableCellText className="w-(--col-w-1)">
+                        <TableCellText className="sm:w-(--col-w-1)">
+                          <span className="text-faint sm:hidden">★ </span>
                           {formatCompactNumber(repo.stars)}
                         </TableCellText>
                       )}
                       <TableCellText
                         className={
-                          displayedQuery ? "text-end" : "w-(--col-w-2)"
+                          displayedQuery ? "text-end" : "sm:w-(--col-w-2)"
                         }
                       >
                         {formatCompactNumber(repo.posts)}
+                        <span className="text-faint sm:hidden"> posts</span>
                       </TableCellText>
                       {!displayedQuery && (
-                        <TableCellText className="w-(--col-w-3) text-end">
+                        <TableCellText className="text-end sm:w-(--col-w-3)">
                           {formatRelativeTime(repo.lastActive, now)}
                         </TableCellText>
                       )}
