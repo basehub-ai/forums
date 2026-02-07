@@ -1,30 +1,16 @@
 import { and, eq } from "drizzle-orm"
-import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
-import { join } from "path"
 import { getRootCommentText } from "@/lib/data/posts"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
+import { loadFonts } from "../_fonts/load-fonts"
 
 const size = {
   width: 1200,
   height: 630,
 }
-
-const geistMonoRegular = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
-  )
-)
-const geistMonoBold = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
-  )
-)
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -42,7 +28,7 @@ export async function GET(request: NextRequest) {
     return new Response("Invalid post number", { status: 400 })
   }
 
-  const [post, fontRegular, fontBold] = await Promise.all([
+  const [post, fonts] = await Promise.all([
     db
       .select({
         title: posts.title,
@@ -59,8 +45,7 @@ export async function GET(request: NextRequest) {
       )
       .limit(1)
       .then((r) => r[0]),
-    geistMonoRegular,
-    geistMonoBold,
+    loadFonts(),
   ])
 
   const title = post?.title || `Post #${postNumber}`
@@ -142,18 +127,7 @@ export async function GET(request: NextRequest) {
     </div>,
     {
       ...size,
-      fonts: [
-        {
-          name: "Geist Mono",
-          data: fontRegular,
-          weight: 400,
-        },
-        {
-          name: "Geist Mono",
-          data: fontBold,
-          weight: 700,
-        },
-      ],
+      fonts,
     }
   )
 }

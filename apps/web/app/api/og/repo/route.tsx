@@ -1,30 +1,16 @@
 import { and, eq, sql } from "drizzle-orm"
-import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
-import { join } from "path"
 import { db } from "@/lib/db/client"
 import { posts } from "@/lib/db/schema"
 import { githubFetch } from "@/lib/github-fetch"
 import { getSiteOrigin } from "@/lib/utils"
+import { loadFonts } from "../_fonts/load-fonts"
 
 const size = {
   width: 1200,
   height: 630,
 }
-
-const geistMonoRegular = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
-  )
-)
-const geistMonoBold = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
-  )
-)
 
 interface GitHubRepoData {
   description: string | null
@@ -40,7 +26,7 @@ export async function GET(request: NextRequest) {
     return new Response("Missing parameters", { status: 400 })
   }
 
-  const [repoData, postCount, fontRegular, fontBold] = await Promise.all([
+  const [repoData, postCount, fonts] = await Promise.all([
     githubFetch(`https://api.github.com/repos/${owner}/${repo}`).then((res) =>
       res.ok ? res.json() : null
     ) as Promise<GitHubRepoData | null>,
@@ -49,8 +35,7 @@ export async function GET(request: NextRequest) {
       .from(posts)
       .where(and(eq(posts.owner, owner), eq(posts.repo, repo)))
       .then((r) => r[0]?.count ?? 0),
-    geistMonoRegular,
-    geistMonoBold,
+    loadFonts(),
   ])
 
   const description = repoData?.description || "Forum discussions"
@@ -131,18 +116,7 @@ export async function GET(request: NextRequest) {
     </div>,
     {
       ...size,
-      fonts: [
-        {
-          name: "Geist Mono",
-          data: fontRegular,
-          weight: 400,
-        },
-        {
-          name: "Geist Mono",
-          data: fontBold,
-          weight: 700,
-        },
-      ],
+      fonts,
     }
   )
 }

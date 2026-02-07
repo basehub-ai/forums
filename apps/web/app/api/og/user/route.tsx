@@ -1,30 +1,16 @@
 import { eq, sql } from "drizzle-orm"
-import { readFile } from "fs/promises"
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
-import { join } from "path"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
 import { getSiteOrigin } from "@/lib/utils"
+import { loadFonts } from "../_fonts/load-fonts"
 
 const size = {
   width: 1200,
   height: 630,
 }
-
-const geistMonoRegular = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Regular.ttf"
-  )
-)
-const geistMonoBold = readFile(
-  join(
-    process.cwd(),
-    "node_modules/geist/dist/fonts/geist-mono/GeistMono-Bold.ttf"
-  )
-)
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -34,15 +20,14 @@ export async function GET(request: NextRequest) {
     return new Response("Missing username parameter", { status: 400 })
   }
 
-  const [user, totalComments, fontRegular, fontBold] = await Promise.all([
+  const [user, totalComments, fonts] = await Promise.all([
     gitHubUserLoader.load(username),
     db
       .select({ count: sql<number>`count(*)` })
       .from(comments)
       .where(eq(comments.authorUsername, username))
       .then((r) => r[0]?.count ?? 0),
-    geistMonoRegular,
-    geistMonoBold,
+    loadFonts(),
   ])
 
   const name = user?.name || username
@@ -136,18 +121,7 @@ export async function GET(request: NextRequest) {
     </div>,
     {
       ...size,
-      fonts: [
-        {
-          name: "Geist Mono",
-          data: fontRegular,
-          weight: 400,
-        },
-        {
-          name: "Geist Mono",
-          data: fontBold,
-          weight: 700,
-        },
-      ],
+      fonts,
     }
   )
 }
