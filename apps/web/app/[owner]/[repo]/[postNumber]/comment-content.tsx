@@ -2,7 +2,17 @@
 
 import { Collapsible } from "@base-ui/react/collapsible"
 import type { ToolUIPart } from "ai"
-import { type ComponentProps, useEffect, useState } from "react"
+import {
+  Children,
+  type ComponentProps,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  isValidElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { harden } from "rehype-harden"
 import { defaultRehypePlugins, Streamdown } from "streamdown"
 import type { AgentUIMessage } from "@/agent/types"
@@ -11,93 +21,202 @@ import { usePostMetadata } from "./post-metadata-context"
 
 const LEADING_SLASH_REGEX = /^\//
 
+function extractText(node: ReactNode): string {
+  if (typeof node === "string") return node
+  if (typeof node === "number") return String(node)
+  if (!node) return ""
+  if (isValidElement(node)) {
+    return extractText(
+      (node.props as { children?: ReactNode }).children ?? null
+    )
+  }
+  if (Array.isArray(node))
+    return (node as ReactNode[]).map(extractText).join("")
+  const arr: ReactNode[] = []
+  Children.forEach(node, (child: ReactNode) => arr.push(child))
+  return arr.map(extractText).join("")
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+}
+
 function Heading({
   level,
+  id,
   children,
   ...props
 }: ComponentProps<"h1"> & { level: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const Tag = `h${level}` as const
   const prefix = "#".repeat(level)
+
+  if (!id) {
+    return (
+      <Tag
+        className="relative mt-6 mb-2 font-semibold text-dim first:mt-0"
+        {...props}
+      >
+        <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
+          {prefix}
+        </span>
+        {children}
+      </Tag>
+    )
+  }
+
+  const href = `#${id}`
+  function handleClick(e: ReactMouseEvent<HTMLAnchorElement>) {
+    e.preventDefault()
+    const url = new URL(window.location.href)
+    url.hash = id as string
+    window.history.replaceState(null, "", url.toString())
+    document.getElementById(id as string)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    })
+  }
+
   return (
     <Tag
-      className="relative mt-6 mb-2 font-semibold text-dim first:mt-0"
+      className="relative mt-6 mb-2 scroll-mt-10 font-semibold text-dim first:mt-0"
+      id={id}
       {...props}
     >
-      <span className="right-full mr-1.5 select-none font-mono text-faint sm:absolute">
+      <a
+        className="right-full mr-1.5 select-none font-mono text-faint hover:underline sm:absolute"
+        href={href}
+        onClick={handleClick}
+      >
         {prefix}
-      </span>
-      {children}
+      </a>
+      <a className="hover:underline" href={href} onClick={handleClick}>
+        {children}
+      </a>
     </Tag>
   )
 }
 
-const streamdownComponents: ComponentProps<typeof Streamdown>["components"] = {
-  h1: (props) => <Heading level={1} {...props} />,
-  h2: (props) => <Heading level={2} {...props} />,
-  h3: (props) => <Heading level={3} {...props} />,
-  h4: (props) => <Heading level={4} {...props} />,
-  h5: (props) => <Heading level={5} {...props} />,
-  h6: (props) => <Heading level={6} {...props} />,
-  p: (props) => (
-    <p className="my-4 leading-relaxed first:mt-0 last:mb-0" {...props} />
-  ),
-  a: (props) => (
-    <a
-      className="text-highlight-blue underline-offset-2 hover:underline"
-      rel="noopener"
-      target="_blank"
-      {...props}
-    />
-  ),
-  strong: (props) => <strong className="font-semibold" {...props} />,
-  em: (props) => <em className="italic" {...props} />,
-  ul: (props) => <ul className="my-4 list-disc space-y-1 pl-4" {...props} />,
-  ol: (props) => <ol className="my-4 list-decimal space-y-1 pl-6" {...props} />,
-  li: (props) => <li {...props} />,
-  blockquote: (props) => (
-    <blockquote
-      className="my-4 border-faint border-l-2 pl-3 text-muted italic"
-      {...props}
-    />
-  ),
-  hr: () => <hr className="my-4 border-border-solid" />,
-  code: (props) => (
-    <code
-      className="break-all bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
-      {...props}
-    />
-  ),
-  pre: (props) => {
-    // biome-ignore lint/suspicious/noExplicitAny: .
-    const childProps = (props.children as any).props as {
-      className: string
-      children: string
+type SlugCounter = Map<string, number>
+
+function makeHeadingComponent(
+  level: 1 | 2 | 3 | 4 | 5 | 6,
+  commentNumber: string | undefined,
+  slugCounter: SlugCounter
+) {
+  return function HeadingWithAnchor(props: ComponentProps<"h1">) {
+    const text = extractText(props.children)
+    const baseSlug = slugify(text)
+
+    let id: string | undefined
+    if (commentNumber && baseSlug) {
+      const fullBase = `${commentNumber}-${baseSlug}`
+      const count = slugCounter.get(fullBase) ?? 0
+      slugCounter.set(fullBase, count + 1)
+      id = count === 0 ? fullBase : `${fullBase}-${count}`
     }
-    return (
-      <pre
-        className="my-4 overflow-x-auto bg-dim/5 p-3 text-sm"
-        data-language={childProps}
-      >
-        <code>{childProps.children}</code>
-      </pre>
-    )
-  },
-  table: (props) => (
-    <div className="my-4 overflow-x-auto">
-      <table className="w-full border-collapse text-sm" {...props} />
-    </div>
-  ),
-  thead: (props) => (
-    <thead className="border-border-solid border-b" {...props} />
-  ),
-  tbody: (props) => <tbody {...props} />,
-  tr: (props) => (
-    <tr className="border-border-solid border-b last:border-0" {...props} />
-  ),
-  th: (props) => (
-    <th className="px-3 py-2 text-left font-medium text-dim" {...props} />
-  ),
-  td: (props) => <td className="px-3 py-2 text-muted" {...props} />,
+
+    return <Heading {...props} id={id} level={level} />
+  }
+}
+
+function useStreamdownComponents(commentNumber: string | undefined) {
+  const slugCounterRef = useRef<SlugCounter>(new Map())
+
+  // Reset the counter on every render so heading IDs are deterministic
+  slugCounterRef.current.clear()
+
+  return useMemo(() => {
+    const slugCounter = slugCounterRef.current
+    return {
+      h1: makeHeadingComponent(1, commentNumber, slugCounter),
+      h2: makeHeadingComponent(2, commentNumber, slugCounter),
+      h3: makeHeadingComponent(3, commentNumber, slugCounter),
+      h4: makeHeadingComponent(4, commentNumber, slugCounter),
+      h5: makeHeadingComponent(5, commentNumber, slugCounter),
+      h6: makeHeadingComponent(6, commentNumber, slugCounter),
+      p: (props: ComponentProps<"p">) => (
+        <p className="my-4 leading-relaxed first:mt-0 last:mb-0" {...props} />
+      ),
+      a: (props: ComponentProps<"a">) => (
+        <a
+          className="text-highlight-blue underline-offset-2 hover:underline"
+          rel="noopener"
+          target="_blank"
+          {...props}
+        />
+      ),
+      strong: (props: ComponentProps<"strong">) => (
+        <strong className="font-semibold" {...props} />
+      ),
+      em: (props: ComponentProps<"em">) => <em className="italic" {...props} />,
+      ul: (props: ComponentProps<"ul">) => (
+        <ul className="my-4 list-disc space-y-1 pl-4" {...props} />
+      ),
+      ol: (props: ComponentProps<"ol">) => (
+        <ol className="my-4 list-decimal space-y-1 pl-6" {...props} />
+      ),
+      li: (props: ComponentProps<"li">) => <li {...props} />,
+      blockquote: (props: ComponentProps<"blockquote">) => (
+        <blockquote
+          className="my-4 border-faint border-l-2 pl-3 text-muted italic"
+          {...props}
+        />
+      ),
+      hr: () => <hr className="my-4 border-border-solid" />,
+      code: (props: ComponentProps<"code">) => (
+        <code
+          className="break-all bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
+          {...props}
+        />
+      ),
+      pre: (props: ComponentProps<"pre">) => {
+        // biome-ignore lint/suspicious/noExplicitAny: .
+        const childProps = (props.children as any).props as {
+          className: string
+          children: string
+        }
+        return (
+          <pre
+            className="my-4 overflow-x-auto bg-dim/5 p-3 text-sm"
+            data-language={childProps}
+          >
+            <code>{childProps.children}</code>
+          </pre>
+        )
+      },
+      table: (props: ComponentProps<"table">) => (
+        <div className="my-4 overflow-x-auto">
+          <table className="w-full border-collapse text-sm" {...props} />
+        </div>
+      ),
+      thead: (props: ComponentProps<"thead">) => (
+        <thead className="border-border-solid border-b" {...props} />
+      ),
+      tbody: (props: ComponentProps<"tbody">) => <tbody {...props} />,
+      tr: (props: ComponentProps<"tr">) => (
+        <tr
+          className="border-border-solid border-b last:border-0"
+          {...props}
+        />
+      ),
+      th: (props: ComponentProps<"th">) => (
+        <th
+          className="px-3 py-2 text-left font-medium text-dim"
+          {...props}
+        />
+      ),
+      td: (props: ComponentProps<"td">) => (
+        <td className="px-3 py-2 text-muted" {...props} />
+      ),
+    } satisfies ComponentProps<typeof Streamdown>["components"]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentNumber])
 }
 
 function formatToolInput(input: unknown): string {
@@ -457,6 +576,7 @@ function ToolGroup({
 
 type CommentContentProps = {
   content: AgentUIMessage[]
+  commentNumber?: string
   hasStreamError?: boolean
   isStreaming?: boolean
   isRetrying?: boolean
@@ -554,6 +674,7 @@ function groupParts(content: AgentUIMessage[]): GroupedPart[] {
 
 export function CommentContent({
   content,
+  commentNumber,
   hasStreamError = false,
   isStreaming = false,
   isRetrying = false,
@@ -562,6 +683,7 @@ export function CommentContent({
   const [thinkingExpanded, setThinkingExpanded] = useState(false)
   const grouped = groupParts(content)
   const { owner, repo, gitContext } = usePostMetadata()
+  const streamdownComponents = useStreamdownComponents(commentNumber)
 
   const lastTextIdx = grouped.findLastIndex((item) => item.type === "text")
   const shouldCollapse = !isStreaming && lastTextIdx > 0
