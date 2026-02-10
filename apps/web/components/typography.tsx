@@ -83,7 +83,7 @@ export const ListItem = ({
   className?: string
   children: React.ReactNode
 }) => {
-  return <div className={cn("flex h-4.5", className)}>{children}</div>
+  return <div className={cn("flex h-4.5 font-pixel", className)}>{children}</div>
 }
 
 export const TableColumnTitle = ({

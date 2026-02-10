@@ -37,7 +37,7 @@ function Popup({
         <div className="relative">
           <BaseMenu.Popup
             className={cn(
-              "peer relative z-50 min-w-40 border border-dim bg-background p-1.5 text-sm",
+              "peer relative z-50 min-w-40 border border-dim bg-background p-1.5 font-pixel text-sm",
               "outline-none data-closed:pointer-events-none",
               className
             )}

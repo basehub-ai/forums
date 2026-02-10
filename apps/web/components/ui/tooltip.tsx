@@ -20,7 +20,7 @@ function Popup({
       <BaseTooltip.Positioner sideOffset={sideOffset}>
         <BaseTooltip.Popup
           className={cn(
-            "z-50 max-w-[280px] bg-bright px-2 py-1 text-background text-sm shadow-sm",
+            "z-50 max-w-[280px] bg-bright px-2 py-1 font-pixel text-background text-sm shadow-sm",
             className
           )}
           {...props}

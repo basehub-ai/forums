@@ -88,7 +88,7 @@ export function BranchSelector({
     <>
       <button
         className={cn(
-          "group flex h-9 animate-fade-in cursor-pointer items-center gap-2 bg-transparent text-faint text-sm transition-none hover:text-accent active:text-accent sm:w-auto",
+          "group flex h-9 animate-fade-in cursor-pointer items-center gap-2 bg-transparent font-pixel text-faint text-sm transition-none hover:text-accent active:text-accent sm:w-auto",
           isBranchDialogOpen && "text-accent"
         )}
         onClick={() => setIsBranchDialogOpen(true)}

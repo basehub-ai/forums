@@ -294,7 +294,7 @@ export const Composer = ({
               <Menu.Root onOpenChange={setIsMenuOpen}>
                 <Menu.Trigger
                   className={cn(
-                    "group h-9 justify-between bg-transparent text-faint text-sm transition-none hover:text-accent hover:no-underline active:text-accent data-popup-open:text-accent sm:w-auto"
+                    "group h-9 justify-between bg-transparent font-pixel text-faint text-sm transition-none hover:text-accent hover:no-underline active:text-accent data-popup-open:text-accent sm:w-auto"
                   )}
                 >
                   {(() => {
@@ -383,7 +383,7 @@ export const Composer = ({
                             : "Switch to ask mode"
                         }
                         className={cn(
-                          "flex items-center justify-center gap-1 text-faint text-sm transition-colors hover:text-accent"
+                          "flex items-center justify-center gap-1 font-pixel text-faint text-sm transition-colors hover:text-accent"
                         )}
                         onClick={toggleMode}
                         type="button"

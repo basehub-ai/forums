@@ -72,7 +72,7 @@ function Popup({
       {...props}
     >
       <div className="relative">
-        <div className="relative z-10 border border-dim bg-background">
+        <div className="relative z-10 border border-dim bg-background font-pixel">
           {title && (
             <div className="absolute -top-4 right-0 left-4 flex items-center">
               <span className="bg-background px-2 font-bold text-bright text-lg tracking-normal">
