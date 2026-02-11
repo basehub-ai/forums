@@ -5,16 +5,16 @@ import type { ToolUIPart } from "ai"
 import {
   Children,
   type ComponentProps,
+  isValidElement,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
-  isValidElement,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react"
 import { harden } from "rehype-harden"
-import { defaultRehypePlugins, Streamdown } from "streamdown"
+import { defaultRehypePlugins, type ExtraProps, Streamdown } from "streamdown"
 import type { AgentUIMessage } from "@/agent/types"
 import { ERROR_CODES } from "@/lib/errors"
 import { usePostMetadata } from "./post-metadata-context"
@@ -22,16 +22,23 @@ import { usePostMetadata } from "./post-metadata-context"
 const LEADING_SLASH_REGEX = /^\//
 
 function extractText(node: ReactNode): string {
-  if (typeof node === "string") return node
-  if (typeof node === "number") return String(node)
-  if (!node) return ""
+  if (typeof node === "string") {
+    return node
+  }
+  if (typeof node === "number") {
+    return String(node)
+  }
+  if (!node) {
+    return ""
+  }
   if (isValidElement(node)) {
     return extractText(
       (node.props as { children?: ReactNode }).children ?? null
     )
   }
-  if (Array.isArray(node))
+  if (Array.isArray(node)) {
     return (node as ReactNode[]).map(extractText).join("")
+  }
   const arr: ReactNode[] = []
   Children.forEach(node, (child: ReactNode) => arr.push(child))
   return arr.map(extractText).join("")
@@ -52,7 +59,7 @@ function Heading({
   id,
   children,
   ...props
-}: ComponentProps<"h1"> & { level: 1 | 2 | 3 | 4 | 5 | 6 }) {
+}: ComponentProps<"h1"> & ExtraProps & { level: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const Tag = `h${level}` as const
   const prefix = "#".repeat(level)
 
@@ -109,7 +116,7 @@ function makeHeadingComponent(
   commentNumber: string | undefined,
   slugCounter: SlugCounter
 ) {
-  return function HeadingWithAnchor(props: ComponentProps<"h1">) {
+  return function HeadingWithAnchor(props: ComponentProps<"h1"> & ExtraProps) {
     const text = extractText(props.children)
     const baseSlug = slugify(text)
 
@@ -140,10 +147,10 @@ function useStreamdownComponents(commentNumber: string | undefined) {
       h4: makeHeadingComponent(4, commentNumber, slugCounter),
       h5: makeHeadingComponent(5, commentNumber, slugCounter),
       h6: makeHeadingComponent(6, commentNumber, slugCounter),
-      p: (props: ComponentProps<"p">) => (
+      p: (props: ComponentProps<"p"> & ExtraProps) => (
         <p className="my-4 leading-relaxed first:mt-0 last:mb-0" {...props} />
       ),
-      a: (props: ComponentProps<"a">) => (
+      a: (props: ComponentProps<"a"> & ExtraProps) => (
         <a
           className="text-highlight-blue underline-offset-2 hover:underline"
           rel="noopener"
@@ -151,31 +158,33 @@ function useStreamdownComponents(commentNumber: string | undefined) {
           {...props}
         />
       ),
-      strong: (props: ComponentProps<"strong">) => (
+      strong: (props: ComponentProps<"strong"> & ExtraProps) => (
         <strong className="font-semibold" {...props} />
       ),
-      em: (props: ComponentProps<"em">) => <em className="italic" {...props} />,
-      ul: (props: ComponentProps<"ul">) => (
+      em: (props: ComponentProps<"em"> & ExtraProps) => (
+        <em className="italic" {...props} />
+      ),
+      ul: (props: ComponentProps<"ul"> & ExtraProps) => (
         <ul className="my-4 list-disc space-y-1 pl-4" {...props} />
       ),
-      ol: (props: ComponentProps<"ol">) => (
+      ol: (props: ComponentProps<"ol"> & ExtraProps) => (
         <ol className="my-4 list-decimal space-y-1 pl-6" {...props} />
       ),
-      li: (props: ComponentProps<"li">) => <li {...props} />,
-      blockquote: (props: ComponentProps<"blockquote">) => (
+      li: (props: ComponentProps<"li"> & ExtraProps) => <li {...props} />,
+      blockquote: (props: ComponentProps<"blockquote"> & ExtraProps) => (
         <blockquote
           className="my-4 border-faint border-l-2 pl-3 text-muted italic"
           {...props}
         />
       ),
       hr: () => <hr className="my-4 border-border-solid" />,
-      code: (props: ComponentProps<"code">) => (
+      code: (props: ComponentProps<"code"> & ExtraProps) => (
         <code
           className="break-all bg-dim/5 px-1 py-0.5 font-mono text-[0.9em] text-highlight-yellow"
           {...props}
         />
       ),
-      pre: (props: ComponentProps<"pre">) => {
+      pre: (props: ComponentProps<"pre"> & ExtraProps) => {
         // biome-ignore lint/suspicious/noExplicitAny: .
         const childProps = (props.children as any).props as {
           className: string
@@ -190,28 +199,24 @@ function useStreamdownComponents(commentNumber: string | undefined) {
           </pre>
         )
       },
-      table: (props: ComponentProps<"table">) => (
+      table: (props: ComponentProps<"table"> & ExtraProps) => (
         <div className="my-4 overflow-x-auto">
           <table className="w-full border-collapse text-sm" {...props} />
         </div>
       ),
-      thead: (props: ComponentProps<"thead">) => (
+      thead: (props: ComponentProps<"thead"> & ExtraProps) => (
         <thead className="border-border-solid border-b" {...props} />
       ),
-      tbody: (props: ComponentProps<"tbody">) => <tbody {...props} />,
-      tr: (props: ComponentProps<"tr">) => (
-        <tr
-          className="border-border-solid border-b last:border-0"
-          {...props}
-        />
+      tbody: (props: ComponentProps<"tbody"> & ExtraProps) => (
+        <tbody {...props} />
       ),
-      th: (props: ComponentProps<"th">) => (
-        <th
-          className="px-3 py-2 text-left font-medium text-dim"
-          {...props}
-        />
+      tr: (props: ComponentProps<"tr"> & ExtraProps) => (
+        <tr className="border-border-solid border-b last:border-0" {...props} />
       ),
-      td: (props: ComponentProps<"td">) => (
+      th: (props: ComponentProps<"th"> & ExtraProps) => (
+        <th className="px-3 py-2 text-left font-medium text-dim" {...props} />
+      ),
+      td: (props: ComponentProps<"td"> & ExtraProps) => (
         <td className="px-3 py-2 text-muted" {...props} />
       ),
     } satisfies ComponentProps<typeof Streamdown>["components"]
