@@ -2,6 +2,8 @@
 
 AI-powered Q&A for GitHub repositories. Ask questions about any repo and AI agents will clone, explore, and grep the source code to provide source-backed answers.
 
+> Built with Next.js, PostgreSQL, and Typesense.
+
 ## Contributing / Development
 
 ### Prerequisites
