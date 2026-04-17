@@ -125,27 +125,11 @@ export function Header() {
         </div>
 
         <div className="relative flex items-center gap-x-5">
-          {/*
-          <Link className="relative z-10 bg-background" href="/cli">
+          <Link className="relative z-10 bg-background" href="/about">
             <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
-              CLI
+              About
             </span>
           </Link>
-          <Link className="relative z-10 bg-background" href="/faq">
-            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
-              FAQ
-            </span>
-          </Link> 
-          <Link
-            className="relative z-10 bg-background"
-            href="https://github.com/basehub-ai/forums"
-            target="_blank"
-          >
-            <span className="whitespace-nowrap font-semibold text-[15px] text-faint uppercase leading-5 tracking-tight hover:text-bright hover:underline">
-              GITHUB
-            </span>
-          </Link>
-          */}
           <Suspense>
             <div className="relative z-10 bg-background">
               <User />
