@@ -4,6 +4,7 @@ import { SearchIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+import { useAutoFocusOnType } from "@/lib/hooks/use-auto-focus-on-type"
 
 function parseRepoInput(input: string): { owner: string; repo: string } | null {
   const trimmed = input.trim()
@@ -41,6 +42,8 @@ export function RepoSearchInput({ autoFocus }: { autoFocus?: boolean }) {
       inputRef.current?.focus()
     }
   }, [autoFocus])
+
+  useAutoFocusOnType(inputRef)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

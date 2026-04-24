@@ -19,6 +19,7 @@ import GeminiIcon from "@/components/icons/gemini"
 import OpenAIIcon from "@/components/icons/openai"
 import { Menu } from "@/components/ui/menu"
 import { authClient } from "@/lib/auth-client"
+import { useAutoFocusOnType } from "@/lib/hooks/use-auto-focus-on-type"
 import { useDialogStore } from "@/lib/stores/dialogs"
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
@@ -177,6 +178,8 @@ export const Composer = ({
       textareaRef.current?.focus()
     }
   }, [autoFocus])
+
+  useAutoFocusOnType(textareaRef)
 
   return (
     <form
