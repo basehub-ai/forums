@@ -9,7 +9,7 @@ import { getSiteOrigin } from "@/lib/utils"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Forums — Get to the source!",
+  title: "Forums",
   description:
     "Ask a question inside any GitHub Repository. AI Agents will clone and read and grep the source code to provide the best answer.",
   openGraph: {
