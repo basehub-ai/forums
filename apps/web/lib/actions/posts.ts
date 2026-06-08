@@ -292,13 +292,10 @@ export async function createComment(data: {
     }
   }
 
-  const isOp = session.user.id === post.authorId
-  const isTopLevel = !data.threadCommentId
-  // LLM replies to same thread as user (flat), or creates new thread if user is OP posting top-level
-  const llmThreadCommentId =
-    llm && !(isTopLevel && isOp)
-      ? (data.threadCommentId ?? commentId)
-      : undefined
+  // Thread metadata remains supported, but the default comment flow is flat.
+  // If threaded replies are re-enabled, an explicit threadCommentId will keep
+  // the LLM response in that thread without auto-creating new threads.
+  const llmThreadCommentId = llm ? data.threadCommentId : undefined
 
   let llmCommentId: string | undefined
   let streamId: string | undefined

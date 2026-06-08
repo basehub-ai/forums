@@ -1,8 +1,7 @@
 "use client"
 
 import type { InferSelectModel } from "drizzle-orm"
-import { useEffect, useMemo, useState } from "react"
-import { authClient } from "@/lib/auth-client"
+import { useEffect, useMemo } from "react"
 import type {
   comments as commentsSchema,
   mentions as mentionsSchema,
@@ -22,13 +21,6 @@ type AuthorInfo = {
   isLlm: boolean
 }
 
-type AskingOption = {
-  id: string
-  name: string
-  image?: string | null
-  isDefault?: boolean
-}
-
 export function CommentThreadClient({
   owner,
   repo,
@@ -38,7 +30,6 @@ export function CommentThreadClient({
   reactions,
   rootCommentId,
   commentNumbers,
-  askingOptions,
 }: {
   owner: string
   repo: string
@@ -48,10 +39,7 @@ export function CommentThreadClient({
   reactions: Reaction[]
   rootCommentId: string | null
   commentNumbers: Map<string, string>
-  askingOptions: AskingOption[]
 }) {
-  const [replyingToId, setReplyingToId] = useState<string | null>(null)
-  const isSignedIn = !!authClient.useSession().data?.session
   const { selectedRef, gitContext } = usePostMetadata()
   const currentSha = gitContext?.sha ?? null
 
@@ -85,24 +73,12 @@ export function CommentThreadClient({
 
   return (
     <CommentThread
-      askingOptions={askingOptions}
       authorsById={authorsById}
       commentNumbers={commentNumbers}
       comments={filteredComments}
       mentions={mentions}
-      onCancelReply={() => {
-        if (isSignedIn) {
-          setReplyingToId(null)
-        }
-      }}
-      onReply={(commentId) => {
-        if (isSignedIn) {
-          setReplyingToId(commentId)
-        }
-      }}
       owner={owner}
       reactions={reactions}
-      replyingToId={replyingToId}
       repo={repo}
       rootCommentId={rootCommentId}
     />
