@@ -88,7 +88,7 @@ export default async function Home() {
   return (
     <>
       <Container>
-        <Title underline>Ask the codebase anything.</Title>
+        <Title underline>Chat with any repo on GitHub.</Title>
         <Subtitle className="mt-0.5">
           Ask any GitHub repo a question. Get source-backed answers from a
           frontier LLM.
