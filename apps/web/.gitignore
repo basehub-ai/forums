@@ -55,3 +55,4 @@ xmcp-env.d.ts
 # mcp-publisher cli token
 .mcpregistry_registry_token
 .mcpregistry_github_token
+/.swc
