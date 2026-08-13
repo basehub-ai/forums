@@ -1,0 +1,9 @@
+{
+  "$schema": "https://v0.dev/schemas/v0.schema.json",
+  "projects": {
+    "apps/web": {
+      "devCommand": "bunx next dev --port 3000",
+      "port": 3000
+    }
+  }
+}
