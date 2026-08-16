@@ -10,6 +10,7 @@ import {
   TableCellText,
   TableColumnTitle,
 } from "@/components/typography"
+import { useAutoFocusOnType } from "@/lib/hooks/use-auto-focus-on-type"
 import { formatCompactNumber, formatRelativeTime } from "@/lib/utils"
 
 type RepoStats = {
@@ -88,6 +89,8 @@ export function RepoListWithSearch({
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  useAutoFocusOnType(inputRef)
 
   useEffect(() => {
     const query = value.trim()
