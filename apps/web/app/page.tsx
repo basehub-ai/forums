@@ -88,7 +88,7 @@ export default async function Home() {
   return (
     <>
       <Container>
-        <Title underline>Get to the source!</Title>
+        <Title underline>Get to the source</Title>
         <Subtitle className="mt-0.5">
           Ask any GitHub repo a question. Get source-backed answers from a
           frontier LLM.
