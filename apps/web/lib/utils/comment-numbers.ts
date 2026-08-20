@@ -5,10 +5,10 @@ type Comment = {
 }
 
 /**
- * Computes hierarchical comment numbers from a flat list of comments.
+ * Computes flat comment numbers from a list of comments.
  *
- * Top-level comments: 1, 2, 3, 4...
- * Replies in a thread: 3.1, 3.2, 3.3...
+ * Thread metadata is intentionally ignored while threaded replies are dormant,
+ * so every visible comment gets a top-level number: 1, 2, 3, 4...
  *
  * Numbers are deterministic based on createdAt order (with id as tiebreaker).
  */
@@ -23,18 +23,9 @@ export function computeCommentNumbers(
   })
 
   const result = new Map<string, string>()
-  const childCounters = new Map<string | null, number>()
 
-  for (const comment of sorted) {
-    const threadNumber = comment.threadCommentId
-      ? result.get(comment.threadCommentId)
-      : null
-
-    const counter = (childCounters.get(comment.threadCommentId) ?? 0) + 1
-    childCounters.set(comment.threadCommentId, counter)
-
-    const number = threadNumber ? `${threadNumber}.${counter}` : String(counter)
-    result.set(comment.id, number)
+  for (const [index, comment] of sorted.entries()) {
+    result.set(comment.id, String(index + 1))
   }
 
   return result

@@ -380,7 +380,6 @@ export default async function PostPage({
 
             <div className="mt-8 space-y-4">
               <CommentThreadClient
-                askingOptions={askingOptions}
                 authorsById={authorsById}
                 commentNumbers={commentNumbers}
                 comments={postComments}
