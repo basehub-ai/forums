@@ -90,23 +90,31 @@ export async function POST(request: Request) {
     return Response.json({ posts: [] })
   }
 
-  if (type === "text") {
-    const textResults = await searchPostsText(query, owner, repo, {
-      perPage: 20,
-      categoryId,
-    })
-    const textPosts = await enrichPosts(textResults, owner, repo)
-    return Response.json({ posts: textPosts })
-  }
+  try {
+    if (type === "text") {
+      const textResults = await searchPostsText(query, owner, repo, {
+        perPage: 20,
+        categoryId,
+      })
+      const textPosts = await enrichPosts(textResults, owner, repo)
+      return Response.json({ posts: textPosts })
+    }
 
-  if (type === "semantic") {
-    const semanticResults = await searchPostsSemantic(query, owner, repo, {
-      perPage: 5,
-      categoryId,
-    })
-    const semanticPosts = await enrichPosts(semanticResults, owner, repo)
-    return Response.json({ posts: semanticPosts })
-  }
+    if (type === "semantic") {
+      const semanticResults = await searchPostsSemantic(query, owner, repo, {
+        perPage: 5,
+        categoryId,
+      })
+      const semanticPosts = await enrichPosts(semanticResults, owner, repo)
+      return Response.json({ posts: semanticPosts })
+    }
 
-  return Response.json({ posts: [] })
+    return Response.json({ posts: [] })
+  } catch (error) {
+    console.error("Hybrid search error:", error)
+    return Response.json(
+      { posts: [], error: "Search failed" },
+      { status: 500 }
+    )
+  }
 }
