@@ -34,8 +34,8 @@ export function ModeratorDeletePostDialog() {
         const { owner, repo } = await deletePost(dialog.postId)
         setDialog(null)
         setError(null)
+        // Navigate to repo index - don't refresh since the post no longer exists
         router.push(`/${owner}/${repo}`)
-        router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete")
       }

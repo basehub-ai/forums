@@ -35,13 +35,16 @@ export function DeletePostOrCommentDialog() {
         setDialog(null)
         setError(null)
         if (result.deletedPost) {
+          // Navigate to repo index - don't refresh since the post no longer exists
           const path = window.location.pathname
           const parts = path.split("/").filter(Boolean)
           if (parts.length >= 2) {
             router.push(`/${parts[0]}/${parts[1]}`)
           }
+        } else {
+          // Only refresh if we're staying on the same page (comment deleted, not post)
+          router.refresh()
         }
-        router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete")
       }
