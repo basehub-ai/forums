@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next"
 import slugify from "slugify"
 import { db } from "@/lib/db/client"
 import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 import { getSiteOrigin } from "@/lib/utils"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -15,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           owner: posts.owner,
           repo: posts.repo,
           number: posts.number,
+          title: posts.title,
           updatedAt: posts.updatedAt,
         })
         .from(posts),
@@ -68,7 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Post pages
   for (const p of allPosts) {
     entries.push({
-      url: `${origin}/${p.owner}/${p.repo}/${p.number}`,
+      url: `${origin}${postPath(p)}`,
       lastModified: new Date(p.updatedAt),
     })
   }

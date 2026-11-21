@@ -184,3 +184,25 @@ describe("extractPostLinks", () => {
     })
   })
 })
+
+describe("extractPostLinks with slugified URLs", () => {
+  test("extracts the number from /owner/repo/title-slug-number", () => {
+    const links = extractPostLinks(
+      makeMessage(
+        "See https://forums.basehub.com/ghostty-org/ghostty/fix-2-things-15 for that"
+      )
+    )
+    expect(links).toHaveLength(1)
+    expect(links[0]).toMatchObject({
+      owner: "ghostty-org",
+      repo: "ghostty",
+      number: 15,
+    })
+  })
+
+  test("does not match a segment that doesn't end in a number", () => {
+    expect(
+      extractPostLinks(makeMessage("/ghostty-org/ghostty/15-things"))
+    ).toHaveLength(0)
+  })
+})

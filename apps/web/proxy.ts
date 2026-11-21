@@ -13,5 +13,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/:owner/:repo/:postNumber(\\d+)",
+  matcher: "/:owner/:repo/:postNumber((?:[a-zA-Z0-9]+-)*\\d+)",
 }

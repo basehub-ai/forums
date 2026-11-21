@@ -24,10 +24,10 @@ export function extractPostLinks(content: AgentUIMessage): ParsedPostLink[] {
         })
       }
 
-      // Pattern 2: owner/repo/number (with optional leading slash)
-      // Matches: /owner/repo/123, owner/repo/123, domain.com/owner/repo/123
+      // Pattern 2: owner/repo/number or owner/repo/title-slug-number
+      // Matches: /owner/repo/123, owner/repo/123, domain.com/owner/repo/some-title-123
       const urlMatches = part.text.matchAll(
-        /(?<![a-zA-Z0-9])\/?([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_.-]+)\/(\d+)(?![/\d])/g
+        /(?<![a-zA-Z0-9])\/?([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_.-]+)\/(?:[a-zA-Z0-9]+-)*(\d+)(?![/\w-])/g
       )
       for (const match of urlMatches) {
         links.push({

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { RelativeTime } from "@/components/relative-time"
 import { UserAvatar } from "@/components/user-avatar"
 import type { mentions as mentionsSchema } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 
 type Mention = InferSelectModel<typeof mentionsSchema>
 
@@ -23,7 +24,12 @@ export function MentionBanner({
   mention: Mention
   author: AuthorInfo | undefined
 }) {
-  const sourcePostUrl = `/${mention.sourcePostOwner}/${mention.sourcePostRepo}/${mention.sourcePostNumber}`
+  const sourcePostUrl = postPath({
+    owner: mention.sourcePostOwner,
+    repo: mention.sourcePostRepo,
+    number: mention.sourcePostNumber,
+    title: mention.sourcePostTitle,
+  })
 
   return (
     <div className="flex items-center gap-2 text-muted-foreground text-sm">

@@ -9,6 +9,7 @@ import { Container } from "@/components/container"
 import { List, ListItem, Subtitle, Title } from "@/components/typography"
 import { db } from "@/lib/db/client"
 import { comments, llmUsers } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 import { getSiteOrigin } from "@/lib/utils"
 
 export async function generateMetadata({
@@ -127,7 +128,12 @@ export default async function LlmProfilePage({
               <ListItem key={comment.id}>
                 <Link
                   className="group flex grow items-start gap-1 overflow-hidden"
-                  href={`/${comment.postOwner}/${comment.postRepo}/${comment.postNumber}`}
+                  href={postPath({
+                    owner: comment.postOwner,
+                    repo: comment.postRepo,
+                    number: comment.postNumber,
+                    title: comment.postTitle,
+                  })}
                 >
                   <AsteriskIcon
                     className="mt-0.5 shrink-0 text-faint"

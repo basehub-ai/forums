@@ -13,6 +13,7 @@ import {
 } from "@/components/typography"
 import { UserAvatar } from "@/components/user-avatar"
 import type { categories } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 
 type PostListItem = {
   id: string
@@ -226,7 +227,12 @@ function PinnedPosts({
           <ListItem key={post.id}>
             <Link
               className="group flex h-5 grow items-start gap-1 overflow-hidden"
-              href={`/${owner}/${repo}/${post.number}`}
+              href={postPath({
+                owner,
+                repo,
+                number: post.number,
+                title: post.title,
+              })}
             >
               <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
               <span className="truncate text-dim group-hover:text-bright group-hover:underline">
@@ -275,7 +281,12 @@ function LatestPosts({
             <ListItem key={post.id}>
               <Link
                 className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
-                href={`/${owner}/${repo}/${post.number}`}
+                href={postPath({
+                  owner,
+                  repo,
+                  number: post.number,
+                  title: post.title,
+                })}
               >
                 <AsteriskIcon
                   className="mt-0.5 shrink-0 text-faint"
@@ -337,7 +348,12 @@ function RelatedPostsSection({
           filteredResults.map((post) => (
             <Link
               className="group flex flex-col gap-0.5"
-              href={`/${owner}/${repo}/${post.number}`}
+              href={postPath({
+                owner,
+                repo,
+                number: post.number,
+                title: post.title,
+              })}
               key={post.id}
             >
               <span className="truncate text-dim text-sm group-hover:text-bright group-hover:underline">
@@ -398,7 +414,12 @@ function TextSearchResults({
               <div className="flex w-full">
                 <Link
                   className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
-                  href={`/${owner}/${repo}/${post.number}`}
+                  href={postPath({
+                    owner,
+                    repo,
+                    number: post.number,
+                    title: post.title,
+                  })}
                 >
                   <AsteriskIcon
                     className="mt-0.5 shrink-0 text-faint"

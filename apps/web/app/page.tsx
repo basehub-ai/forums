@@ -17,6 +17,7 @@ import {
 import { db } from "@/lib/db/client"
 import { comments, posts } from "@/lib/db/schema"
 import { getLatestPosts } from "@/lib/latest-posts"
+import { postPath } from "@/lib/post-url"
 import { getTopRepositories } from "@/lib/top-repos"
 
 function getPostsWithMCPComments(limit = 5) {
@@ -108,7 +109,7 @@ export default async function Home() {
                 <ListItem key={post.id}>
                   <Link
                     className="group flex grow items-center gap-1 overflow-hidden"
-                    href={`/${post.owner}/${post.repo}/${post.number}`}
+                    href={postPath(post)}
                   >
                     <AsteriskIcon className="shrink-0 text-faint" size={16} />
                     <span className="truncate text-dim leading-none group-hover:text-bright group-hover:underline">
@@ -123,8 +124,6 @@ export default async function Home() {
             </List>
           </div>
         )}
-
-
       </Container>
 
       <hr className="divider-md my-14 h-px border-0 opacity-40" />
@@ -197,7 +196,7 @@ export default async function Home() {
                   <ListItem key={post.id}>
                     <Link
                       className="group flex grow items-center gap-1 overflow-hidden"
-                      href={`/${post.owner}/${post.repo}/${post.number}`}
+                      href={postPath(post)}
                     >
                       <AsteriskIcon className="shrink-0 text-faint" size={16} />
                       <span className="truncate text-dim leading-none group-hover:text-bright group-hover:underline">
