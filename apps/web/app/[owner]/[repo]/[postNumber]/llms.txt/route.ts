@@ -4,6 +4,7 @@ import type { AgentUIMessage } from "@/agent/types"
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { categories, comments, llmUsers, posts } from "@/lib/db/schema"
+import { parsePostSegment } from "@/lib/post-url"
 
 function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toISOString()
@@ -60,9 +61,9 @@ export async function GET(
   const { owner, repo, postNumber: postNumberStr } = await context.params
   const url = new URL(request.url)
   const includeTools = url.searchParams.get("tools") === "true"
-  const postNumber = Number.parseInt(postNumberStr, 10)
+  const postNumber = parsePostSegment(postNumberStr)
 
-  if (Number.isNaN(postNumber)) {
+  if (postNumber === null) {
     notFound()
   }
 

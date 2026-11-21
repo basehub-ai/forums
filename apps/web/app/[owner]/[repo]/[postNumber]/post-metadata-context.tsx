@@ -9,6 +9,7 @@ import {
 } from "react"
 import type { GitContextData } from "@/agent/types"
 import { getPostMetadata, updatePost } from "@/lib/actions/posts"
+import { postPath } from "@/lib/post-url"
 
 type Category = {
   id: string
@@ -45,6 +46,7 @@ const PostMetadataContext = createContext<PostMetadata | null>(null)
 
 export function PostMetadataProvider({
   postId,
+  postNumber,
   owner,
   repo,
   authorId,
@@ -58,6 +60,7 @@ export function PostMetadataProvider({
   children,
 }: {
   postId: string
+  postNumber: number
   owner: string
   repo: string
   authorId: string
@@ -113,6 +116,18 @@ export function PostMetadataProvider({
       clearInterval(interval)
     }
   }, [isPolling, poll])
+
+  // Titles get generated (or edited) after the page loads: keep the URL on the slug
+  useEffect(() => {
+    const path = postPath({ owner, repo, number: postNumber, title })
+    if (window.location.pathname !== path) {
+      window.history.replaceState(
+        null,
+        "",
+        `${path}${window.location.search}${window.location.hash}`
+      )
+    }
+  }, [owner, repo, postNumber, title])
 
   const updateMetadata = useCallback(
     async (data: { title?: string; categoryId?: string | null }) => {

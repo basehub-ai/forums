@@ -1,3 +1,5 @@
+import { parsePostSegment } from "./post-url"
+
 const TRAILING_SLASH_REGEX = /\/$/
 
 export function parsePostUrl(url: string): {
@@ -27,14 +29,8 @@ export function parsePostUrl(url: string): {
 
     const [owner, repo, postNumberStr] = parts
 
-    // Ensure the string is a valid integer (no decimals, no trailing chars)
-    if (!/^\d+$/.test(postNumberStr)) {
-      return null
-    }
-
-    const postNumber = Number.parseInt(postNumberStr, 10)
-
-    if (!Number.isInteger(postNumber) || postNumber <= 0) {
+    const postNumber = parsePostSegment(postNumberStr)
+    if (postNumber === null) {
       return null
     }
 

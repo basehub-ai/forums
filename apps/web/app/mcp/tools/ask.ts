@@ -10,7 +10,8 @@ import { auth } from "@/lib/auth"
 import { autumn, CREDIT_COSTS, checkIsPro } from "@/lib/autumn"
 import { getUserAccessToken } from "@/lib/data/github"
 import { db } from "@/lib/db/client"
-import { comments, llmUsers, user } from "@/lib/db/schema"
+import { comments, llmUsers, posts, user } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 import { checkMessageRateLimit } from "@/lib/rate-limit"
 import { resolveRepoInput } from "@/lib/resolve-repo-input"
 import { indexRepo } from "@/lib/typesense-index"
@@ -239,7 +240,14 @@ export default async function ask({
     }
   }
 
-  const postUrl = `${getSiteOrigin()}/${owner}/${repo}/${result.postNumber}`
+  // The title is generated while the LLM answers, so it's usually set by now
+  const postTitle = await db
+    .select({ title: posts.title })
+    .from(posts)
+    .where(eq(posts.id, result.postId))
+    .limit(1)
+    .then((r) => r[0]?.title ?? null)
+  const postUrl = `${getSiteOrigin()}${postPath({ owner, repo, number: result.postNumber, title: postTitle })}`
 
   revalidateTag(`repo:${owner}:${repo}`, "max")
   revalidateTag(`post:${result.postId}`, "max")

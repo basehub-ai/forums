@@ -10,6 +10,7 @@ import {
 } from "@/components/typography"
 import { UserAvatar } from "@/components/user-avatar"
 import type { categories } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 
 type PostListItem = {
   id: string
@@ -63,9 +64,17 @@ export function ActivePosts({
               <ListItem key={post.id}>
                 <Link
                   className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
-                  href={`/${owner}/${repo}/${post.number}`}
+                  href={postPath({
+                    owner,
+                    repo,
+                    number: post.number,
+                    title: post.title,
+                  })}
                 >
-                  <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                  <AsteriskIcon
+                    className="mt-0.5 shrink-0 text-faint"
+                    size={16}
+                  />
                   <span className="truncate leading-none group-hover:text-bright">
                     {post.title || `Post #${post.number}`}
                   </span>

@@ -1,7 +1,7 @@
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { Metadata } from "next"
 import { cacheLife, cacheTag } from "next/cache"
-import { notFound, redirect } from "next/navigation"
+import { notFound, permanentRedirect, redirect } from "next/navigation"
 import { z } from "zod"
 import type { AgentMode } from "@/agent/types"
 import { Container } from "@/components/container"
@@ -17,6 +17,7 @@ import {
   reactions,
 } from "@/lib/db/schema"
 import { githubFetch } from "@/lib/github-fetch"
+import { parsePostSegment, postPath, postSlug } from "@/lib/post-url"
 import { getTopReposForBuild } from "@/lib/top-repos"
 import { getSiteOrigin } from "@/lib/utils"
 import { computeCommentNumbers } from "@/lib/utils/comment-numbers"
@@ -70,9 +71,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { owner, repo, postNumber } = await params
   const origin = getSiteOrigin()
-  const postNumberInt = Number.parseInt(postNumber, 10)
+  const postNumberInt = parsePostSegment(postNumber)
 
-  if (Number.isNaN(postNumberInt)) {
+  if (postNumberInt === null) {
     return {}
   }
 
@@ -97,11 +98,14 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: {
+      canonical: `${origin}${postPath({ owner, repo, number: postNumberInt, title: post.title })}`,
+    },
     openGraph: {
       title,
       description,
       images: [
-        `${origin}/api/og/post?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&postNumber=${encodeURIComponent(postNumber)}`,
+        `${origin}/api/og/post?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&postNumber=${postNumberInt}`,
       ],
     },
   }
@@ -120,6 +124,7 @@ export const generateStaticParams = async () => {
       owner: posts.owner,
       repo: posts.repo,
       number: posts.number,
+      title: posts.title,
     })
     .from(posts)
     .where(
@@ -132,7 +137,7 @@ export const generateStaticParams = async () => {
   return topRepoPosts.map((post) => ({
     owner: post.owner,
     repo: post.repo,
-    postNumber: String(post.number),
+    postNumber: postSlug({ number: post.number, title: post.title }),
   }))
 }
 
@@ -152,9 +157,9 @@ export default async function PostPage({
     redirect(`/${owner}/${repo}/${cleanPostNumber}/llms.txt`)
   }
 
-  const postNumber = Number.parseInt(postNumberStr, 10)
+  const postNumber = parsePostSegment(postNumberStr)
 
-  if (Number.isNaN(postNumber)) {
+  if (postNumber === null) {
     notFound()
   }
 
@@ -251,10 +256,18 @@ export default async function PostPage({
     notFound()
   }
 
+  cacheTag(`post:${postWithCategory.id}`)
+
+  const canonicalSegment = postSlug({
+    number: postWithCategory.number,
+    title: postWithCategory.title,
+  })
+  if (postNumberStr !== canonicalSegment) {
+    permanentRedirect(`/${owner}/${repo}/${canonicalSegment}`)
+  }
+
   const { category, gitContexts, pinned, ...post } = postWithCategory
   const gitContext = gitContexts?.[0] ?? null
-
-  cacheTag(`post:${post.id}`)
 
   const staleInfo = gitContext
     ? await getStaleInfo(owner, repo, gitContext.sha, gitContext.branch)
@@ -368,6 +381,7 @@ export default async function PostPage({
       owner={owner}
       pinned={pinned}
       postId={post.id}
+      postNumber={post.number}
       repo={repo}
       staleInfo={staleInfo}
     >

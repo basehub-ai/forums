@@ -17,6 +17,7 @@ import {
 import { gitHubUserLoader } from "@/lib/auth"
 import { db } from "@/lib/db/client"
 import { comments } from "@/lib/db/schema"
+import { postPath } from "@/lib/post-url"
 import {
   formatCompactNumber,
   formatRelativeTime,
@@ -217,7 +218,10 @@ export default async function UserProfilePage({
                     className="group mr-3 flex grow items-center gap-1 overflow-hidden text-dim hover:underline"
                     href={`/${repo.owner}/${repo.repo}`}
                   >
-                    <AsteriskIcon className="mt-0.5 shrink-0 text-faint" size={16} />
+                    <AsteriskIcon
+                      className="mt-0.5 shrink-0 text-faint"
+                      size={16}
+                    />
                     <span className="whitespace-nowrap leading-none group-hover:text-bright">
                       {repo.owner}/{repo.repo}
                     </span>
@@ -263,7 +267,12 @@ export default async function UserProfilePage({
               <ListItem key={comment.id}>
                 <Link
                   className="group flex grow items-start gap-1 overflow-hidden"
-                  href={`/${comment.postOwner}/${comment.postRepo}/${comment.postNumber}`}
+                  href={postPath({
+                    owner: comment.postOwner,
+                    repo: comment.postRepo,
+                    number: comment.postNumber,
+                    title: comment.postTitle,
+                  })}
                 >
                   <AsteriskIcon
                     className="mt-0.5 shrink-0 text-faint"
