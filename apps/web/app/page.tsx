@@ -81,8 +81,8 @@ export default async function Home() {
   cacheLife("minutes")
 
   const [topRepos, latestPosts, mcpPosts] = await Promise.all([
-    getTopRepositories(5),
-    getLatestPosts(5),
+    getTopRepositories(15),
+    getLatestPosts(15),
     getPostsWithMCPComments(5),
   ])
 
