@@ -57,16 +57,25 @@ export async function getTopRepositories(limit = 10): Promise<RepoStats[]> {
   "use cache"
   cacheLife("minutes")
 
+  // Stars add at most ~1.6 to the score below (log10 of a few hundred
+  // thousand, times 0.3), while each post adds 0.4. So rank candidates by
+  // posts and recency in SQL and only fetch stars from GitHub for those,
+  // instead of one GitHub request per repo that has ever had a post.
+  const candidateLimit = limit * 3
+  const lastActiveExpr = sql<number>`greatest(max(${posts.updatedAt}), coalesce(max(${comments.updatedAt}), 0))`
+
   const repoStats = await db
     .select({
       owner: posts.owner,
       repo: posts.repo,
       postCount: sql<number>`count(distinct ${posts.id})::int`,
-      lastActive: sql<number>`greatest(max(${posts.updatedAt}), coalesce(max(${comments.updatedAt}), 0))`,
+      lastActive: lastActiveExpr,
     })
     .from(posts)
     .leftJoin(comments, sql`${comments.postId} = ${posts.id}`)
     .groupBy(posts.owner, posts.repo)
+    .orderBy(desc(sql`count(distinct ${posts.id})`), desc(lastActiveExpr))
+    .limit(candidateLimit)
 
   if (repoStats.length === 0) {
     return []
